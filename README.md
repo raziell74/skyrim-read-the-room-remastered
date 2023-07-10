@@ -24,7 +24,7 @@ I absolutely love the idea but it has a lot of buggy behavior, half finished fea
 
 - [ ] Mod added Followers is hit or miss on if they receive the RTR follower scripts 
 - [ ] Equip/Unequip helmet while in beast form breaks the character
-- [ ] CC Alternate Armor + Vanilla Masks + some hoods of vanilla light armor
+- [ ] CC Alternate Armor + Vanilla Masks + some hoods of vanilla light armor break
 - [ ] Combat settings to skip animations are sometimes ignored
 - [ ] Prevent the game from re-equipping removed helmet/hood
     - Any suggestions on a fix for this would be appreciated. 
