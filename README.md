@@ -7,41 +7,41 @@ I absolutely love the idea but it has a lot of buggy behavior, half finished fea
 
 ## Fixed
 
-- [x] *BugFix* helmet/hood sometimes remains in the hand even after equipping
-- [x] *BugFix* helmet/hood showing in the hand during other animations
-- [x] *BugFix* Hoods would periodically use the helmet animations, better hood detection implemented
-- [x] *BugFix* OnMagicEffectApply issue 
+- [x] Helmet/hood sometimes remains in the hand even after equipping
+- [x] Helmet/hood showing in the hand during other animations
+- [x] Hoods would periodically use the helmet animations, better hood detection implemented
+- [x] OnMagicEffectApply issue 
   - OnMagicEffectApply is notorious for causing save bloat and script lag, replacing with OnMagicEffectApplyEx from [po3's Papyrus Extender](https://www.nexusmods.com/skyrimspecialedition/mods/22854)
-- [x] *BugFix* RTR_MonitorEffect xEdit error
-- [x] *BugFix* Dirt and Blood animations break helmet management
-- [x] *BugFix* First helmet from new save works great, rest doesn't
-- [x] *BugFix* Hotkey Triggers in menu's and console
-- [x] *BugFix* Exclusions for Wigs from popular hair mods
-- [x] *BugFix* Helmets/Hoods sometimes get stuck in hand
-- [x] *BugFix* Follower helmet state should match the players. Using the Hotkey to put on a helmet while your follower already has a helmet would trigger the follower to remove theirs.
+- [x] RTR_MonitorEffect xEdit error
+- [x] Dirt and Blood animations break helmet management
+- [x] First helmet from new save works great, rest doesn't
+- [x] Hotkey Triggers in menu's and console
+- [x] Exclusions for Wigs from popular hair mods
+- [x] Helmets/Hoods sometimes get stuck in hand
+- [x] Follower helmet state should match the players. Using the Hotkey to put on a helmet while your follower already has a helmet would trigger the follower to remove theirs.
 
 ## Currently Looking into
 
-- [ ] *BugFix* Mod added Followers is hit or miss on if they receive the RTR follower scripts 
-- [ ] *BugFix* Equip/Unequip helmet while in beast form breaks the character
-- [ ] *BugFix* CC Alternate Armor + Vanilla Masks + some hoods of vanilla light armor
-- [ ] *BugFix* Combat settings to skip animations are sometimes ignored
-- [ ] *BugFix* Prevent the game from re-equipping removed helmet/hood
+- [ ] Mod added Followers is hit or miss on if they receive the RTR follower scripts 
+- [ ] Equip/Unequip helmet while in beast form breaks the character
+- [ ] CC Alternate Armor + Vanilla Masks + some hoods of vanilla light armor
+- [ ] Combat settings to skip animations are sometimes ignored
+- [ ] Prevent the game from re-equipping removed helmet/hood
     - Any suggestions on a fix for this would be appreciated. 
     - Currently I'm thinking of equipping a hidden helmet so the follower won't try to switch it with one from inventory.
-- [ ] *BugFix* There is no check for if a follower is a current follower so if they have the RTR perk applied through SPID they will trigger the helmet equip/unequip
-- [ ] *BugFix* Followers should only trigger RTR when the player does. They should not have their own location/key-hit checks for optimization reasons
+- [ ] There is no check for if a follower is a current follower so if they have the RTR perk applied through SPID they will trigger the helmet equip/unequip
+- [ ] Followers should only trigger RTR when the player does. They should not have their own location/key-hit checks for optimization reasons
 
 # Small Tweaks and Enhancements
 
-- *Tweak* Adding various modded hood support using [FLM - Form List Manipulator](https://www.nexusmods.com/skyrimspecialedition/mods/74037)
+- Adding various modded hood support using [FLM - Form List Manipulator](https://www.nexusmods.com/skyrimspecialedition/mods/74037)
   - [x] [H2135's Fantasy Series6](https://www.patreon.com/posts/sse-h2135s-cbbe-39697683)
   - *Will add more mod support as they are suggested*
-- [ ] *Tweak* Additional Wig support. Treat wigs as "unequipped" state so putting on the last equipped helmet will still trigger. Also re-equip the wig when the helmet is removed.
-- [ ] *Tweak* Add new "RTRNoAnimation" keyword to the `ReadTheRoom_Exclusions_KID.ini` so people can set modded head gear with bad gnd meshes to still equip/unequip but skip the animations/hand and hip attachment.
-- [ ] *Tweak* Script Refactor. There is tons of duplicated code, unoptimized functionality, unused properties, and redundant behaviors.
-- [ ] *Tweak* Plugin clean up. Unused forms are abound in the plugin. Clean these out to make the plugin smaller so formIds can be opened up to be used by some new features.
-- [x] *Tweak* Updated hood animations to using the great animations from chikuwan's [Serana's Hood Fix with Animation](https://www.nexusmods.com/skyrimspecialedition/mods/80336) mod.
+- [ ] Additional Wig support. Treat wigs as "unequipped" state so putting on the last equipped helmet will still trigger. Also re-equip the wig when the helmet is removed.
+- [ ] Add new "RTRNoAnimation" keyword to the `ReadTheRoom_Exclusions_KID.ini` so people can set modded head gear with bad gnd meshes to still equip/unequip but skip the animations/hand and hip attachment.
+- [ ] Script Refactor. There is tons of duplicated code, unoptimized functionality, unused properties, and redundant behaviors.
+- [ ] Plugin clean up. Unused forms are abound in the plugin. Clean these out to make the plugin smaller so formIds can be opened up to be used by some new features.
+- [x] Updated hood animations to using the great animations from chikuwan's [Serana's Hood Fix with Animation](https://www.nexusmods.com/skyrimspecialedition/mods/80336) mod.
 
 # Possible New Features
 
