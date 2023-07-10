@@ -5,7 +5,7 @@ I absolutely love the idea but it has a lot of buggy behavior, half finished fea
 
 # Known Bugs
 
-## Fixed
+### Fixed
 
 - [x] Helmet/hood sometimes remains in the hand even after equipping
 - [x] Helmet/hood showing in the hand during other animations
@@ -20,7 +20,7 @@ I absolutely love the idea but it has a lot of buggy behavior, half finished fea
 - [x] Helmets/Hoods sometimes get stuck in hand
 - [x] Follower helmet state should match the players. Using the Hotkey to put on a helmet while your follower already has a helmet would trigger the follower to remove theirs.
 
-## Currently Looking into
+### Currently Looking into
 
 - [ ] Mod added Followers is hit or miss on if they receive the RTR follower scripts 
 - [ ] Equip/Unequip helmet while in beast form breaks the character
