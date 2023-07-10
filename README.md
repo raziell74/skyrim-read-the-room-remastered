@@ -3,7 +3,7 @@
 It seems the original author of [Read the Room - Immersive and Animated Helmet Management](https://www.nexusmods.com/skyrimspecialedition/mods/77605) has stopped development on the project.
 I absolutely love the idea but it has a lot of buggy behavior, half finished features, and things I just feel should work differently. It's a staple in my load order but I got tired of waiting for an update. So with my minimal modding/papyrus scripting experience I decided to make the updates myself.
 
-# Known Bugs
+## Known Bugs
 
 ### Fixed
 
@@ -32,7 +32,7 @@ I absolutely love the idea but it has a lot of buggy behavior, half finished fea
 - [ ] There is no check for if a follower is a current follower so if they have the RTR perk applied through SPID they will trigger the helmet equip/unequip
 - [ ] Followers should only trigger RTR when the player does. They should not have their own location/key-hit checks for optimization reasons
 
-# Small Tweaks and Enhancements
+## Small Tweaks and Enhancements
 
 - Adding various modded hood support using [FLM - Form List Manipulator](https://www.nexusmods.com/skyrimspecialedition/mods/74037)
   - [x] [H2135's Fantasy Series6](https://www.patreon.com/posts/sse-h2135s-cbbe-39697683)
@@ -43,7 +43,7 @@ I absolutely love the idea but it has a lot of buggy behavior, half finished fea
 - [ ] Plugin clean up. Unused forms are abound in the plugin. Clean these out to make the plugin smaller so formIds can be opened up to be used by some new features.
 - [x] Updated hood animations to using the great animations from chikuwan's [Serana's Hood Fix with Animation](https://www.nexusmods.com/skyrimspecialedition/mods/80336) mod.
 
-# Possible New Features
+## Possible New Features
 
 These are just a few features I would love to implement. Fair warning though, my brain is a fickle electric meat lump riddled with ADHD and fueled only by coffee and handfuls of vodka infused gummy bears... So I make no promises!
 
