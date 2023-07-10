@@ -3,17 +3,10 @@
 It seems the original author of [Read the Room - Immersive and Animated Helmet Management](https://www.nexusmods.com/skyrimspecialedition/mods/77605) has stopped development on the project.
 I absolutely love the idea but it has a lot of buggy behavior, half finished features, and things I just feel should work differently. It's a staple in my load order but I got tired of waiting for an update. So with my minimal modding/papyrus scripting experience I decided to make the updates myself.
 
-## Fix Progress for Known Bugs:
+# Known Bugs
 
-- [ ] *BugFix* Mod added Followers is hit or miss on if they receive the RTR follower scripts 
-- [ ] *BugFix* Equip/Unequip helmet while in beast form breaks the character
-- [ ] *BugFix* CC Alternate Armor + Vanilla Masks + some hoods of vanilla light armor
-- [ ] *BugFix* Combat settings to skip animations are sometimes ignored
-- [ ] *BugFix* Prevent the game from re-equipping removed helmet/hood
-    - Any suggestions on a fix for this would be appreciated. 
-    - Currently I'm thinking of equipping a hidden helmet so the follower won't try to switch it with one from inventory.
-- [ ] *BugFix* There is no check for if a follower is a current follower so if they have the RTR perk applied through SPID they will trigger the helmet equip/unequip
-- [ ] *BugFix* Followers should only trigger RTR when the player does. They should not have their own location/key-hit checks for optimization reasons
+## Fixed
+
 - [x] *BugFix* helmet/hood sometimes remains in the hand even after equipping
 - [x] *BugFix* helmet/hood showing in the hand during other animations
 - [x] *BugFix* Hoods would periodically use the helmet animations, better hood detection implemented
@@ -27,7 +20,19 @@ I absolutely love the idea but it has a lot of buggy behavior, half finished fea
 - [x] *BugFix* Helmets/Hoods sometimes get stuck in hand
 - [x] *BugFix* Follower helmet state should match the players. Using the Hotkey to put on a helmet while your follower already has a helmet would trigger the follower to remove theirs.
 
-## Tweaks
+## Currently Looking into
+
+- [ ] *BugFix* Mod added Followers is hit or miss on if they receive the RTR follower scripts 
+- [ ] *BugFix* Equip/Unequip helmet while in beast form breaks the character
+- [ ] *BugFix* CC Alternate Armor + Vanilla Masks + some hoods of vanilla light armor
+- [ ] *BugFix* Combat settings to skip animations are sometimes ignored
+- [ ] *BugFix* Prevent the game from re-equipping removed helmet/hood
+    - Any suggestions on a fix for this would be appreciated. 
+    - Currently I'm thinking of equipping a hidden helmet so the follower won't try to switch it with one from inventory.
+- [ ] *BugFix* There is no check for if a follower is a current follower so if they have the RTR perk applied through SPID they will trigger the helmet equip/unequip
+- [ ] *BugFix* Followers should only trigger RTR when the player does. They should not have their own location/key-hit checks for optimization reasons
+
+# Small Tweaks and Enhancements
 
 - *Tweak* Adding various modded hood support using [FLM - Form List Manipulator](https://www.nexusmods.com/skyrimspecialedition/mods/74037)
   - [x] [H2135's Fantasy Series6](https://www.patreon.com/posts/sse-h2135s-cbbe-39697683)
@@ -38,7 +43,7 @@ I absolutely love the idea but it has a lot of buggy behavior, half finished fea
 - [ ] *Tweak* Plugin clean up. Unused forms are abound in the plugin. Clean these out to make the plugin smaller so formIds can be opened up to be used by some new features.
 - [x] *Tweak* Updated hood animations to using the great animations from chikuwan's [Serana's Hood Fix with Animation](https://www.nexusmods.com/skyrimspecialedition/mods/80336) mod.
 
-## Possible New Features
+# Possible New Features
 
 These are just a few features I would love to implement. Fair warning though, my brain is a fickle electric meat lump riddled with ADHD and fueled only by coffee and handfuls of vodka infused gummy bears... So I make no promises!
 
