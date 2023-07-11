@@ -1,0 +1,4 @@
+ofa -a RTREquip helmetequip.hkx
+ofa -a RTRUnequip helmetunequip.hkx
+ofa -a RTREquipHood hoodequip.hkx
+ofa -a RTRUnequipHood hoodunequip.hkx
