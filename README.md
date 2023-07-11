@@ -18,11 +18,12 @@ I absolutely love the idea but it has a lot of buggy behavior, half finished fea
 - [x] Hotkey Triggers in menu's and console
 - [x] Exclusions for Wigs from popular hair mods
 - [x] Helmets/Hoods sometimes get stuck in hand
-- [x] Follower helmet state should match the players. Using the Hotkey to put on a helmet while your follower already has a helmet would trigger the follower to remove theirs.
+- [x] Mod added Followers is hit or miss on if they receive the RTR follower scripts 
 
 ### Currently Looking into
 
-- [ ] Mod added Followers is hit or miss on if they receive the RTR follower scripts 
+- [ ] Follower support only affects a single follower, and it's buggy as hell. Refactor entire "follower monitor" script to instead work as functional hooks that iterate through each npc that has the "RTRFollower" keyword and "CurrentFollowerFaction" faction and equip/unequip when ever the player does. The original script uses single variables to control things like "lastEquipped". This needs to be changed to track an array of followers equipment states.
+- [ ] Follower helmet state should match the players. Using the Hotkey to put on a helmet while your follower already has a helmet would trigger the follower to remove theirs.
 - [ ] Equip/Unequip helmet while in beast form breaks the character
 - [ ] CC Alternate Armor + Vanilla Masks + some hoods of vanilla light armor break
 - [ ] Combat settings to skip animations are sometimes ignored
