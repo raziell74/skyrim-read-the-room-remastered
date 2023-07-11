@@ -514,12 +514,12 @@ Event OnKeyDown(Int KeyCode)
 		if (!Utility.IsInMenuMode() && ui.IsTextInputEnabled() == false && !LowerHood && TargetActor.GetItemCount(LastEquippedHelmet) > 0) || (LowerHood && TargetActor.GetItemCount(LastEquippedHood) > 0)
 			WasToggle = true
 			Bool PlayerEquipped = IsPlayerHelmetEquipped()
-			if HelmetEquipped && PlayerEquipped
+			if HelmetEquipped && PlayerEquipped == false
 				UnequipActorHeadgear()
 				if ItemEnabledActor(TargetActor, plugin, hand_name, IsFemale)
 					FixInterruptedUnequip()
 				endif
-			elseif HelmetEquipped && PlayerEquipped == false
+			elseif !HelmetEquipped && PlayerEquipped
 				Bool Check = EquipActorHeadgear()
 				if Check && TargetActor.IsEquipped(LastEquippedHelmet) == false && TargetActor.IsEquipped(LastEquippedHood) == false
 					FixInterruptedEquip()

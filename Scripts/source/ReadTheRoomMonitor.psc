@@ -1,74 +1,45 @@
 ScriptName ReadTheRoomMonitor extends ActiveMagicEffect
 
 Import IED 
-import PO3_Events_Alias
+Import ReadTheRoomUtil
+; Import PO3_Events_Alias
+; Import MiscUtil
 
 GlobalVariable property RTR_GlobalEnable auto
+
 GlobalVariable property ToggleKey auto
 GlobalVariable property DeleteKey auto
 GlobalVariable property EnableKey auto
-GlobalVariable property HipPositionX auto
-GlobalVariable property HipPositionY auto
-GlobalVariable property HipPositionZ auto
-GlobalVariable property HipRotationPitch auto
-GlobalVariable property HipRotationRoll auto
-GlobalVariable property HipRotationYaw auto
-GlobalVariable property HipPositionXCirclet auto
-GlobalVariable property HipPositionYCirclet auto
-GlobalVariable property HipPositionZCirclet auto
-GlobalVariable property HipRotationPitchCirclet auto
-GlobalVariable property HipRotationRollCirclet auto
-GlobalVariable property HipRotationYawCirclet auto
-GlobalVariable property HandPositionX auto
-GlobalVariable property HandPositionY auto
-GlobalVariable property HandPositionZ auto
-GlobalVariable property HandRotationPitch auto
-GlobalVariable property HandRotationRoll auto
-GlobalVariable property HandRotationYaw auto
-GlobalVariable property HandPositionXCirclet auto
-GlobalVariable property HandPositionYCirclet auto
-GlobalVariable property HandPositionZCirclet auto
-GlobalVariable property HandRotationPitchCirclet auto
-GlobalVariable property HandRotationRollCirclet auto
-GlobalVariable property HandRotationYawCirclet auto
-GlobalVariable property HipPositionXFemale auto
-GlobalVariable property HipPositionYFemale auto
-GlobalVariable property HipPositionZFemale auto
-GlobalVariable property HipRotationPitchFemale auto
-GlobalVariable property HipRotationRollFemale auto
-GlobalVariable property HipRotationYawFemale auto
-GlobalVariable property HipPositionXCircletFemale auto
-GlobalVariable property HipPositionYCircletFemale auto
-GlobalVariable property HipPositionZCircletFemale auto
-GlobalVariable property HipRotationPitchCircletFemale auto
-GlobalVariable property HipRotationRollCircletFemale auto
-GlobalVariable property HipRotationYawCircletFemale auto
-GlobalVariable property HandPositionXFemale auto
-GlobalVariable property HandPositionYFemale auto
-GlobalVariable property HandPositionZFemale auto
-GlobalVariable property HandRotationPitchFemale auto
-GlobalVariable property HandRotationRollFemale auto
-GlobalVariable property HandRotationYawFemale auto
-GlobalVariable property HandPositionXCircletFemale auto
-GlobalVariable property HandPositionYCircletFemale auto
-GlobalVariable property HandPositionZCircletFemale auto
-GlobalVariable property HandRotationPitchCircletFemale auto
-GlobalVariable property HandRotationRollCircletFemale auto
-GlobalVariable property HandRotationYawCircletFemale auto
-GlobalVariable property EquipWhenSafe auto
-GlobalVariable property UnequipWhenUnsafe auto
+
+GlobalVariable[] property MaleHandAnchor auto
+GlobalVariable[] property MaleHipAnchor auto
+GlobalVariable[] property FemaleHandAnchor auto
+GlobalVariable[] property FemaleHipAnchor auto
+
 GlobalVariable property CombatEquip auto
 GlobalVariable property CombatEquipAnimation auto
+GlobalVariable property EquipWhenSafe auto
+GlobalVariable property UnequipWhenUnsafe auto
+
 GlobalVariable property ManageCirclets auto
+GlobalVariable property ManageFollowers auto
+
 GlobalVariable property RemoveHelmetWithoutArmor auto
-FormList property HostileKeywords auto
+
 FormList property SafeKeywords auto
-FormList property LoweredHoods auto
+FormList property HostileKeywords auto
+
 FormList property LowerableHoods auto
+FormList property LoweredHoods auto
+
 MagicEffect property RTR_CombatEffect auto
 Perk property ReadTheRoomPerk auto
+
+Keyword property RTR_Follower auto
+
 Actor property PlayerRef auto
 Actor TargetActor
+
 Bool HelmetEquipped = false
 Bool HelmetWasEquipped = false
 Bool Status
@@ -85,223 +56,119 @@ Bool LowerHood = false
 String plugin = "ReadTheRoom.esp"
 String hip_name = "HelmetOnHip"
 String hand_name = "HelmetOnHand"
+String HelmetOnHip = "HelmetOnHip"
+String HelmetOnHand = "HelmetOnHand"
 String hip_node = "NPC Pelvis [Pelv]"
 String hand_node = "NPC R Hand [RHnd]"
 String LastEquippedType = "None"
 Float hip_scale = 0.9150
 Float hand_scale = 1.05
+
 Form LastEquippedHelmet
 Form LastEquippedHood
 Form LoweredLastEquippedHood
 
 Event OnAnimationEvent(ObjectReference akSource, string asEventName)
-	if Active
-		if UnequipAnimation
-			if LastEquippedType == "Helmet"
-				LastEquippedHelmet = GetLastEquippedForm(TargetActor, 1, true, false)
-				if LastEquippedHelmet as String == "None"
-					LastEquippedHelmet = GetLastEquippedForm(TargetActor, 0, true, false)
-				endif
-			elseif LastEquippedType == "Circlet"
-				LastEquippedHelmet = GetLastEquippedForm(TargetActor, 12, true, false)
-			endif
-			if (LastEquippedHelmet as Armor).IsHelmet() || LastEquippedHelmet.HasKeywordString("ClothingCirclet") || LastEquippedHelmet.HasKeywordString("RTR_HoodKW")
-				
-				if akSource == TargetActor && asEventName == "SoundPlay.NPCHumanCombatIdleA"
-					;enable helmet on hand, unequip helmet
-					Float[] hand_position = new Float[3]
-					Float[] hand_rotation = new Float[3]
-					if LastEquippedType == "Helmet"
-						if IsFemale
-							hand_position[0] = HandPositionXFemale.GetValue()
-							hand_position[1] = HandPositionYFemale.GetValue()
-							hand_position[2] = HandPositionZFemale.GetValue()
-							hand_rotation[0] = HandRotationPitchFemale.GetValue()
-							hand_rotation[1] = HandRotationRollFemale.GetValue()
-							hand_rotation[2] = HandRotationYawFemale.GetValue()
-						else
-							hand_position[0] = HandPositionX.GetValue()
-							hand_position[1] = HandPositionY.GetValue()
-							hand_position[2] = HandPositionZ.GetValue()
-							hand_rotation[0] = HandRotationPitch.GetValue()
-							hand_rotation[1] = HandRotationRoll.GetValue()
-							hand_rotation[2] = HandRotationYaw.GetValue()
-						endif
-					elseif LastEquippedType == "Circlet"
-						if IsFemale
-							hand_position[0] = HandPositionXCircletFemale.GetValue()
-							hand_position[1] = HandPositionYCircletFemale.GetValue()
-							hand_position[2] = HandPositionZCircletFemale.GetValue()
-							hand_rotation[0] = HandRotationPitchCircletFemale.GetValue()
-							hand_rotation[1] = HandRotationRollCircletFemale.GetValue()
-							hand_rotation[2] = HandRotationYawCircletFemale.GetValue()
-						else
-							hand_position[0] = HandPositionXCirclet.GetValue()
-							hand_position[1] = HandPositionYCirclet.GetValue()
-							hand_position[2] = HandPositionZCirclet.GetValue()
-							hand_rotation[0] = HandRotationPitchCirclet.GetValue()
-							hand_rotation[1] = HandRotationRollCirclet.GetValue()
-							hand_rotation[2] = HandRotationYawCirclet.GetValue()
-						endif
-					endif
-					Status = CreateItemActor(TargetActor, plugin, hand_name, IsFemale, LastEquippedHelmet, InventoryRequired, hand_node)
-					Status = SetItemFormActor(TargetActor, plugin, hand_name, IsFemale, LastEquippedHelmet)
-					Status = SetItemNodeActor(TargetActor, plugin, hand_name, IsFemale, hand_node)
-					Status = SetItemPositionActor(TargetActor, plugin, hand_name, IsFemale, hand_position)
-					Status = SetItemRotationActor(TargetActor, plugin, hand_name, IsFemale, hand_rotation)
-					if LastEquippedType == "Helmet"
-						Status = SetItemScaleActor(TargetActor, plugin, hand_name, IsFemale, hand_scale)
-					endif
-					Status = SetItemEnabledActor(TargetActor, plugin, hand_name, IsFemale, true)
-					if TargetActor == PlayerRef
-						TargetActor.UnequipItem(LastEquippedHelmet, false, true)
-					else
-						TargetActor.UnequipItem(LastEquippedHelmet, true, true)
-					endif
-				endif
-				if akSource == TargetActor && asEventName == "SoundPlay.NPCHumanCombatIdleB"
-					if LastEquippedType == "Helmet" || LastEquippedType == "Circlet"
-						;enable helmet on hip, disable helmet on hand
-						Float[] hip_position = new Float[3]
-						Float[] hip_rotation = new Float[3]
-						if LastEquippedType == "Helmet"
-							if IsFemale
-								hip_position[0] = HipPositionXFemale.GetValue()
-								hip_position[1] = HipPositionYFemale.GetValue()
-								hip_position[2] = HipPositionZFemale.GetValue()
-								hip_rotation[0] = HipRotationPitchFemale.GetValue()
-								hip_rotation[1] = HipRotationRollFemale.GetValue()
-								hip_rotation[2] = HipRotationYawFemale.GetValue()
-							else
-								hip_position[0] = HipPositionX.GetValue()
-								hip_position[1] = HipPositionY.GetValue()
-								hip_position[2] = HipPositionZ.GetValue()
-								hip_rotation[0] = HipRotationPitch.GetValue()
-								hip_rotation[1] = HipRotationRoll.GetValue()
-								hip_rotation[2] = HipRotationYaw.GetValue()
-							endif
-						elseif LastEquippedType == "Circlet"
-							if IsFemale
-								hip_position[0] = HipPositionXCircletFemale.GetValue()
-								hip_position[1] = HipPositionYCircletFemale.GetValue()
-								hip_position[2] = HipPositionZCircletFemale.GetValue()
-								hip_rotation[0] = HipRotationPitchCircletFemale.GetValue()
-								hip_rotation[1] = HipRotationRollCircletFemale.GetValue()
-								hip_rotation[2] = HipRotationYawCircletFemale.GetValue()
-							else
-								hip_position[0] = HipPositionXCirclet.GetValue()
-								hip_position[1] = HipPositionYCirclet.GetValue()
-								hip_position[2] = HipPositionZCirclet.GetValue()
-								hip_rotation[0] = HipRotationPitchCirclet.GetValue()
-								hip_rotation[1] = HipRotationRollCirclet.GetValue()
-								hip_rotation[2] = HipRotationYawCirclet.GetValue()
-							endif
-						endif
-						Status = CreateItemActor(TargetActor, plugin, hip_name, IsFemale, LastEquippedHelmet, InventoryRequired, hip_node)
-						Status = SetItemFormActor(TargetActor, plugin, hip_name, IsFemale, LastEquippedHelmet)
-						Status = SetItemNodeActor(TargetActor, plugin, hip_name, IsFemale, hip_node)
-						Status = SetItemRotationActor(TargetActor, plugin, hip_name, IsFemale, hip_rotation)
-						Status = SetItemPositionActor(TargetActor, plugin, hip_name, IsFemale, hip_position)
-						Status = SetItemScaleActor(TargetActor, plugin, hip_name, IsFemale, hip_scale)
-						Status = SetItemEnabledActor(TargetActor, plugin, hip_name, IsFemale, true)
-						DeleteItemActor(TargetActor, plugin, hand_name)
-					elseif LastEquippedType == "Hood"
-						TargetActor.UnequipItem(LastEquippedHood, false, true)
-						TargetActor.EquipItem(LoweredLastEquippedHood, false, true)
-					endif
-				endif
-				if akSource == TargetActor && asEventName == "SoundPlay.NPCHumanCombatIdleC"
-					debug.sendAnimationEvent(TargetActor, "OffsetStop")
-				endif
-			endif
-		elseif EquipAnimation
-			if LastEquippedType == "Helmet"
-				LastEquippedHelmet = GetLastEquippedForm(TargetActor, 1, true, false)
-				if LastEquippedHelmet as String == "None"
-					LastEquippedHelmet = GetLastEquippedForm(TargetActor, 0, true, false)
-				endif
-			elseif LastEquippedType == "Circlet"
-				LastEquippedHelmet = GetLastEquippedForm(TargetActor, 12, true, false)
-			endif
-			if (LastEquippedHelmet as Armor).IsHelmet() || LastEquippedHelmet.HasKeywordString("ClothingCirclet") || LastEquippedHelmet.HasKeywordString("RTR_HoodKW")
-				; Check if we need to fix the LastEquippedType for hoods
-				if LastEquippedHelmet.HasKeywordString("RTR_HoodKW")
-					LastEquippedType = "Hood"
-				endif
-				
-				if akSource == TargetActor && asEventName == "SoundPlay.NPCHumanCombatIdleA"
-					Float[] hand_position = new Float[3]
-					Float[] hand_rotation = new Float[3]
-					if LastEquippedType == "Helmet"
-						if IsFemale
-							hand_position[0] = HandPositionXFemale.GetValue()
-							hand_position[1] = HandPositionYFemale.GetValue()
-							hand_position[2] = HandPositionZFemale.GetValue()
-							hand_rotation[0] = HandRotationPitchFemale.GetValue()
-							hand_rotation[1] = HandRotationRollFemale.GetValue()
-							hand_rotation[2] = HandRotationYawFemale.GetValue()
-						else
-							hand_position[0] = HandPositionX.GetValue()
-							hand_position[1] = HandPositionY.GetValue()
-							hand_position[2] = HandPositionZ.GetValue()
-							hand_rotation[0] = HandRotationPitch.GetValue()
-							hand_rotation[1] = HandRotationRoll.GetValue()
-							hand_rotation[2] = HandRotationYaw.GetValue()
-						endif
-					elseif LastEquippedType == "Circlet"
-						if IsFemale
-							hand_position[0] = HandPositionXCircletFemale.GetValue()
-							hand_position[1] = HandPositionYCircletFemale.GetValue()
-							hand_position[2] = HandPositionZCircletFemale.GetValue()
-							hand_rotation[0] = HandRotationPitchCircletFemale.GetValue()
-							hand_rotation[1] = HandRotationRollCircletFemale.GetValue()
-							hand_rotation[2] = HandRotationYawCircletFemale.GetValue()
-						else
-							hand_position[0] = HandPositionXCirclet.GetValue()
-							hand_position[1] = HandPositionYCirclet.GetValue()
-							hand_position[2] = HandPositionZCirclet.GetValue()
-							hand_rotation[0] = HandRotationPitchCirclet.GetValue()
-							hand_rotation[1] = HandRotationRollCirclet.GetValue()
-							hand_rotation[2] = HandRotationYawCirclet.GetValue()
-						endif
-					endif
-					;disable helmet on hip
-					DeleteItemActor(TargetActor, plugin, hip_name)
-					;enable helmet on hand
-					Status = CreateItemActor(TargetActor, plugin, hand_name, IsFemale, LastEquippedHelmet, InventoryRequired, hand_node)
-					Status = SetItemFormActor(TargetActor, plugin, hand_name, IsFemale, LastEquippedHelmet)
-					Status = SetItemNodeActor(TargetActor, plugin, hand_name, IsFemale, hand_node)
-					Status = SetItemPositionActor(TargetActor, plugin, hand_name, IsFemale, hand_position)
-					Status = SetItemRotationActor(TargetActor, plugin, hand_name, IsFemale, hand_rotation)
-					if LastEquippedType == "Helmet"
-						Status = SetItemScaleActor(TargetActor, plugin, hand_name, IsFemale, hand_scale)
-					endif
-					Status = SetItemEnabledActor(TargetActor, plugin, hand_name, IsFemale, true)
-				endif
-				if akSource == TargetActor && asEventName == "SoundPlay.NPCHumanCombatIdleB"
-					;equip helmet, disable helmet on hand
-					if LastEquippedType == "Helmet" || LastEquippedType == "Circlet"
-						if TargetActor.GetItemCount(LastEquippedHelmet) > 0
-							if TargetActor == PlayerRef
-								TargetActor.EquipItem(LastEquippedHelmet, false, true)
-							else
-								TargetActor.EquipItem(LastEquippedHelmet, true, true)
-							endif
-						endif
-						DeleteItemActor(TargetActor, plugin, hand_name)
-					elseif LastEquippedType == "Hood"
-						TargetActor.UnequipItem(LoweredLastEquippedHood, false, true)
-						TargetActor.RemoveItem(LoweredLastEquippedHood, 1, true)
-						TargetActor.EquipItem(LastEquippedHood, false, true)
-					endif
-				endif
-				if akSource == TargetActor && asEventName == "SoundPlay.NPCHumanCombatIdleC"
-					debug.sendAnimationEvent(TargetActor, "OffsetStop")
-				endif
-			endif
-		else 
-			DeleteItemActor(TargetActor, plugin, hand_name)
+	; RTR Active Gate Check
+	if !Active
+		return
+	endif
+
+	; Type cast our reference source
+	Actor target_actor = akSource as Actor
+	bool is_female = target_actor.GetActorBase().GetSex() == 1
+
+	; RTR Actor Gate Check
+	; @TODO Check target_actor against followers as well as player
+	if target_actor != PlayerRef || target_actor.GetActorBase().HasKeyword(RTR_Follower)
+		return
+	endif
+
+	; Get Last Equipped Head Wear
+	if LastEquippedType == "Helmet"
+		LastEquippedHelmet = GetLastEquippedForm(target_actor, 1, true, false)
+		if LastEquippedHelmet as String == "None"
+			LastEquippedHelmet = GetLastEquippedForm(target_actor, 0, true, false)
 		endif
+	elseif LastEquippedType == "Circlet"
+		LastEquippedHelmet = GetLastEquippedForm(target_actor, 12, true, false)
+	endif
+
+	; Exit early if LastEquippedHelmet isn't valid hear wear
+	if !RTR_IsValidHeadWear(LastEquippedHelmet)
+		return
+	endif
+
+	; Double check LastEquippedType accuracy for hoods
+	if LastEquippedHelmet.HasKeywordString("RTR_HoodKW")
+		LastEquippedType = "Hood"
+	endif
+
+	; Determine hip/hand Anchors by gender 
+	GlobalVariable[] hip_anchor = new GlobalVariable[12]
+	GlobalVariable[] hand_anchor = new GlobalVariable[12]
+
+	if is_female 
+		hip_anchor = FemaleHipAnchor
+		hand_anchor = FemaleHandAnchor 
+	else
+		hip_anchor = MaleHipAnchor
+		hand_anchor = MaleHandAnchor
+	endif
+
+	; Prevent game from re-equipping the helmet if actor is an NPC
+	bool prevent_equip = target_actor != PlayerRef
+	
+	if UnequipAnimation
+		; Enable helmet on hand during unequip animation
+		if asEventName == "SoundPlay.NPCHumanCombatIdleA" ; Anim Start Annotation
+			RTR_Attach(target_actor, HelmetOnHand, LastEquippedHelmet, LastEquippedType, hand_scale, hand_node, is_female, hand_anchor)
+			target_actor.UnequipItem(LastEquippedHelmet, prevent_equip, true)
+		endif
+
+		; Enable Helmet on hip, disable helmet on hand
+		if asEventName == "SoundPlay.NPCHumanCombatIdleB" ; Anim Attach Annotation
+			if LastEquippedType != "Hood"
+				; Place helmet/circlet on hip
+				RTR_Attach(target_actor, HelmetOnHip, LastEquippedHelmet, LastEquippedType, hip_scale, hip_node, is_female, hip_anchor)
+				RTR_Detatch(target_actor, HelmetOnHand)
+			else
+				; Skip hip placement for hoods and equip lowered version of hood instead
+				; @TODO Should be using IED attachment instead of physically equipping the item so it is consistent with other helmets
+				target_actor.UnequipItem(LastEquippedHood, false, true)
+				target_actor.EquipItem(LoweredLastEquippedHood, prevent_equip, true)
+			endif
+		endif
+
+		if asEventName == "SoundPlay.NPCHumanCombatIdleC" ; Anim End Annotation
+			debug.sendAnimationEvent(target_actor, "OffsetStop")
+		endif
+	elseif EquipAnimation
+		if asEventName == "SoundPlay.NPCHumanCombatIdleA" ; Anim Start Annotation
+			RTR_Detatch(target_actor, HelmetOnHip)
+			RTR_Attach(target_actor, HelmetOnHand, LastEquippedHelmet, LastEquippedType, hand_scale, hand_node, is_female, hand_anchor)
+		endif
+
+		if asEventName == "SoundPlay.NPCHumanCombatIdleB" ; Anim Attach Annotation
+			if LastEquippedType != "Hood"
+				; Equip Helmet
+				target_actor.EquipItem(LastEquippedHelmet, false, true)
+				RTR_Detatch(target_actor, HelmetOnHand)
+			else
+				; Equip Hood
+				; @TODO Should be switched to IED detatch of lowered hood instead physically eqiupping the item
+				target_actor.UnequipItem(LoweredLastEquippedHood, false, true)
+				target_actor.RemoveItem(LoweredLastEquippedHood, 1, true)
+				target_actor.EquipItem(LastEquippedHood, false, true)
+			endif
+		endif
+
+		if asEventName == "SoundPlay.NPCHumanCombatIdleC" ; Anim End Annotation
+			debug.sendAnimationEvent(target_actor, "OffsetStop")
+		endif
+	else
+		; Ensure that if we're not currently animating we don't have any hand items attached
+		RTR_Detatch(target_actor, HelmetOnHand)
 	endif
 EndEvent
 
@@ -344,6 +211,22 @@ Event OnKeyDown(Int KeyCode)
 						FixInterruptedEquip()
 					endif
 				endif
+
+				; Trigger Follower Headwear Management
+				; if ManageFollowers.GetValueInt() == 1
+				Actor[] followers = MiscUtil.ScanCellNPCs(PlayerRef, 150.0, RTR_Follower)
+				; List the followers
+				int followerIndex = 0
+				while (followerIndex < followers.Length)
+					Actor followerActor = followers[followerIndex]
+					string followerActorName = followerActor.GetBaseObject().GetName()
+					Debug.Notification("RTR Detected Follower: " + followerActorName)
+
+					; increment through
+					followerIndex += 1
+				endwhile
+				; endif
+
 				Active = false
 			endif
 		endif
@@ -457,54 +340,17 @@ Event OnMenuClose(String MenuName)
 					Place = false
 				endif
 				if Place
-					Float[] hip_position = new Float[3]
-					Float[] hip_rotation = new Float[3]
-					if LastEquippedType == "Helmet"
-						if IsFemale
-							hip_position[0] = HipPositionXFemale.GetValue()
-							hip_position[1] = HipPositionYFemale.GetValue()
-							hip_position[2] = HipPositionZFemale.GetValue()
-							hip_rotation[0] = HipRotationPitchFemale.GetValue()
-							hip_rotation[1] = HipRotationRollFemale.GetValue()
-							hip_rotation[2] = HipRotationYawFemale.GetValue()
-						else
-							hip_position[0] = HipPositionX.GetValue()
-							hip_position[1] = HipPositionY.GetValue()
-							hip_position[2] = HipPositionZ.GetValue()
-							hip_rotation[0] = HipRotationPitch.GetValue()
-							hip_rotation[1] = HipRotationRoll.GetValue()
-							hip_rotation[2] = HipRotationYaw.GetValue()
-						endif
-					elseif LastEquippedType == "Circlet"
-						if IsFemale
-							hip_position[0] = HipPositionXCircletFemale.GetValue()
-							hip_position[1] = HipPositionYCircletFemale.GetValue()
-							hip_position[2] = HipPositionZCircletFemale.GetValue()
-							hip_rotation[0] = HipRotationPitchCircletFemale.GetValue()
-							hip_rotation[1] = HipRotationRollCircletFemale.GetValue()
-							hip_rotation[2] = HipRotationYawCircletFemale.GetValue()
-						else
-							hip_position[0] = HipPositionXCirclet.GetValue()
-							hip_position[1] = HipPositionYCirclet.GetValue()
-							hip_position[2] = HipPositionZCirclet.GetValue()
-							hip_rotation[0] = HipRotationPitchCirclet.GetValue()
-							hip_rotation[1] = HipRotationRollCirclet.GetValue()
-							hip_rotation[2] = HipRotationYawCirclet.GetValue()
-						endif
-					endif
+					; @BOOKMARK
+					GlobalVariable[] anchor = new GlobalVariable[12]
 					if TargetActor.GetActorBase().GetSex() == 1
 						IsFemale = true
+						anchor = FemaleHipAnchor
 					else
 						IsFemale = False
+						anchor = MaleHandAnchor
 					endif
-					DeleteItemActor(TargetActor, plugin, hip_name)
-					Status = CreateItemActor(TargetActor, plugin, hip_name, IsFemale, LastEquippedHelmet, InventoryRequired, hip_node)
-					Status = SetItemFormActor(TargetActor, plugin, hip_name, IsFemale, LastEquippedHelmet)
-					Status = SetItemNodeActor(TargetActor, plugin, hip_name, IsFemale, hip_node)
-					Status = SetItemRotationActor(TargetActor, plugin, hip_name, IsFemale, hip_rotation)
-					Status = SetItemPositionActor(TargetActor, plugin, hip_name, IsFemale, hip_position)
-					Status = SetItemScaleActor(TargetActor, plugin, hip_name, IsFemale, hip_scale)
-					Status = SetItemEnabledActor(TargetActor, plugin, hip_name, IsFemale, true)
+
+					RTR_Attach(TargetActor, HelmetOnHip, LastEquippedHelmet, LastEquippedType, hip_scale, hip_node, IsFemale, anchor)
 				endif
 			else
 				DeleteItemActor(TargetActor, plugin, hip_name)
@@ -688,51 +534,20 @@ Function FixInterruptedEquip()
 EndFunction
 
 Function FixInterruptedUnequip()
-	Float[] hip_position = new Float[3]
-	Float[] hip_rotation = new Float[3]
-	if LastEquippedType == "Helmet"
-		if IsFemale
-			hip_position[0] = HipPositionXFemale.GetValue()
-			hip_position[1] = HipPositionYFemale.GetValue()
-			hip_position[2] = HipPositionZFemale.GetValue()
-			hip_rotation[0] = HipRotationPitchFemale.GetValue()
-			hip_rotation[1] = HipRotationRollFemale.GetValue()
-			hip_rotation[2] = HipRotationYawFemale.GetValue()
-		else
-			hip_position[0] = HipPositionX.GetValue()
-			hip_position[1] = HipPositionY.GetValue()
-			hip_position[2] = HipPositionZ.GetValue()
-			hip_rotation[0] = HipRotationPitch.GetValue()
-			hip_rotation[1] = HipRotationRoll.GetValue()
-			hip_rotation[2] = HipRotationYaw.GetValue()
-		endif
-	elseif LastEquippedType == "Circlet"
-		if IsFemale
-			hip_position[0] = HipPositionXCircletFemale.GetValue()
-			hip_position[1] = HipPositionYCircletFemale.GetValue()
-			hip_position[2] = HipPositionZCircletFemale.GetValue()
-			hip_rotation[0] = HipRotationPitchCircletFemale.GetValue()
-			hip_rotation[1] = HipRotationRollCircletFemale.GetValue()
-			hip_rotation[2] = HipRotationYawCircletFemale.GetValue()
-		else
-			hip_position[0] = HipPositionXCirclet.GetValue()
-			hip_position[1] = HipPositionYCirclet.GetValue()
-			hip_position[2] = HipPositionZCirclet.GetValue()
-			hip_rotation[0] = HipRotationPitchCirclet.GetValue()
-			hip_rotation[1] = HipRotationRollCirclet.GetValue()
-			hip_rotation[2] = HipRotationYawCirclet.GetValue()
-		endif
+	; @BOOKMARK
+	GlobalVariable[] anchor = new GlobalVariable[12]
+	if IsFemale
+		anchor = FemaleHipAnchor
+	else
+		anchor = MaleHandAnchor
 	endif
-	DeleteItemActor(TargetActor, plugin, hip_name)
-	DeleteItemActor(TargetActor, plugin, hand_name)
+
+	RTR_Detatch(TargetActor, HelmetOnHip)
+	RTR_Detatch(TargetActor, HelmetOnHand)
 	TargetActor.UnequipItem(LastEquippedHelmet, false, true)
-	Status = CreateItemActor(TargetActor, plugin, hip_name, IsFemale, LastEquippedHelmet, InventoryRequired, hip_node)
-	Status = SetItemFormActor(TargetActor, plugin, hip_name, IsFemale, LastEquippedHelmet)
-	Status = SetItemNodeActor(TargetActor, plugin, hip_name, IsFemale, hip_node)
-	Status = SetItemRotationActor(TargetActor, plugin, hip_name, IsFemale, hip_rotation)
-	Status = SetItemPositionActor(TargetActor, plugin, hip_name, IsFemale, hip_position)
-	Status = SetItemScaleActor(TargetActor, plugin, hip_name, IsFemale, hip_scale)
-	Status = SetItemEnabledActor(TargetActor, plugin, hip_name, IsFemale, true)
+
+	RTR_Attach(TargetActor, HelmetOnHip, LastEquippedHelmet, LastEquippedType, hip_scale, hip_node, IsFemale, anchor)
+
 	if WasFirstPerson
 		Game.ForceFirstPerson()
 	endif

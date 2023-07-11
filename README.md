@@ -32,6 +32,7 @@ I absolutely love the idea but it has a lot of buggy behavior, half finished fea
     - Currently I'm thinking of equipping a hidden helmet so the follower won't try to switch it with one from inventory.
 - [ ] There is no check for if a follower is a current follower so if they have the RTR perk applied through SPID they will trigger the helmet equip/unequip
 - [ ] Followers should only trigger RTR when the player does. They should not have their own location/key-hit checks for optimization reasons
+  - Fixing the followers required some extra functionality. Had to add [PapyrusUtil SE](https://www.nexusmods.com/skyrimspecialedition/mods/13048) as a dependency. I've heard that PapyrusUtil is incompatible with 1.6.640 *sad_face* so if I can find another solution I'll remove it as a dependency but for now it was the quickiest and easiest solution. I'll keep work shopping different solutions to find the best one! Apologies for those on the latest version, for now just disable follower support and the mod should still work for the player.
 
 ## Small Tweaks and Enhancements
 
@@ -42,7 +43,22 @@ I absolutely love the idea but it has a lot of buggy behavior, half finished fea
 - [ ] Add new "RTRNoAnimation" keyword to the `ReadTheRoom_Exclusions_KID.ini` so people can set modded head gear with bad gnd meshes to still equip/unequip but skip the animations/hand and hip attachment.
 - [ ] Script Refactor. There is tons of duplicated code, unoptimized functionality, unused properties, and redundant behaviors.
 - [ ] Plugin clean up. Unused forms are abound in the plugin. Clean these out to make the plugin smaller so formIds can be opened up to be used by some new features.
-- [x] Updated hood animations to using the great animations from chikuwan's [Serana's Hood Fix with Animation](https://www.nexusmods.com/skyrimspecialedition/mods/80336) mod.
+- [ ] Updated hood animations to using the great animations from chikuwan's [Serana's Hood Fix with Animation](https://www.nexusmods.com/skyrimspecialedition/mods/80336) mod.
+- [ ] Animation Annotation Update - Change animation annotations to be more descriptive and not something stupid like `SoundPlay.NPCHumanCombatIdleA`. FYI for those using older versions of Eating Animations and Sounds the reason the helmet would attach is due to the `SoundPlay` annotations in this mods hkx files. Redoing the annotations to be unique to RTR negates this ever happening again. Using annotations in this way should not only make the code cleaner but allow scripts to send the unique annotations as animation events to any actor. This means Follower support will be 100 times easier and less buggy!
+  - Old Stupid Annotations
+    - `SoundPlay.NPCHumanCombatIdleA` = hand node placement during animation
+    - `SoundPlay.NPCHumanCombatIdleB` = hip node placement during animation
+    - `SoundPlay.NPCHumanCombatIdleC` = OffsetStop Trigger at end of animation 
+  - New Hottness!
+    - `RTR.Equip.Start`
+    - `RTR.Equip.Attach`
+    - `RTR.Equip.End`
+    - `RTR.Unequip.Start`
+    - `RTR.Unequip.Attach`
+    - `RTR.Unequip.End`
+    - `RTR.Hood.Unequip.Start`
+    - `RTR.Hood.Unequip.Attach`
+    - `RTR.Hood.Unequip.End`
 
 ## Possible New Features
 
