@@ -5,28 +5,27 @@ Import IED
 String Property PluginName = "ReadTheRoom.esp" Auto
 
 ; Anchor Array Index Mapping from Script Property
-Int Property posXIndex = 0 Auto
-Int Property posYIndex = 1 Auto
-Int Property posZIndex = 2 Auto
-Int Property rotRollIndex = 3 Auto
-Int Property rotPitchIndex = 4 Auto
-Int Property rotYawIndex = 5 Auto
-Int Property circletIndexOffset = 6 Auto
+Int Property PosXIndex = 0 Auto
+Int Property PosYIndex = 1 Auto
+Int Property PosZIndex = 2 Auto
+Int Property RotRollIndex = 3 Auto
+Int Property RotPitchIndex = 4 Auto
+Int Property RotYawIndex = 5 Auto
+Int Property CircletIndexOffset = 6 Auto
 
 ; Takes an Anchor Positioning Array and translates it to an IED positoin variable
 ; Returns Float[3] = {x, y, z}
-Float[] function RTR_GetPosition(String HelmType, GlobalVariable[] Anchor) global
-    ReadTheRoomUtil s
+Float[] function RTR_GetPosition(String HelmType, GlobalVariable[] Anchor)
     Float[] position = new Float[3]
     
     if HelmType == "Circlet"
-        position[0] = Anchor[s.posXIndex + s.circletIndexOffset].getValue()
-        position[1] = Anchor[s.posYIndex + s.circletIndexOffset].getValue()
-        position[2] = Anchor[s.posZIndex + s.circletIndexOffset].getValue()
+        position[0] = Anchor[PosXIndex + CircletIndexOffset].getValue()
+        position[1] = Anchor[PosYIndex + CircletIndexOffset].getValue()
+        position[2] = Anchor[PosZIndex + CircletIndexOffset].getValue()
     else
-        position[0] = Anchor[s.posXIndex].getValue()
-        position[1] = Anchor[s.posYIndex].getValue()
-        position[2] = Anchor[s.posZIndex].getValue()
+        position[0] = Anchor[PosXIndex].getValue()
+        position[1] = Anchor[PosYIndex].getValue()
+        position[2] = Anchor[PosZIndex].getValue()
     endif
 
     return position
@@ -34,18 +33,17 @@ endFunction
 
 ; Takes an Anchor Positioning Array and translates it to an IED rotation variable
 ; Returns Float[3] = {pitch, roll, yaw}
-Float[] function RTR_GetRotation(String HelmType, GlobalVariable[] Anchor) global
-    ReadTheRoomUtil s
+Float[] function RTR_GetRotation(String HelmType, GlobalVariable[] Anchor)
     Float[] rotation = new Float[3]
     
     if HelmType == "Circlet"
-        rotation[0] = Anchor[s.rotPitchIndex + s.circletIndexOffset].getValue()
-        rotation[1] = Anchor[s.rotRollIndex + s.circletIndexOffset].getValue()
-        rotation[2] = Anchor[s.rotYawIndex + s.circletIndexOffset].getValue()
+        rotation[0] = Anchor[RotPitchIndex + CircletIndexOffset].getValue()
+        rotation[1] = Anchor[RotRollIndex + CircletIndexOffset].getValue()
+        rotation[2] = Anchor[RotYawIndex + CircletIndexOffset].getValue()
     else
-        rotation[0] = Anchor[s.rotPitchIndex].getValue()
-        rotation[1] = Anchor[s.rotRollIndex].getValue()
-        rotation[2] = Anchor[s.rotYawIndex].getValue()
+        rotation[0] = Anchor[RotPitchIndex].getValue()
+        rotation[1] = Anchor[RotRollIndex].getValue()
+        rotation[2] = Anchor[RotYawIndex].getValue()
     endif
 
     return rotation
@@ -56,8 +54,8 @@ function RTR_Attach(Actor target_actor, String attachment_name, Form item, Strin
     ReadTheRoomUtil s
     Bool inventory_required = true
 
-    Float[] pos = RTR_GetPosition(item_type, anchor)
-    Float[] rot = RTR_GetRotation(item_type, anchor)
+    Float[] pos = s.RTR_GetPosition(item_type, anchor)
+    Float[] rot = s.RTR_GetRotation(item_type, anchor)
 
     CreateItemActor(target_actor, s.PluginName, attachment_name, is_female, item, inventory_required, node_name)
     SetItemFormActor(target_actor, s.PluginName, attachment_name, is_female, item)
