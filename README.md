@@ -3,9 +3,9 @@
 It seems the original author of [Read the Room - Immersive and Animated Helmet Management](https://www.nexusmods.com/skyrimspecialedition/mods/77605) has stopped development on the project.
 I absolutely love the idea but it has a lot of buggy behavior, half finished features, and things I just feel should work differently. It's a staple in my load order but I got tired of waiting for an update. So with my minimal modding/papyrus scripting experience I decided to make the updates myself.
 
-## Known Bugs
+## bugs... Bugs.... BUGS!!!!!!
 
-### Fixed
+### Squashed
 
 - [x] Helmet/hood sometimes remains in the hand even after equipping
 - [x] Helmet/hood showing in the hand during other animations
@@ -20,7 +20,7 @@ I absolutely love the idea but it has a lot of buggy behavior, half finished fea
 - [x] Helmets/Hoods sometimes get stuck in hand
 - [x] Mod added Followers is hit or miss on if they receive the RTR follower scripts 
 
-### Currently Looking into
+### Known Bugs
 
 - [ ] Follower support only affects a single follower, and it's buggy as hell. Refactor entire "follower monitor" script to instead work as functional hooks that iterate through each npc that has the "RTRFollower" keyword and "CurrentFollowerFaction" faction and equip/unequip when ever the player does. The original script uses single variables to control things like "lastEquipped". This needs to be changed to track an array of followers equipment states.
 - [ ] Follower helmet state should match the players. Using the Hotkey to put on a helmet while your follower already has a helmet would trigger the follower to remove theirs.
@@ -33,19 +33,20 @@ I absolutely love the idea but it has a lot of buggy behavior, half finished fea
 - [ ] There is no check for if a follower is a current follower so if they have the RTR perk applied through SPID they will trigger the helmet equip/unequip
 - [ ] Followers should only trigger RTR when the player does. They should not have their own location/key-hit checks for optimization reasons
   - Fixing the followers required some extra functionality. Had to add [PapyrusUtil SE](https://www.nexusmods.com/skyrimspecialedition/mods/13048) as a dependency. I've heard that PapyrusUtil is incompatible with 1.6.640 *sad_face* so if I can find another solution I'll remove it as a dependency but for now it was the quickiest and easiest solution. I'll keep work shopping different solutions to find the best one! Apologies for those on the latest version, for now just disable follower support and the mod should still work for the player.
+  - I did some digging and some users managed to get PapyrusUtil working again by installing the [All in one (Anniversary Edition)](https://www.nexusmods.com/skyrimspecialedition/mods/32444?tab=files) version of Address Library for SKSE Plugins. 
+  - I'll keep looking for a different work around though because I don't like having to include SKSE dependencies if I can help it because of this exact reason.
 
-## Small Tweaks and Enhancements
+## Tweaks and Enhancements
 
 - Adding various modded hood support using [FLM - Form List Manipulator](https://www.nexusmods.com/skyrimspecialedition/mods/74037)
   - [x] [H2135's Fantasy Series6](https://www.patreon.com/posts/sse-h2135s-cbbe-39697683)
   - *Will add more mod support as they are suggested*
-- [ ] Additional Wig support. Treat wigs as "unequipped" state so putting on the last equipped helmet will still trigger. Also re-equip the wig when the helmet is removed.
-- [ ] Add new "RTRNoAnimation" keyword to the `ReadTheRoom_Exclusions_KID.ini` so people can set modded head gear with bad gnd meshes to still equip/unequip but skip the animations/hand and hip attachment.
-- [ ] Script Refactor. There is tons of duplicated code, unoptimized functionality, unused properties, and redundant behaviors.
-- [ ] Plugin clean up. Unused forms are abound in the plugin. Clean these out to make the plugin smaller so formIds can be opened up to be used by some new features.
-- [ ] Updated hood animations to using the great animations from chikuwan's [Serana's Hood Fix with Animation](https://www.nexusmods.com/skyrimspecialedition/mods/80336) mod.
-- [ ] Animation Annotation Update - Change animation annotations to be more descriptive and not something stupid like `SoundPlay.NPCHumanCombatIdleA`. FYI for those using older versions of Eating Animations and Sounds the reason the helmet would attach is due to the `SoundPlay` annotations in this mods hkx files. Redoing the annotations to be unique to RTR negates this ever happening again. Using annotations in this way should not only make the code cleaner but allow scripts to send the unique annotations as animation events to any actor. This means Follower support will be 100 times easier and less buggy!
-  - Old Stupid Annotations
+- [x] Animation Annotation Update - Changes to the animation annotations to be more descriptive and unique. Instead of generic events that are used by lots of other animations.
+  - By using unique annotations for each phase of each animation the scripts Animation Event registration can be stream lined, reducing tons of extra script checks and headache.
+  - With these unique annotations any actor can be sent RTR Animations and they will be handled by a single event handler instead of attempting to split the event handlers in two for the player and other NPCs
+  - FYI for those using older versions of [Eating Animations and Sounds SE](https://www.nexusmods.com/skyrimspecialedition/mods/42602) the reason the helmet would attach is due to the `SoundPlay.NPCHumanCombatIdleA` annotations in eating animation files. 
+  - Unique annotations just for RTR animations ensures compatibility
+  - Old Non-Uniqueified Annotations
     - `SoundPlay.NPCHumanCombatIdleA` = hand node placement during animation
     - `SoundPlay.NPCHumanCombatIdleB` = hip node placement during animation
     - `SoundPlay.NPCHumanCombatIdleC` = OffsetStop Trigger at end of animation 
@@ -56,9 +57,18 @@ I absolutely love the idea but it has a lot of buggy behavior, half finished fea
     - `RTR.Unequip.Start`
     - `RTR.Unequip.Attach`
     - `RTR.Unequip.End`
+    - `RTR.Hood.Equip.Start`
+    - `RTR.Hood.Equip.End`
     - `RTR.Hood.Unequip.Start`
-    - `RTR.Hood.Unequip.Attach`
     - `RTR.Hood.Unequip.End`
+  - Tools used
+    - [HKanno64](https://www.nexusmods.com/skyrimspecialedition/mods/54244)
+    - [SkyrimGulid Annotation Tool](https://www.skyrim-guild.com/guides/skyrimannotationtool)
+- [ ] Major Script Refactor. Duplicated code, Unoptimized logic patterns, Unused properties/variables, Redundant behavior, OH MY!
+- [ ] Additional Wig support. Treat wigs as "unequipped" state so putting on the last equipped helmet will still trigger. Also re-equip the wig when the helmet is removed.
+- [ ] Add new "RTRNoAnimation" keyword to the `ReadTheRoom_Exclusions_KID.ini` so people can set modded head gear with bad gnd meshes to still equip/unequip but skip the animations/hand and hip attachment.
+- [ ] Plugin clean up. Unused forms are abound in the plugin. Clean these out to make the plugin smaller so formIds can be opened up to be used by some new features.
+- [ ] Updated hood animations to using the great animations from chikuwan's [Serana's Hood Fix with Animation](https://www.nexusmods.com/skyrimspecialedition/mods/80336) mod.
 
 ## Possible New Features
 
@@ -154,6 +164,6 @@ These are just a few features I would love to implement. Fair warning though, my
 # Disclaimer: Sometimes I suck
 
 I am somewhat notorious for starting projects and abandoning them. Life gets busy, I move onto other projects, I get bored... many things might happen.
-As such all my mods aer public on github so if my ADHD gets the better of me and I run off into a field chasing butterflies anyone willing can pick up where I leave off.
+As such all my mods are public on github so if my ADHD gets the better of me and I run off into a field chasing butterflies anyone willing can pick up where I leave off.
 
 Apologies for this part of my personality. 
