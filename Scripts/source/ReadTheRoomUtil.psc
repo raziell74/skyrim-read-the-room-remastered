@@ -13,15 +13,37 @@ String Property PluginName = "ReadTheRoom.esp" Auto
 ;
 ; @param Form item
 ; @return Bool
-Bool function RTR_IsValidHeadWear(Form item) global
-    bool isHelmet = (item as Armor).IsHelmet()
-    bool isCirclet = item.HasKeywordString("ClothingCirclet")
-    bool isHood = item.HasKeywordString("RTR_HoodKW")
-    
+Bool function RTR_IsValidHeadWear(Actor target_actor, Form item, FormList LoweredHoods) global
+    ; Make sure there really is an item to check against
+    if !item
+        return false
+    endif
+
+    ; Has this item been assigned to the exclusion list?
+    Bool isExcluded = item.HasKeywordString("RTR_ExcludeKW")
+    if isExcluded
+        return false
+    endif
+
+    ; Is the item a helmet, circlet, or hood?
+    Bool isHelmet = (item as Armor).IsHelmet()
+    Bool isCirclet = item.HasKeywordString("ClothingCirclet")
+    Bool isHood = item.HasKeywordString("RTR_HoodKW")
     if isHelmet || isCirclet || isHood
+        ; Since Lowered Hoods are equipped (dumb) make sure the item isn't one of those
+        if isHood && LoweredHoods.HasForm(item)
+            return false
+        endif
+
+        ; Does the actor have the item in their inventory?
+        if target_actor.GetItemCount(item) <= 0
+            return false
+        endif
+
         return true
     endif
 
+    ; Item is not head gear
     return false
 endFunction
 
@@ -30,8 +52,9 @@ endFunction
 ;
 ; @param Form item
 ; @return String
-Bool function RTR_InferItemType(Form item) global
-    if item.HasKeywordString("RTR_HoodKW")
+Bool function RTR_InferItemType(Form item, FormList LowerableHoods) global
+    ; Check if a hood has been set up to be lowered
+    if item.HasKeywordString("RTR_HoodKW") && LowerableHoods.HasForm(item)
         return "Hood"
     elseif item.HasKeywordString("ClothingCirclet")
         return "Circlet"
@@ -40,6 +63,18 @@ Bool function RTR_InferItemType(Form item) global
     endif
 
     return "None"
+endFunction
+
+Form function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
+    ; Get any item equipped in the HEAD biped slot
+    Form equipped = PlayerRef.GetWornForm(kSlotMask30)
+    
+    ; Check for a circlet
+    if ManageCirclets.getValueInt() == 1 && !equipped
+        equipped = PlayerRef.GetWornForm(kSlotMask42)
+    endif
+
+    return equipped
 endFunction
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
