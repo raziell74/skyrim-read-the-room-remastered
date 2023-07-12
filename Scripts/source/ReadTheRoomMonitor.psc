@@ -36,6 +36,7 @@ GlobalVariable property RemoveHelmetWithoutArmor auto
 ; Management Settings
 GlobalVariable property ManageCirclets auto
 GlobalVariable property ManageFollowers auto
+FormList property ManagedFollowers auto
 
 ; Location Identification Settings
 FormList property SafeKeywords auto
@@ -90,6 +91,8 @@ Event OnKeyDown(Int KeyCode)
 	if KeyCode == ToggleKey.GetValueInt()
 		Form equipped = RTR_GetEquipped(PlayerRef, ManageCirclets.getValueInt() == 1)
 		Bool is_valid = RTR_IsValidHeadWear(PlayerRef, equipped, LoweredHoods)
+
+		UpdateManagedFollowersList()
 		
 		if is_valid
 			UnequipActorHeadgear(PlayerRef, equipped)
@@ -100,22 +103,6 @@ Event OnKeyDown(Int KeyCode)
 
 		; Make Absolutely sure we've cleared our hand node
 		RTR_Detatch(PlayerRef, HelmetOnHand)
-
-		; @todo Implement Follower Headwear Management [Experimental]
-		; if ManageFollowers.GetValueInt() == 1
-		; 	Actor[] followers = ScanCellNPCs(PlayerRef, 150.0, RTR_Follower)
-			
-		; 	; @DEBUG List the followers
-		; 	int followerIndex = 0
-		; 	while (followerIndex < followers.Length)
-		; 		Actor followerActor = followers[followerIndex]
-		; 		string followerActorName = followerActor.GetBaseObject().GetName()
-		; 		Debug.Notification("RTR Detected Follower: " + followerActorName)
-
-		; 		; increment through
-		; 		followerIndex += 1
-		; 	endwhile
-		; endif
 	endif
 
 	; Force clear attachment nodes
@@ -138,6 +125,7 @@ Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 	
 	; Update the MostRecentLocationAction
 	MostRecentLocationAction = RTR_GetLocationAction(akNewLoc, is_valid, equip_when_safe, unequip_when_unsafe, SafeKeywords, HostileKeywords)
+	UpdateManagedFollowersList()
 
 	if MostRecentLocationAction == "Equip"
 		Form last_equipped = RTR_GetLastEquipped(PlayerRef)
@@ -316,7 +304,7 @@ Function EquipActorHeadgear(Actor target_actor, Form last_equipped)
 	Bool was_drawn = RTR_SheathWeapon(target_actor)
 	Bool was_first_person = RTR_ForceThirdPerson(target_actor)
 
-	RTR_PlayAnimation(target_actor, animation, animation_time, was_drawn, was_first_person)
+	RTR_PlayAnimation(target_actor, target_actor == PlayerRef, animation, animation_time, was_drawn, was_first_person)
 
 	; Check attachment node accuracy...
 	; Just in case the animation was interrupted
@@ -324,6 +312,9 @@ Function EquipActorHeadgear(Actor target_actor, Form last_equipped)
 	if RTR_IsAttached(target_actor, HelmetOnHip, target_actor.GetActorBase().getSex())
 		EquipWithNoAnimation(target_actor, last_equipped)
 	endif
+
+	; [Experimental] Will not do anything unless follower support is enabled
+	EquipFollowerHeadgear()
 EndFunction
 
 ; EquipWithNoAnimation
@@ -395,7 +386,7 @@ Function UnequipActorHeadgear(Actor target_actor, Form equipped)
 	Bool was_drawn = RTR_SheathWeapon(target_actor)
 	Bool was_first_person = RTR_ForceThirdPerson(target_actor)
 
-	RTR_PlayAnimation(target_actor, animation, animation_time, was_drawn, was_first_person)
+	RTR_PlayAnimation(target_actor, target_actor == PlayerRef, animation, animation_time, was_drawn, was_first_person)
 
 	; Check attachment node accuracy...
 	; Just in case the animation was interrupted
@@ -403,6 +394,9 @@ Function UnequipActorHeadgear(Actor target_actor, Form equipped)
 	if !RTR_IsAttached(target_actor, HelmetOnHip, target_actor.GetActorBase().getSex())
 		UnequipWithNoAnimation(target_actor, equipped)
 	endif
+
+	; [Experimental] Will not do anything unless follower support is enabled
+	UnequipFollowerHeadgear()
 EndFunction
 
 ; UnequipWithNoAnimation
@@ -451,6 +445,73 @@ function RegisterForAnnotationEvents(Actor target_actor)
 
 	RegisterForAnimationEvent(target_actor, "RTR.Hood.Unequip.Start")
 	RegisterForAnimationEvent(target_actor, "RTR.Hood.Unequip.End")
+endFunction
+
+; RegisterManagedFollowers
+; Registers followers for management that are close to the player
+; In the current cell
+function UpdateManagedFollowersList()
+	if ManageFollowers.GetValueInt() == 0
+		return
+	endif
+
+	; ManagedFollowers
+	Actor[] found_followers = ScanCellNPCs(PlayerRef, 500.0, RTR_Follower)
+	
+	int i = 0
+	int managedFollowerCount = ManagedFollowers.GetSize()
+	while (i < managedFollowerCount)
+		Actor followerActor = ManagedFollowers.GetAt(i) as Actor
+		ManagedFollowers.AddForm(followerActor)
+		; @DEBUG Output Current Managed Followers
+		string followerActorName = followerActor.GetActorBase().GetName()
+		Debug.Notification("RTR Detected Follower: " + followerActorName)
+		i += 1
+	endwhile
+endFunction
+
+function UnequipFollowerHeadgear()
+	if ManageFollowers.GetValueInt() == 0
+		return
+	endif
+
+	int i = 0
+	int managedFollowerCount = ManagedFollowers.GetSize()
+	while (i < managedFollowerCount)
+		Actor follower = ManagedFollowers.GetAt(i) as Actor
+		Form equipped = RTR_GetEquipped(follower, ManageCirclets.getValueInt() == 1)
+		Bool is_valid = RTR_IsValidHeadWear(follower, equipped, LoweredHoods)
+		
+		if is_valid
+			UnequipActorHeadgear(follower, equipped)
+		endif
+
+		; Make Absolutely sure their hand nodes are clear
+		RTR_Detatch(follower, HelmetOnHand)
+		i += 1 ; NEXT
+	endwhile
+endFunction
+
+function EquipFollowerHeadgear()
+	if ManageFollowers.GetValueInt() == 0
+		return
+	endif
+	
+	int i = 0
+	int managedFollowerCount = ManagedFollowers.GetSize()
+	while (i < managedFollowerCount)
+		Actor follower = ManagedFollowers.GetAt(i) as Actor
+		Form last_equipped = RTR_GetLastEquipped(follower)
+		Bool is_valid = RTR_IsValidHeadWear(follower, last_equipped, LoweredHoods)
+		
+		if is_valid
+			EquipActorHeadgear(follower, last_equipped)
+		endif
+
+		; Make Absolutely sure their hand nodes are clear
+		RTR_Detatch(follower, HelmetOnHand)
+		i += 1 ; NEXT
+	endwhile
 endFunction
 
 ; HipAnchor
