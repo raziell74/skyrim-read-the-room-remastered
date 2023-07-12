@@ -114,9 +114,12 @@ EndEvent
 ; @todo Test to see if this will need "debounce" logic for when rapidly changing Locations
 Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 	Form equipped = RTR_GetEquipped(PlayerRef, ManageCirclets.getValueInt() == 1)
-	Bool has_valid_helmet = RTR_IsValidHeadWear(PlayerRef, equipped, LoweredHoods)
-
-	MostRecentLocationAction = RTR_LocationAction(akNewLoc)
+	Bool is_valid = RTR_IsValidHeadWear(PlayerRef, equipped, LoweredHoods)
+	Bool equip_when_safe = EquipWhenSafe.getValueInt() == 1
+	Bool unequip_when_unsafe = UnequipWhenUnsafe.getValueInt() == 1
+	
+	; Update the MostRecentLocationAction
+	MostRecentLocationAction = RTR_GetLocationAction(akNewLoc, is_valid, equip_when_safe, unequip_when_unsafe, SafeKeywords, HostileKeywords)
 
 	if MostRecentLocationAction == "Equip"
 		Form last_equipped = RTR_GetLastEquipped(PlayerRef)
@@ -151,21 +154,19 @@ Function EquipWithNoAnimation(Actor target_actor, Form last_equipped)
 	String last_equipped_type = RTR_InferItemType(last_equipped, LowerableHoods)
 
 	if last_equipped_type == "Hood"
-		Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(equipped))
+		Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(last_equipped))
 		target_actor.UnequipItem(lowered_hood, false, true)
 		target_actor.EquipItem(last_equipped, false, true)
-		return true
 	else
 		target_actor.EquipItem(last_equipped, false, true)
 		RTR_DetatchAllActor(target_actor)
-		return true
 	endif
 endFunction
 
 ; @todo refactor duplicated logic from EquipActorHeadgear and UnequipActorHeadgear
 Function EquipActorHeadgear(Actor target_actor, Form last_equipped)
 	; Exit early if the actor is already wearing the item
-	if target_actor.IsEquipped(equipped)
+	if target_actor.IsEquipped(last_equipped)
 		RTR_DetatchAllActor(target_actor)
 		return
 	endif
@@ -254,7 +255,7 @@ Function EquipActorHeadgear(Actor target_actor, Form last_equipped)
 	endif
 
 	; Check attachment node accuracy. Just in case the animation was interrupted
-	RTR_Detach(target_actor, HelmetOnHand)
+	RTR_Detatch(target_actor, HelmetOnHand)
 	if RTR_IsAttached(target_actor, HelmetOnHip, target_actor.GetActorBase().getSex())
 		EquipWithNoAnimation(target_actor, last_equipped)
 	endif
@@ -269,19 +270,26 @@ Function UnequipWithNoAnimation(Actor target_actor, Form equipped)
 		Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(equipped))
 		target_actor.UnequipItem(equipped, false, true)
 		target_actor.EquipItem(lowered_hood, prevent_equip, true)
-		return true
 	else
+		String last_equipped_type = RTR_InferItemType(equipped, LowerableHoods)
+		Bool is_female = target_actor.GetActorBase().getSex() == 1
+		GlobalVariable[] hip_anchor = new GlobalVariable[12]
+		if is_female 
+			hip_anchor = FemaleHipAnchor
+		else
+			hip_anchor = MaleHipAnchor
+		endif
+		
 		target_actor.UnequipItem(equipped, prevent_equip, true)
-		RTR_Detach(target_actor, HelmetOnHand)
+		RTR_Detatch(target_actor, HelmetOnHand)
 		RTR_Attach(target_actor, HelmetOnHip, equipped, last_equipped_type, HipScale, HipNode, is_female, hip_anchor)
-		return true
 	endif
 endFunction
 
 Function UnequipActorHeadgear(Actor target_actor, Form equipped)
 	; Exit early if the actor is not wearing the item
 	if !target_actor.IsEquipped(equipped)
-		RTR_Detach(target_actor, HelmetOnHand)
+		RTR_Detatch(target_actor, HelmetOnHand)
 		return
 	endif
 
@@ -369,7 +377,7 @@ Function UnequipActorHeadgear(Actor target_actor, Form equipped)
 	endif
 
 	; Check attachment node accuracy. Just in case the animation was interrupted
-	RTR_Detach(target_actor, HelmetOnHand)
+	RTR_Detatch(target_actor, HelmetOnHand)
 	if !RTR_IsAttached(target_actor, HelmetOnHip, target_actor.GetActorBase().getSex())
 		UnequipWithNoAnimation(target_actor, equipped)
 	endif
