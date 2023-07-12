@@ -179,15 +179,19 @@ Bool function RTR_ForceThirdPerson(Actor target_actor) global
     return false
 endFunction
 
-function RTR_PlayAnimation(Actor target_actor, String animation, Float animation_time, Bool draw_weapon, Bool return_to_first_person) global
+function RTR_PlayAnimation(Actor target_actor, Bool is_player, String animation, Float animation_time, Bool draw_weapon, Bool return_to_first_person) global
     ; Start Animation
-	Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
+    if is_player
+	    Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
+    endif
 	Debug.sendAnimationEvent(target_actor, animation)
 	Utility.wait(animation_time)
 
 	; End Animation
 	Debug.sendAnimationEvent(target_actor, "OffsetStop")
-	Game.EnablePlayerControls()
+	if is_player
+        Game.EnablePlayerControls()
+    endif
 
 	; Draw Weapon
 	if draw_weapon
@@ -195,7 +199,7 @@ function RTR_PlayAnimation(Actor target_actor, String animation, Float animation
 	endif
 
 	; If actor was in first person, return to first person
-	if return_to_first_person
+	if is_player && return_to_first_person
 		Game.ForceFirstPerson()
 	endif
 endFunction
