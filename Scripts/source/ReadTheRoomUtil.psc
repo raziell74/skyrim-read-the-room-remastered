@@ -3,6 +3,9 @@ ScriptName ReadTheRoomUtil
 Import IED
 
 String Property PluginName = "ReadTheRoom.esp" Auto
+Int Property kSlotMask30 = 0x00000001 AutoReadOnly ; HEAD
+Int Property kSlotMask42 = 0x00001000 AutoReadOnly ; Circlet
+Int Property kSlotMask32 = 0x00000004 AutoReadOnly ; BODY
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;; ReadTheRoom Functions ;;;;;;;;;;;;;;;
@@ -72,12 +75,13 @@ endFunction
 ; @param Bool manage_circlets
 ; @return Form
 Form function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
+    ReadTheRoomUtil s
     ; Get any item equipped in the HEAD biped slot
-    Form equipped = PlayerRef.GetWornForm(kSlotMask30)
+    Form equipped = target_actor.GetWornForm(s.kSlotMask30)
     
     ; Check for a circlet
-    if ManageCirclets.getValueInt() == 1 && !equipped
-        equipped = PlayerRef.GetWornForm(kSlotMask42)
+    if manage_circlets && !equipped
+        equipped = target_actor.GetWornForm(s.kSlotMask42)
     endif
 
     return equipped
@@ -88,8 +92,9 @@ endFunction
 ;
 ; @return Bool
 Bool Function RTR_IsTorsoEquipped(Actor target_actor) global
-	Armor TorsoArmor = target_actor.GetWornForm(kSlotMask32) as Armor
-	return TorsoArmor != 0
+    ReadTheRoomUtil s
+	Armor TorsoArmor = target_actor.GetWornForm(s.kSlotMask32) as Armor
+	return TorsoArmor != None
 EndFunction
 
 ; RTR_LocationHasKeyword
@@ -133,8 +138,8 @@ String function RTR_GetLocationAction(Location loc, Bool has_valid_helmet, Bool 
         endif
     else
         ; Equip in hostile/non-safe locations
-        Bool CanEquipInHostileLoc = !is_valid_helmet && IsHostile && !equip_when_safe
-        Bool CanEquipInNonHostileLoc = !is_valid_helmet && !IsHostile && equip_when_safe
+        Bool CanEquipInHostileLoc = !has_valid_helmet && IsHostile && !equip_when_safe
+        Bool CanEquipInNonHostileLoc = !has_valid_helmet && !IsHostile && equip_when_safe
 
         if CanEquipInHostileLoc || CanEquipInNonHostileLoc
             return "Equip"
