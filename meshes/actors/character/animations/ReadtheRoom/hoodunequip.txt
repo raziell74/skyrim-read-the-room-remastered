@@ -1,0 +1,6 @@
+# numOriginalFrames: 30
+# duration: 1.000000
+# numAnnotationTracks: 97
+# numAnnotations: 2
+0.466667 RTR.Hood.Unequip.Start
+0.800000 RTR.Hood.Unequip.End
