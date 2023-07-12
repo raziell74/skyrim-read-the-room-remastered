@@ -6,9 +6,6 @@ Import PO3_Events_Alias ; powerofthree's Papyrus Extender
 
 Import ReadTheRoomUtil
 
-; @todo the magic effect is not needed. Add an onCombatStateChange event to the script to post combat logic
-; MagicEffect property RTR_CombatEffect auto
-
 ; @todo Use the RTR_GlobalEnable
 GlobalVariable property RTR_GlobalEnable auto
 
@@ -50,6 +47,8 @@ String HipNode = "NPC Pelvis [Pelv]"
 String HandNode = "NPC R Hand [RHnd]"
 Float HipScale = 0.9150
 Float HandScale = 1.05
+
+String MostRecentLocationAction = "None"
 
 Event OnInit()
 	RegisterForMenu("InventoryMenu")
@@ -112,45 +111,41 @@ Event OnKeyDown(Int KeyCode)
 	endif
 EndEvent
 
-Bool Function CheckLocationForKeyword(Location current_loc, FormList keywords_to_check)
-	int i = 0
-	while i < keywords_to_check.GetSize()
-		if current_loc.HasKeyword(keywords_to_check.GetAt(i) as Keyword)
-			return true
-		endif
-		i += 1
-	endwhile
-	return false
-EndFunction
-
+; @todo Test to see if this will need "debounce" logic for when rapidly changing Locations
 Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 	Form equipped = RTR_GetEquipped(PlayerRef, ManageCirclets.getValueInt() == 1)
-	Bool is_valid_helmet = RTR_IsValidHeadWear(PlayerRef, equipped, LoweredHoods)
-	Bool IsSafe = CheckLocationForKeyword(current_loc, SafeKeywords)
-	Bool IsHostile = CheckLocationForKeyword(current_loc, HostileKeywords)
+	Bool has_valid_helmet = RTR_IsValidHeadWear(PlayerRef, equipped, LoweredHoods)
 
-	; Unequip in safe/non-hostile locations
-	Bool IsSafeLoc_Unequip = is_valid_helmet && IsSafe && UnequipWhenUnsafe.GetValue() == 0
-	Bool IsNotHostile_Unequip = is_valid_helmet && !IsHostile && UnequipWhenUnsafe.GetValue() == 1
+	MostRecentLocationAction = RTR_LocationAction(akNewLoc)
 
-	if IsSafeLoc_Unequip || IsNotHostile_Unequip
-		UnequipActorHeadgear(PlayerRef, equipped)
-	endif
-
-	; Equip in hostile/non-safe locations
-	Bool IsHostileLoc_Equip = !is_valid_helmet && IsHostile && EquipWhenSafe.GetValue() == 0
-	Bool IsNotHostileLoc_Equip = !is_valid_helmet && !IsHostile && EquipWhenSafe.GetValue() == 1
-
-	if IsHostileLoc_Equip || IsNotHostileLoc_Equip
+	if MostRecentLocationAction == "Equip"
 		Form last_equipped = RTR_GetLastEquipped(PlayerRef)
 		EquipActorHeadgear(PlayerRef, last_equipped)
+	elseif MostRecentLocationAction == "Unequip"
+		UnequipActorHeadgear(PlayerRef, equipped)
 	endif
 EndEvent
 
-Bool Function IsTorsoEquipped()
-	Armor TorsoArmor = PlayerRef.GetWornForm(kSlotMask32) as Armor
-	return TorsoArmor != 0
-EndFunction
+Event OnCombatStateChanged(Actor akTarget, int aeCombatState)
+	if akTarget == PlayerRef && CombatEquip.GetValueInt() == 1
+		if aeCombatState == 1
+			; Player entered combat
+			Form last_equipped = RTR_GetLastEquipped(PlayerRef)
+			EquipActorHeadgear(PlayerRef, last_equipped)
+		elseif aeCombatState == 0
+			; Player left combat
+			if MostRecentLocationAction == "Unequip"
+				Form equipped = RTR_GetEquipped(PlayerRef, ManageCirclets.getValueInt() == 1)
+				UnequipActorHeadgear(PlayerRef, equipped)
+			endif
+		endIf
+	endIf
+
+	if CombatEquip.GetValueInt() == 1 && aeCombatState == 2
+		; Someone is looking for the player
+		; @todo Implement
+	endif
+endEvent
 
 Function EquipWithNoAnimation(Actor target_actor, Form last_equipped)
 	String last_equipped_type = RTR_InferItemType(last_equipped, LowerableHoods)
@@ -167,17 +162,11 @@ Function EquipWithNoAnimation(Actor target_actor, Form last_equipped)
 	endif
 endFunction
 
-; @todo refactor reusable code into functions
+; @todo refactor duplicated logic from EquipActorHeadgear and UnequipActorHeadgear
 Function EquipActorHeadgear(Actor target_actor, Form last_equipped)
-	; Check Actor status for any conditions that would prevent animation
-	if target_actor.GetSitState() || \
-		target_actor.IsSwimming() || \
-		target_actor.GetAnimationVariableInt("bInJumpState") == 1 || \
-		target_actor.GetAnimationVariableInt("IsEquipping") == 1 || \
-		target_actor.GetAnimationVariableInt("IsUnequipping") == 1
-		
-		; Force equip with no animation
-		EquipWithNoAnimation(target_actor, last_equipped)
+	; Exit early if the actor is already wearing the item
+	if target_actor.IsEquipped(equipped)
+		RTR_DetatchAllActor(target_actor)
 		return
 	endif
 
@@ -192,6 +181,18 @@ Function EquipActorHeadgear(Actor target_actor, Form last_equipped)
 			EquipWithNoAnimation(target_actor, last_equipped)
 			return
 		endif
+	endif
+
+	; Check Actor status for any conditions that would prevent animation
+	if target_actor.GetSitState() || \
+		target_actor.IsSwimming() || \
+		target_actor.GetAnimationVariableInt("bInJumpState") == 1 || \
+		target_actor.GetAnimationVariableInt("IsEquipping") == 1 || \
+		target_actor.GetAnimationVariableInt("IsUnequipping") == 1
+		
+		; Force equip with no animation
+		EquipWithNoAnimation(target_actor, last_equipped)
+		return
 	endif
 
 	; Animated Equip
@@ -278,15 +279,9 @@ Function UnequipWithNoAnimation(Actor target_actor, Form equipped)
 endFunction
 
 Function UnequipActorHeadgear(Actor target_actor, Form equipped)
-	; Check Actor status for any conditions that would prevent animation
-	if target_actor.GetSitState() || \
-		target_actor.IsSwimming() || \
-		target_actor.GetAnimationVariableInt("bInJumpState") == 1 || \
-		target_actor.GetAnimationVariableInt("IsEquipping") == 1 || \
-		target_actor.GetAnimationVariableInt("IsUnequipping") == 1
-		
-		; Force unequip with no animation
-		UnequipWithNoAnimation(target_actor, equipped)
+	; Exit early if the actor is not wearing the item
+	if !target_actor.IsEquipped(equipped)
+		RTR_Detach(target_actor, HelmetOnHand)
 		return
 	endif
 
@@ -301,6 +296,18 @@ Function UnequipActorHeadgear(Actor target_actor, Form equipped)
 			UnequipWithNoAnimation(target_actor, equipped)
 			return
 		endif
+	endif
+
+	; Check Actor status for any conditions that would prevent animation
+	if target_actor.GetSitState() || \
+		target_actor.IsSwimming() || \
+		target_actor.GetAnimationVariableInt("bInJumpState") == 1 || \
+		target_actor.GetAnimationVariableInt("IsEquipping") == 1 || \
+		target_actor.GetAnimationVariableInt("IsUnequipping") == 1
+		
+		; Force unequip with no animation
+		UnequipWithNoAnimation(target_actor, equipped)
+		return
 	endif
 
 	; Animated Unequip
@@ -460,7 +467,7 @@ EndEvent
 
 Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
 	Actor target_actor = akReference as Actor
-	if (RemoveHelmetWithoutArmor.GetValueInt() == 1 && !IsTorsoEquipped())
+	if (RemoveHelmetWithoutArmor.GetValueInt() == 1 && !RTR_IsTorsoEquipped(target_actor))
 		RTR_DetatchAllActor(target_actor)
 	endif
 	RTR_Detatch(target_actor, HelmetOnHand)
