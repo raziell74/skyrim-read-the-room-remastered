@@ -65,6 +65,12 @@ Bool function RTR_InferItemType(Form item, FormList LowerableHoods) global
     return "None"
 endFunction
 
+; RTR_GetEquipped
+; Gets the Form for the item equipped in the HEAD biped slot
+;
+; @param Actor target_actor
+; @param Bool manage_circlets
+; @return Form
 Form function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
     ; Get any item equipped in the HEAD biped slot
     Form equipped = PlayerRef.GetWornForm(kSlotMask30)
@@ -75,6 +81,67 @@ Form function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
     endif
 
     return equipped
+endFunction
+
+; RTR_IsTorsoEquipped
+; Checks if the player has any torso armor equipped
+;
+; @return Bool
+Bool Function RTR_IsTorsoEquipped(Actor target_actor) global
+	Armor TorsoArmor = target_actor.GetWornForm(kSlotMask32) as Armor
+	return TorsoArmor != 0
+EndFunction
+
+; RTR_LocationHasKeyword
+; Checks if a location has any of the keywords in a FormList
+;
+; @param Location current_loc
+; @param FormList keywords_to_check
+; @return Bool
+Bool function RTR_LocationHasKeyword(Location current_loc, FormList keywords_to_check) global
+	int i = 0
+	while i < keywords_to_check.GetSize()
+		if current_loc.HasKeyword(keywords_to_check.GetAt(i) as Keyword)
+			return true
+		endif
+		i += 1
+	endwhile
+	return false
+EndFunction
+
+; RTR_GetLocationAction
+; Determines if the player should equip or unequip their headwear based on the location
+;
+; @param Location loc
+; @param Bool has_valid_helmet
+; @param Bool equip_when_safe
+; @param Bool unequip_when_unsafe
+; @param FormList safe_keywords
+; @param FormList hostile_keywords
+; @return String "Equip", "Unequip", or "None"
+String function RTR_GetLocationAction(Location loc, Bool has_valid_helmet, Bool equip_when_safe, Bool unequip_when_unsafe, FormList safe_keywords, FormList hostile_keywords) global
+    Bool IsSafe = RTR_LocationHasKeyword(loc, safe_keywords)
+	Bool IsHostile = RTR_LocationHasKeyword(loc, hostile_keywords)
+
+    if has_valid_helmet
+        ; Unequip in safe/non-hostile locations
+        Bool CanUnequipInSafeLoc = IsSafe && !unequip_when_unsafe
+        Bool CanUnequipInNonHostileLoc = !IsHostile && unequip_when_unsafe
+
+        if CanUnequipInSafeLoc || CanUnequipInNonHostileLoc
+            return "Unequip"
+        endif
+    else
+        ; Equip in hostile/non-safe locations
+        Bool CanEquipInHostileLoc = !is_valid_helmet && IsHostile && !equip_when_safe
+        Bool CanEquipInNonHostileLoc = !is_valid_helmet && !IsHostile && equip_when_safe
+
+        if CanEquipInHostileLoc || CanEquipInNonHostileLoc
+            return "Equip"
+        endif
+    endif
+
+    return "None"
 endFunction
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
