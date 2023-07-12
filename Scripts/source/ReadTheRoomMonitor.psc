@@ -61,22 +61,6 @@ Event OnInit()
 	RegisterForKey(ToggleKey.GetValueInt())
 	RegisterForKey(DeleteKey.GetValueInt())
 	RegisterForKey(EnableKey.GetValueInt())
-
-	; Register To Animation Events for RTR annotations
-	; Annotations trigger IED node attachment and Gear Equipping/Unequipping at specific points during the animation
-	RegisterForAnimationEvent(target_actor, "RTR.Equip.Start")
-	RegisterForAnimationEvent(target_actor, "RTR.Equip.Attach")
-	RegisterForAnimationEvent(target_actor, "RTR.Equip.End")
-
-	RegisterForAnimationEvent(target_actor, "RTR.Hood.Equip.Start")
-	RegisterForAnimationEvent(target_actor, "RTR.Hood.Equip.End")
-
-	RegisterForAnimationEvent(target_actor, "RTR.Unequip.Start")
-	RegisterForAnimationEvent(target_actor, "RTR.Unequip.Attach")
-	RegisterForAnimationEvent(target_actor, "RTR.Unequip.End")
-
-	RegisterForAnimationEvent(target_actor, "RTR.Hood.Unequip.Start")
-	RegisterForAnimationEvent(target_actor, "RTR.Hood.Unequip.End")
 EndEvent
 
 ;;;; Event Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -319,6 +303,7 @@ Function EquipActorHeadgear(Actor target_actor, Form last_equipped)
 	endif
 
 	; Animated Equip
+	RegisterForAnnotationEvents(target_actor)
 	String animation = "RTREquip"
 	Float animation_time = 3.3
 
@@ -397,6 +382,7 @@ Function UnequipActorHeadgear(Actor target_actor, Form equipped)
 	endif
 
 	; Animated Unequip
+	RegisterForAnnotationEvents(target_actor)
 	String animation = "RTRUnequip"
 	Float animation_time = 3.25
 
@@ -445,6 +431,27 @@ Function UnequipWithNoAnimation(Actor target_actor, Form equipped)
 endFunction
 
 ;;;; Local Script Helper Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; RegisterForAnnotationEvents
+; Register To Animation Events for RTR annotations
+; Annotations trigger IED node attachment and Gear Equipping/Unequipping at specific points during the animation
+;
+; @param Actor target_actor
+function RegisterForAnnotationEvents(Actor target_actor)
+	RegisterForAnimationEvent(target_actor, "RTR.Equip.Start")
+	RegisterForAnimationEvent(target_actor, "RTR.Equip.Attach")
+	RegisterForAnimationEvent(target_actor, "RTR.Equip.End")
+
+	RegisterForAnimationEvent(target_actor, "RTR.Hood.Equip.Start")
+	RegisterForAnimationEvent(target_actor, "RTR.Hood.Equip.End")
+
+	RegisterForAnimationEvent(target_actor, "RTR.Unequip.Start")
+	RegisterForAnimationEvent(target_actor, "RTR.Unequip.Attach")
+	RegisterForAnimationEvent(target_actor, "RTR.Unequip.End")
+
+	RegisterForAnimationEvent(target_actor, "RTR.Hood.Unequip.Start")
+	RegisterForAnimationEvent(target_actor, "RTR.Hood.Unequip.End")
+endFunction
 
 ; HipAnchor
 ; Returns the correct hip anchor for the actor's gender
