@@ -1,9 +1,10 @@
 ScriptName ReadTheRoomMonitor extends ActiveMagicEffect
 
-Import IED 
+Import IED ; Immersive Equipment Display
+Import MiscUtil ; PapyrusUtil SE
+Import PO3_Events_Alias ; powerofthree's Papyrus Extender
+
 Import ReadTheRoomUtil
-; Import PO3_Events_Alias
-; Import MiscUtil
 
 GlobalVariable property RTR_GlobalEnable auto
 
@@ -54,60 +55,32 @@ Bool Active = false
 Bool WasFirstPerson = false
 Bool LowerHood = false
 String plugin = "ReadTheRoom.esp"
-String hip_name = "HelmetOnHip"
-String hand_name = "HelmetOnHand"
 String HelmetOnHip = "HelmetOnHip"
 String HelmetOnHand = "HelmetOnHand"
-String hip_node = "NPC Pelvis [Pelv]"
-String hand_node = "NPC R Hand [RHnd]"
+String HipNode = "NPC Pelvis [Pelv]"
+String HandNode = "NPC R Hand [RHnd]"
 String LastEquippedType = "None"
-Float hip_scale = 0.9150
-Float hand_scale = 1.05
+Float HipScale = 0.9150
+Float HandScale = 1.05
 
 Form LastEquippedHelmet
 Form LastEquippedHood
 Form LoweredLastEquippedHood
 
 Event OnAnimationEvent(ObjectReference akSource, string asEventName)
-	; RTR Active Gate Check
-	if !Active
-		return
-	endif
-
-	; Type cast our reference source
 	Actor target_actor = akSource as Actor
-	bool is_female = target_actor.GetActorBase().GetSex() == 1
+	Form last_equipped = RTR_GetLastEquipped(target_actor)
 
-	; RTR Actor Gate Check
-	; @TODO Check target_actor against followers as well as player
-	if target_actor != PlayerRef || target_actor.GetActorBase().HasKeyword(RTR_Follower)
+	; Exit early if last_equipped isn't a valid Helmet, Hood, or Circlet
+	if !RTR_IsValidHeadWear(last_equipped)
 		return
-	endif
-
-	; Get Last Equipped Head Wear
-	if LastEquippedType == "Helmet"
-		LastEquippedHelmet = GetLastEquippedForm(target_actor, 1, true, false)
-		if LastEquippedHelmet as String == "None"
-			LastEquippedHelmet = GetLastEquippedForm(target_actor, 0, true, false)
-		endif
-	elseif LastEquippedType == "Circlet"
-		LastEquippedHelmet = GetLastEquippedForm(target_actor, 12, true, false)
-	endif
-
-	; Exit early if LastEquippedHelmet isn't valid hear wear
-	if !RTR_IsValidHeadWear(LastEquippedHelmet)
-		return
-	endif
-
-	; Double check LastEquippedType accuracy for hoods
-	if LastEquippedHelmet.HasKeywordString("RTR_HoodKW")
-		LastEquippedType = "Hood"
 	endif
 
 	; Determine hip/hand Anchors by gender 
 	GlobalVariable[] hip_anchor = new GlobalVariable[12]
 	GlobalVariable[] hand_anchor = new GlobalVariable[12]
 
+	Bool is_female = target_actor.GetActorBase().GetSex() == 1
 	if is_female 
 		hip_anchor = FemaleHipAnchor
 		hand_anchor = FemaleHandAnchor 
@@ -116,66 +89,70 @@ Event OnAnimationEvent(ObjectReference akSource, string asEventName)
 		hand_anchor = MaleHandAnchor
 	endif
 
+	String last_equipped_type = RTR_InferItemType(last_equipped)
+
+	if last_equipped_type == "None"
+		return
+	endif
+
 	; Prevent game from re-equipping the helmet if actor is an NPC
-	bool prevent_equip = target_actor != PlayerRef
-	
-	if UnequipAnimation
-		; Enable helmet on hand during unequip animation
-		if asEventName == "SoundPlay.NPCHumanCombatIdleA" ; Anim Start Annotation
-			RTR_Attach(target_actor, HelmetOnHand, LastEquippedHelmet, LastEquippedType, hand_scale, hand_node, is_female, hand_anchor)
-			target_actor.UnequipItem(LastEquippedHelmet, prevent_equip, true)
-		endif
+	Bool prevent_equip = target_actor != PlayerRef
 
-		; Enable Helmet on hip, disable helmet on hand
-		if asEventName == "SoundPlay.NPCHumanCombatIdleB" ; Anim Attach Annotation
-			if LastEquippedType != "Hood"
-				; Place helmet/circlet on hip
-				RTR_Attach(target_actor, HelmetOnHip, LastEquippedHelmet, LastEquippedType, hip_scale, hip_node, is_female, hip_anchor)
-				RTR_Detatch(target_actor, HelmetOnHand)
-			else
-				; Skip hip placement for hoods and equip lowered version of hood instead
-				; @TODO Should be using IED attachment instead of physically equipping the item so it is consistent with other helmets
-				target_actor.UnequipItem(LastEquippedHood, false, true)
-				target_actor.EquipItem(LoweredLastEquippedHood, prevent_equip, true)
-			endif
-		endif
-
-		if asEventName == "SoundPlay.NPCHumanCombatIdleC" ; Anim End Annotation
-			debug.sendAnimationEvent(target_actor, "OffsetStop")
-		endif
-	elseif EquipAnimation
-		if asEventName == "SoundPlay.NPCHumanCombatIdleA" ; Anim Start Annotation
-			RTR_Detatch(target_actor, HelmetOnHip)
-			RTR_Attach(target_actor, HelmetOnHand, LastEquippedHelmet, LastEquippedType, hand_scale, hand_node, is_female, hand_anchor)
-		endif
-
-		if asEventName == "SoundPlay.NPCHumanCombatIdleB" ; Anim Attach Annotation
-			if LastEquippedType != "Hood"
-				; Equip Helmet
-				target_actor.EquipItem(LastEquippedHelmet, false, true)
-				RTR_Detatch(target_actor, HelmetOnHand)
-			else
-				; Equip Hood
-				; @TODO Should be switched to IED detatch of lowered hood instead physically eqiupping the item
-				target_actor.UnequipItem(LoweredLastEquippedHood, false, true)
-				target_actor.RemoveItem(LoweredLastEquippedHood, 1, true)
-				target_actor.EquipItem(LastEquippedHood, false, true)
-			endif
-		endif
-
-		if asEventName == "SoundPlay.NPCHumanCombatIdleC" ; Anim End Annotation
-			debug.sendAnimationEvent(target_actor, "OffsetStop")
-		endif
-	else
-		; Ensure that if we're not currently animating we don't have any hand items attached
+	; Helmet/Circlet Equip
+	if asEventName == "RTR.Equip.Start"
+		RTR_Detatch(target_actor, HelmetOnHip)
+		RTR_Attach(target_actor, HelmetOnHand, last_equipped, last_equipped_type, HandScale, HandNode, is_female, hand_anchor)
+	elseif asEventName == "RTR.Equip.Attach"
+		target_actor.EquipItem(LastEquippedHelmet, false, true)
 		RTR_Detatch(target_actor, HelmetOnHand)
+	elseif asEventName == "RTR.Equip.End"
+		Debug.sendAnimationEvent(target_actor, "OffsetStop")
+	endif
+
+	; Helmet/Circlet Unequip
+	if asEventName == "RTR.Unequip.Start"
+		RTR_Attach(target_actor, HelmetOnHand, last_equipped, last_equipped_type, HandScale, HandNode, is_female, hand_anchor)
+		target_actor.UnequipItem(last_equipped, prevent_equip, true)
+	elseif asEventName == "RTR.Unequip.Attach"
+		RTR_Attach(target_actor, HelmetOnHip, last_equipped, last_equipped_type, HipScale, HipNode, is_female, hip_anchor)
+		RTR_Detatch(target_actor, HelmetOnHand)
+	elseif asEventName == "RTR.Unequip.End"
+		Debug.sendAnimationEvent(target_actor, "OffsetStop")
+	endif
+
+	; Hood Equip
+	; @TODO Should be switched to IED attach/detatch lowered hood Form instead physically eqiupping the item
+	if asEventName == "RTR.Hood.Equip.Start"
+		if LowerableHoods.HasForm(last_equipped)
+			Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(last_equipped))
+			target_actor.UnequipItem(lowered_hood, false, true)
+			target_actor.RemoveItem(lowered_hood, 1, true)
+		endif
+
+		target_actor.EquipItem(last_equipped, false, true)
+	elseif asEventName == "RTR.Hood.Equip.End"
+		Debug.sendAnimationEvent(target_actor, "OffsetStop")
+	endif
+
+	; Hood Unequip
+	; @TODO Should be switched to IED attach/detatch lowered hood Form instead physically eqiupping the item
+	if asEventName == "RTR.Hood.Unequip.Start"
+		if LowerableHoods.HasForm(last_equipped)
+			Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(last_equipped))
+			target_actor.UnequipItem(last_equipped, false, true)
+			target_actor.EquipItem(lowered_hood, prevent_equip, true)
+		Else
+			target_actor.UnequipItem(last_equipped, prevent_equip, true)
+		endif
+	elseif asEventName == "RTR.Hood.Unequip.End"
+		Debug.sendAnimationEvent(target_actor, "OffsetStop")
 	endif
 EndEvent
 
 Event OnEffectFinish(Actor akTarget, Actor akCaster)
 	TargetActor.UnequipItem(LoweredLastEquippedHood, true, true)
 	TargetActor.RemoveItem(LoweredLastEquippedHood, 1, true)
-	DeleteAll(plugin)
+	RTR_DetatchAll()
 EndEvent
 
 Event OnEffectStart(Actor Target, Actor Caster)
@@ -202,7 +179,7 @@ Event OnKeyDown(Int KeyCode)
 				HelmetEquipped = IsHelmetEquipped()
 				if HelmetEquipped
 					Bool Check = UnequipActorHeadgear()
-					if !Check || ItemEnabledActor(TargetActor, plugin, hand_name, IsFemale)
+					if !Check || RTR_IsAttached(TargetActor, HelmetOnHand, IsFemale)
 						FixInterruptedUnequip()
 					endif
 				else
@@ -232,7 +209,7 @@ Event OnKeyDown(Int KeyCode)
 		endif
 	endif
 	if KeyCode == DeleteKey.GetValueInt()
-		DeleteAll(plugin)
+		RTR_DetatchAll()
 		TargetActor.UnequipItem(LoweredLastEquippedHood)
 	endif
 	if KeyCode == EnableKey.GetValueInt()
@@ -258,7 +235,7 @@ Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 			if HelmetEquipped && Active == false
 				Active = true
 				Check = UnequipActorHeadgear()
-				if ItemEnabledActor(TargetActor, plugin, hand_name, IsFemale)
+				if RTR_IsAttached(TargetActor, HelmetOnHand, IsFemale)
 					FixInterruptedUnequip()
 				endif
 				Active = false
@@ -293,12 +270,12 @@ Event OnMagicEffectApplyEx(ObjectReference akCaster, MagicEffect akEffect)
 				if LastEquippedType == "Helmet"
 					if TargetActor.GetItemCount(LastEquippedHelmet) > 0 && !LastEquippedHelmet.HasKeywordString("RTR_ExcludeKW")
 						TargetActor.EquipItem(LastEquippedHelmet, false, true)
-						DeleteItemActor(TargetActor, plugin, hip_name)
+						RTR_Detatch(TargetActor, HelmetOnHip)
 					endif
 				elseif ManageCirclets.GetValueInt() == 1 && LastEquippedType == "Circlet"
 					if TargetActor.GetItemCount(LastEquippedHelmet) > 0 && !LastEquippedHelmet.HasKeywordString("RTR_ExcludeKW")
 						TargetActor.EquipItem(LastEquippedHelmet, false, true)
-						DeleteItemActor(TargetActor, plugin, hip_name)
+						RTR_Detatch(TargetActor, HelmetOnHip)
 					endif
 				elseif LastEquippedType == "Hood"
 					if TargetActor.GetItemCount(LastEquippedHood) > 0 && !LastEquippedHood.HasKeywordString("RTR_ExcludeKW")
@@ -319,7 +296,7 @@ Event OnMenuClose(String MenuName)
 	if MenuName == "InventoryMenu"
 		HelmetEquipped = IsHelmetEquipped()
 		if HelmetEquipped || (RemoveHelmetWithoutArmor.GetValueInt() == 1 && !IsTorsoEquipped())
-			DeleteItemActor(TargetActor, plugin, hip_name)
+			RTR_Detatch(TargetActor, HelmetOnHip)
 			TargetActor.UnequipItem(LoweredLastEquippedHood, false, true)
 			TargetActor.RemoveItem(LoweredLastEquippedHood, 1, true)
 		else
@@ -350,10 +327,10 @@ Event OnMenuClose(String MenuName)
 						anchor = MaleHandAnchor
 					endif
 
-					RTR_Attach(TargetActor, HelmetOnHip, LastEquippedHelmet, LastEquippedType, hip_scale, hip_node, IsFemale, anchor)
+					RTR_Attach(TargetActor, HelmetOnHip, LastEquippedHelmet, LastEquippedType, HipScale, HipNode, IsFemale, anchor)
 				endif
 			else
-				DeleteItemActor(TargetActor, plugin, hip_name)
+				RTR_Detatch(TargetActor, HelmetOnHip)
 				if TargetActor == PlayerRef && TargetActor.GetItemCount(LastEquippedHood) > 0 && !LastEquippedHood.HasKeywordString("RTR_ExcludeKW")
 					TargetActor.EquipItem(LoweredLastEquippedHood, false, true)
 				endif
@@ -368,7 +345,7 @@ Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
 		if TargetActor.GetItemCount(LastEquippedHood) < 1
 			TargetActor.UnequipItem(LoweredLastEquippedHood)
 			LowerHood = true
-			DeleteItemActor(TargetActor, plugin, hand_name)
+			RTR_Detatch(TargetActor, HelmetOnHand)
 		endif
 	endif
 	if LoweredHoods.Find(akBaseObject) == -1
@@ -386,7 +363,7 @@ Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
 				LowerHood = false
 				LastEquippedType = "Helmet"
 			endif
-			DeleteItemActor(TargetActor, plugin, hand_name)
+			RTR_Detatch(TargetActor, HelmetOnHand)
 		else
 			LowerHood = false
 		endif
@@ -399,7 +376,7 @@ EndEvent
 
 Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
 	if (RemoveHelmetWithoutArmor.GetValueInt() == 1 && !IsTorsoEquipped())
-		DeleteAllActor(TargetActor, plugin)
+		RTR_DetatchAllActor(TargetActor)
 	endif
 	if TargetActor.IsEquipped(LoweredLastEquippedHood)
 		if TargetActor.GetItemCount(LastEquippedHood) < 1
@@ -410,7 +387,7 @@ Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
 EndEvent 
 
 Event OnRaceSwitchComplete()
-	DeleteAllActor(TargetActor, plugin)
+	RTR_DetatchAllActor(TargetActor)
 EndEvent
 
 Bool Function CheckLocationForKeyword(Location current_loc, FormList keywords_to_check)
@@ -511,7 +488,7 @@ Bool Function EquipActorHeadgear()
 EndFunction
 
 Function FixInterruptedEquip()
-	DeleteItemActor(TargetActor, plugin, hip_name)
+	RTR_Detatch(TargetActor, HelmetOnHip)
 	if !LowerHood
 		if TargetActor.GetItemCount(LastEquippedHelmet) > 0
 			TargetActor.EquipItem(LastEquippedHelmet, false, true)
@@ -530,7 +507,7 @@ Function FixInterruptedEquip()
 	if WasFirstPerson
 		Game.ForceFirstPerson()
 	endif
-	DeleteItemActor(TargetActor, plugin, hand_name)
+	RTR_Detatch(TargetActor, HelmetOnHand)
 EndFunction
 
 Function FixInterruptedUnequip()
@@ -546,7 +523,7 @@ Function FixInterruptedUnequip()
 	RTR_Detatch(TargetActor, HelmetOnHand)
 	TargetActor.UnequipItem(LastEquippedHelmet, false, true)
 
-	RTR_Attach(TargetActor, HelmetOnHip, LastEquippedHelmet, LastEquippedType, hip_scale, hip_node, IsFemale, anchor)
+	RTR_Attach(TargetActor, HelmetOnHip, LastEquippedHelmet, LastEquippedType, HipScale, HipNode, IsFemale, anchor)
 
 	if WasFirstPerson
 		Game.ForceFirstPerson()
@@ -666,7 +643,7 @@ Bool Function UnequipActorHeadgear()
 				endif
 				debug.sendAnimationEvent(TargetActor, "OffsetStop")
 				Game.EnablePlayerControls()
-				DeleteItemActor(TargetActor, plugin, hand_name)
+				RTR_Detatch(TargetActor, HelmetOnHand)
 				WasToggle = false
 				if WasDrawn
 					TargetActor.DrawWeapon()
