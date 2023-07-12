@@ -6,6 +6,7 @@ Import PO3_Events_Alias ; powerofthree's Papyrus Extender
 
 Import ReadTheRoomUtil
 
+; @todo Clear unused properites
 GlobalVariable property RTR_GlobalEnable auto
 
 GlobalVariable property ToggleKey auto
@@ -67,12 +68,329 @@ Form LastEquippedHelmet
 Form LastEquippedHood
 Form LoweredLastEquippedHood
 
+Event OnInit()
+	RegisterForMenu("InventoryMenu")
+	RegisterForKey(ToggleKey.GetValueInt())
+	RegisterForKey(DeleteKey.GetValueInt())
+	RegisterForKey(EnableKey.GetValueInt())
+EndEvent
+
+Event OnKeyDown(Int KeyCode)
+	; Prevent keypresses from being registered if in menu mode or text input mode (console)
+	if Utility.IsInMenuMode() || ui.IsTextInputEnabled()
+		return
+	endif
+
+	; Toggle Read the Room
+	if KeyCode == EnableKey.GetValueInt()
+		if PlayerRef.hasperk(ReadTheRoomPerk)
+			PlayerRef.removeperk(ReadTheRoomPerk)
+		else
+			PlayerRef.addperk(ReadTheRoomPerk)
+		endif
+	endif
+
+	; Manually Toggle Head Gear
+	if KeyCode == ToggleKey.GetValueInt()
+		Form equipped = RTR_GetEquipped(PlayerRef, ManageCirclets.getValueInt() == 1)
+		Bool is_valid = RTR_IsValidHeadWear(PlayerRef, equipped, LoweredHoods)
+		
+		if is_valid
+			UnequipActorHeadgear(PlayerRef, equipped)
+		else
+			Form last_equipped = RTR_GetLastEquipped(PlayerRef)
+			EquipActorHeadgear(PlayerRef, last_equipped)
+		endif
+
+		; Make Absolutely sure we've cleared our hand node
+		RTR_Detatch(PlayerRef, HelmetOnHand)
+
+		; @todo Implement Follower Headwear Management [Experimental]
+		; if ManageFollowers.GetValueInt() == 1
+		; 	Actor[] followers = ScanCellNPCs(PlayerRef, 150.0, RTR_Follower)
+			
+		; 	; @DEBUG List the followers
+		; 	int followerIndex = 0
+		; 	while (followerIndex < followers.Length)
+		; 		Actor followerActor = followers[followerIndex]
+		; 		string followerActorName = followerActor.GetBaseObject().GetName()
+		; 		Debug.Notification("RTR Detected Follower: " + followerActorName)
+
+		; 		; increment through
+		; 		followerIndex += 1
+		; 	endwhile
+		; endif
+	endif
+
+	; Force clear attachment nodes
+	if KeyCode == DeleteKey.GetValueInt()
+		RTR_DetatchAll()
+		TargetActor.UnequipItem(LoweredLastEquippedHood)
+	endif
+EndEvent
+
+Bool Function CheckLocationForKeyword(Location current_loc, FormList keywords_to_check)
+	int i = 0
+	while i < keywords_to_check.GetSize()
+		if current_loc.HasKeyword(keywords_to_check.GetAt(i) as Keyword)
+			return true
+		endif
+		i += 1
+	endwhile
+	return false
+EndFunction
+
+Event OnLocationChange(Location akOldLoc, Location akNewLoc)
+	Form equipped = RTR_GetEquipped(PlayerRef, ManageCirclets.getValueInt() == 1)
+	Bool is_valid_helmet = RTR_IsValidHeadWear(PlayerRef, equipped, LoweredHoods)
+	Bool IsSafe = CheckLocationForKeyword(current_loc, SafeKeywords)
+	Bool IsHostile = CheckLocationForKeyword(current_loc, HostileKeywords)
+
+	; Unequip in safe/non-hostile locations
+	Bool IsSafeLoc_Unequip = is_valid_helmet && IsSafe && UnequipWhenUnsafe.GetValue() == 0
+	Bool IsNotHostile_Unequip = is_valid_helmet && !IsHostile && UnequipWhenUnsafe.GetValue() == 1
+
+	if IsSafeLoc_Unequip || IsNotHostile_Unequip
+		UnequipActorHeadgear(PlayerRef, equipped)
+	endif
+
+	; Equip in hostile/non-safe locations
+	Bool IsHostileLoc_Equip = !is_valid_helmet && IsHostile && EquipWhenSafe.GetValue() == 0
+	Bool IsNotHostileLoc_Equip = !is_valid_helmet && !IsHostile && EquipWhenSafe.GetValue() == 1
+
+	if IsHostileLoc_Equip || IsNotHostileLoc_Equip
+		Form last_equipped = RTR_GetLastEquipped(PlayerRef)
+		EquipActorHeadgear(PlayerRef, last_equipped)
+	endif
+EndEvent
+
+Bool Function IsTorsoEquipped()
+	Armor TorsoArmor = PlayerRef.GetWornForm(kSlotMask32) as Armor
+	return TorsoArmor != 0
+EndFunction
+
+Function EquipWithNoAnimation(Actor target_actor, Form last_equipped)
+	String last_equipped_type = RTR_InferItemType(last_equipped, LowerableHoods)
+
+	if last_equipped_type == "Hood"
+		Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(equipped))
+		target_actor.UnequipItem(lowered_hood, false, true)
+		target_actor.EquipItem(last_equipped, false, true)
+		return true
+	else
+		target_actor.EquipItem(last_equipped, false, true)
+		RTR_DetatchAllActor(target_actor)
+		return true
+	endif
+endFunction
+
+; @todo refactor reusable code into functions
+Function EquipActorHeadgear(Actor target_actor, Form last_equipped)
+	; Check Actor status for any conditions that would prevent animation
+	if target_actor.GetSitState() || \
+		target_actor.IsSwimming() || \
+		target_actor.GetAnimationVariableInt("bInJumpState") == 1 || \
+		target_actor.GetAnimationVariableInt("IsEquipping") == 1 || \
+		target_actor.GetAnimationVariableInt("IsUnequipping") == 1
+		
+		; Force equip with no animation
+		EquipWithNoAnimation(target_actor, last_equipped)
+		return
+	endif
+
+	; Combat State Unequip
+	if target_actor.GetCombatState() == 1
+		if CombatEquip.GetValueInt() == 0
+			return
+		endif
+
+		; Equip with no animation
+		if CombatEquipAnimation.getValueInt() == 0
+			EquipWithNoAnimation(target_actor, last_equipped)
+			return
+		endif
+	endif
+
+	; Animated Equip
+	bool was_drawn = false
+	bool was_first_person = false
+
+	; If weapon is drawn, sheath it
+	if target_actor.IsWeaponDrawn()
+		Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
+		was_drawn = true
+		while target_actor.GetAnimationVariableInt("IsUnequipping") == 1
+			utility.wait(0.01)
+		endwhile
+	endif
+
+	; If actor is in first person, force third person
+	if target_actor.GetAnimationVariableInt("i1stPerson") == 1 
+		Game.ForceThirdPerson()
+		was_first_person = true
+	endif
+
+	String animation = "RTREquip"
+	Float animation_time = 3.3
+	Bool is_hood = LowerableHoods.hasForm(last_equipped)
+
+	; Register for animation events
+	; These are needed for the animation annotations used in the animation to queue needed functions
+	if is_hood
+		animation = "RTREquipHood"
+		animation_time = 1.0
+		RegisterForAnimationEvent(target_actor, "RTR.Hood.Equip.Start")
+		RegisterForAnimationEvent(target_actor, "RTR.Hood.Equip.End")
+	else
+		RegisterForAnimationEvent(target_actor, "RTR.Equip.Start")
+		RegisterForAnimationEvent(target_actor, "RTR.Equip.Attach")
+		RegisterForAnimationEvent(target_actor, "RTR.Equip.End")
+	endif
+
+	; Play the equip animation
+	Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
+	Debug.sendAnimationEvent(target_actor, animation)
+	Utility.wait(animation_time)
+
+	; End equip animation
+	Debug.sendAnimationEvent(TargetActor, "OffsetStop")
+	Game.EnablePlayerControls()
+
+	; If actor was drawn, redraw weapon
+	if was_drawn
+		target_actor.DrawWeapon()
+		while target_actor.GetAnimationVariableInt("IsEquipping") == 1
+			utility.wait(0.01)
+		endwhile
+	endif
+
+	; If actor was in first person, return to first person
+	if was_first_person
+		Game.ForceFirstPerson()
+	endif
+
+	; Check attachment node accuracy. Just in case the animation was interrupted
+	RTR_Detach(target_actor, HelmetOnHand)
+	if RTR_IsAttached(target_actor, HelmetOnHip, target_actor.GetActorBase().getSex())
+		EquipWithNoAnimation(target_actor, last_equipped)
+	endif
+EndFunction
+
+Function UnequipWithNoAnimation(Actor target_actor, Form equipped)
+	; Prevent game from re-equipping the helmet if actor is an NPC
+	Bool prevent_equip = target_actor != PlayerRef
+	String equipped_type = RTR_InferItemType(equipped, LowerableHoods)
+
+	if equipped_type == "Hood"
+		Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(equipped))
+		target_actor.UnequipItem(equipped, false, true)
+		target_actor.EquipItem(lowered_hood, prevent_equip, true)
+		return true
+	else
+		target_actor.UnequipItem(equipped, prevent_equip, true)
+		RTR_Detach(target_actor, HelmetOnHand)
+		RTR_Attach(target_actor, HelmetOnHip, equipped, last_equipped_type, HipScale, HipNode, is_female, hip_anchor)
+		return true
+	endif
+endFunction
+
+Function UnequipActorHeadgear(Actor target_actor, Form equipped)
+	; Check Actor status for any conditions that would prevent animation
+	if target_actor.GetSitState() || \
+		target_actor.IsSwimming() || \
+		target_actor.GetAnimationVariableInt("bInJumpState") == 1 || \
+		target_actor.GetAnimationVariableInt("IsEquipping") == 1 || \
+		target_actor.GetAnimationVariableInt("IsUnequipping") == 1
+		
+		; Force unequip with no animation
+		UnequipWithNoAnimation(target_actor, equipped)
+		return
+	endif
+
+	; Combat State Unequip
+	if target_actor.GetCombatState() == 1
+		if CombatEquip.GetValueInt() == 0
+			return
+		endif
+
+		; Unequip with no animation
+		if CombatEquipAnimation.getValueInt() == 0
+			UnequipWithNoAnimation(target_actor, equipped)
+			return
+		endif
+	endif
+
+	; Animated Unequip
+	bool was_drawn = false
+	bool was_first_person = false
+
+	; If weapon is drawn, sheath it
+	if target_actor.IsWeaponDrawn()
+		Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
+		was_drawn = true
+		while target_actor.GetAnimationVariableInt("IsUnequipping") == 1
+			utility.wait(0.01)
+		endwhile
+	endif
+
+	; If actor is in first person, force third person
+	if target_actor.GetAnimationVariableInt("i1stPerson") == 1 
+		Game.ForceThirdPerson()
+		was_first_person = true
+	endif
+
+	String animation = "RTRUnequip"
+	Float animation_time = 3.25
+	Bool is_hood = LowerableHoods.hasForm(equipped)
+
+	; Register for animation events
+	; These are needed for the animation annotations used in the animation to queue needed functions
+	if is_hood
+		animation = "RTRHoodUnequip"
+		animation_time = 1.0
+		RegisterForAnimationEvent(target_actor, "RTR.Hood.Unequip.Start")
+		RegisterForAnimationEvent(target_actor, "RTR.Hood.Unequip.End")
+	else
+		RegisterForAnimationEvent(target_actor, "RTR.Unequip.Start")
+		RegisterForAnimationEvent(target_actor, "RTR.Unequip.Attach")
+		RegisterForAnimationEvent(target_actor, "RTR.Unequip.End")
+	endif
+
+	; Play the unequip animation
+	Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
+	Debug.sendAnimationEvent(target_actor, animation)
+	Utility.wait(animation_time)
+
+	; End unequip animation
+	Debug.sendAnimationEvent(TargetActor, "OffsetStop")
+	Game.EnablePlayerControls()
+
+	; If actor was drawn, redraw weapon
+	if was_drawn
+		target_actor.DrawWeapon()
+		while target_actor.GetAnimationVariableInt("IsEquipping") == 1
+			utility.wait(0.01)
+		endwhile
+	endif
+
+	; If actor was in first person, return to first person
+	if was_first_person
+		Game.ForceFirstPerson()
+	endif
+
+	; Check attachment node accuracy. Just in case the animation was interrupted
+	RTR_Detach(target_actor, HelmetOnHand)
+	if !RTR_IsAttached(target_actor, HelmetOnHip, target_actor.GetActorBase().getSex())
+		UnequipWithNoAnimation(target_actor, equipped)
+	endif
+EndFunction
+
 Event OnAnimationEvent(ObjectReference akSource, string asEventName)
 	Actor target_actor = akSource as Actor
 	Form last_equipped = RTR_GetLastEquipped(target_actor)
 
 	; Exit early if last_equipped isn't a valid Helmet, Hood, or Circlet
-	if !RTR_IsValidHeadWear(last_equipped)
+	if !RTR_IsValidHeadWear(target_actor, last_equipped, LoweredHoods)
 		return
 	endif
 
@@ -89,7 +407,7 @@ Event OnAnimationEvent(ObjectReference akSource, string asEventName)
 		hand_anchor = MaleHandAnchor
 	endif
 
-	String last_equipped_type = RTR_InferItemType(last_equipped)
+	String last_equipped_type = RTR_InferItemType(last_equipped, LowerableHoods)
 
 	if last_equipped_type == "None"
 		return
@@ -149,510 +467,21 @@ Event OnAnimationEvent(ObjectReference akSource, string asEventName)
 	endif
 EndEvent
 
-Event OnEffectFinish(Actor akTarget, Actor akCaster)
-	TargetActor.UnequipItem(LoweredLastEquippedHood, true, true)
-	TargetActor.RemoveItem(LoweredLastEquippedHood, 1, true)
-	RTR_DetatchAll()
-EndEvent
-
-Event OnEffectStart(Actor Target, Actor Caster)
-	TargetActor = Target
-	RegisterForMenu("InventoryMenu")
-	RegisterForKey(ToggleKey.GetValueInt())
-	RegisterForKey(DeleteKey.GetValueInt())
-	RegisterForKey(EnableKey.GetValueInt())
-EndEvent
-
-Event OnInit()
-	RegisterForMenu("InventoryMenu")
-	RegisterForKey(ToggleKey.GetValueInt())
-	RegisterForKey(DeleteKey.GetValueInt())
-	RegisterForKey(EnableKey.GetValueInt())
-EndEvent
-
-Event OnKeyDown(Int KeyCode)
-	if KeyCode == ToggleKey.GetValueInt()
-		if (!Utility.IsInMenuMode() && ui.IsTextInputEnabled() == False && !LowerHood && TargetActor.GetItemCount(LastEquippedHelmet) > 0 && !LastEquippedHelmet.HasKeywordString("RTR_ExcludeKW")) || (LowerHood && TargetActor.GetItemCount(LastEquippedHood) > 0 && !LastEquippedHood.HasKeywordString("RTR_ExcludeKW"))
-			if Active == false
-				Active = true
-				WasToggle = true
-				HelmetEquipped = IsHelmetEquipped()
-				if HelmetEquipped
-					Bool Check = UnequipActorHeadgear()
-					if !Check || RTR_IsAttached(TargetActor, HelmetOnHand, IsFemale)
-						FixInterruptedUnequip()
-					endif
-				else
-					Bool Check = EquipActorHeadgear()
-					if !Check || (TargetActor.IsEquipped(LastEquippedHelmet) == false && TargetActor.IsEquipped(LastEquippedHood) == false)
-						FixInterruptedEquip()
-					endif
-				endif
-
-				; Trigger Follower Headwear Management
-				; if ManageFollowers.GetValueInt() == 1
-				Actor[] followers = MiscUtil.ScanCellNPCs(PlayerRef, 150.0, RTR_Follower)
-				; List the followers
-				int followerIndex = 0
-				while (followerIndex < followers.Length)
-					Actor followerActor = followers[followerIndex]
-					string followerActorName = followerActor.GetBaseObject().GetName()
-					Debug.Notification("RTR Detected Follower: " + followerActorName)
-
-					; increment through
-					followerIndex += 1
-				endwhile
-				; endif
-
-				Active = false
-			endif
-		endif
-	endif
-	if KeyCode == DeleteKey.GetValueInt()
-		RTR_DetatchAll()
-		TargetActor.UnequipItem(LoweredLastEquippedHood)
-	endif
-	if KeyCode == EnableKey.GetValueInt()
-		if TargetActor.hasperk(ReadTheRoomPerk)
-			TargetActor.removeperk(ReadTheRoomPerk)
-		else
-			TargetActor = Game.GetPlayer()
-			TargetActor.addperk(ReadTheRoomPerk)
-		endif
-	endif
-EndEvent
-
-Event OnLocationChange(Location akOldLoc, Location akNewLoc)
-	if (!LowerHood && TargetActor.GetItemCount(LastEquippedHelmet) > 0 && !LastEquippedHelmet.HasKeywordString("RTR_ExcludeKW")) || (LowerHood && TargetActor.GetItemCount(LastEquippedHood) > 0 && !LastEquippedHood.HasKeywordString("RTR_ExcludeKW"))
-		Location current_loc = akNewLoc
-		Bool Check
-		Bool IsSafe = CheckLocationForKeyword(current_loc, SafeKeywords)
-		Bool IsHostile = CheckLocationForKeyword(current_loc, HostileKeywords)
-		Float UnequipWhenUnsafeVal = UnequipWhenUnsafe.GetValue()
-		Float EquipWhenSafeVal = EquipWhenSafe.GetValue()
-		HelmetEquipped = IsHelmetEquipped()
-		if (IsSafe && UnequipWhenUnsafeVal == 0) || (HelmetEquipped && !IsHostile && UnequipWhenUnsafeVal == 1)
-			if HelmetEquipped && Active == false
-				Active = true
-				Check = UnequipActorHeadgear()
-				if RTR_IsAttached(TargetActor, HelmetOnHand, IsFemale)
-					FixInterruptedUnequip()
-				endif
-				Active = false
-			endif
-		endif
-		if (IsHostile && EquipWhenSafeVal == 0) || (!HelmetEquipped && !IsSafe && EquipWhenSafeVal == 1)
-			if HelmetEquipped == false && Active == false
-				Active = true
-				Check = EquipActorHeadgear()
-				if Check && TargetActor.IsEquipped(LastEquippedHelmet) == false && TargetActor.IsEquipped(LastEquippedHood) == false
-					FixInterruptedEquip()
-				endif
-				Active = false
-			endif
-		endif
-	endif
-EndEvent
-
-Event OnMagicEffectApplyEx(ObjectReference akCaster, MagicEffect akEffect)
-	if akEffect == RTR_CombatEffect
-		if !IsHelmetEquipped()
-			if CombatEquipAnimation.GetValue() == 1
-				if Active == false
-					Active = true
-					Bool Check = EquipActorHeadgear()
-					if Check && TargetActor.IsEquipped(LastEquippedHelmet) == false && TargetActor.IsEquipped(LastEquippedHood) == false
-						FixInterruptedEquip()
-					endif
-					Active = false
-				endif
-			else
-				if LastEquippedType == "Helmet"
-					if TargetActor.GetItemCount(LastEquippedHelmet) > 0 && !LastEquippedHelmet.HasKeywordString("RTR_ExcludeKW")
-						TargetActor.EquipItem(LastEquippedHelmet, false, true)
-						RTR_Detatch(TargetActor, HelmetOnHip)
-					endif
-				elseif ManageCirclets.GetValueInt() == 1 && LastEquippedType == "Circlet"
-					if TargetActor.GetItemCount(LastEquippedHelmet) > 0 && !LastEquippedHelmet.HasKeywordString("RTR_ExcludeKW")
-						TargetActor.EquipItem(LastEquippedHelmet, false, true)
-						RTR_Detatch(TargetActor, HelmetOnHip)
-					endif
-				elseif LastEquippedType == "Hood"
-					if TargetActor.GetItemCount(LastEquippedHood) > 0 && !LastEquippedHood.HasKeywordString("RTR_ExcludeKW")
-						TargetActor.EquipItem(LastEquippedHood, false, true)
-					endif
-				endif
-			endif
-		endif
-	endif
-EndEvent
-
-Event OnMenuOpen(String MenuName)
-	Active = false
-EndEvent
-
-Event OnMenuClose(String MenuName)
-	Active = false
-	if MenuName == "InventoryMenu"
-		HelmetEquipped = IsHelmetEquipped()
-		if HelmetEquipped || (RemoveHelmetWithoutArmor.GetValueInt() == 1 && !IsTorsoEquipped())
-			RTR_Detatch(TargetActor, HelmetOnHip)
-			TargetActor.UnequipItem(LoweredLastEquippedHood, false, true)
-			TargetActor.RemoveItem(LoweredLastEquippedHood, 1, true)
-		else
-			if LastEquippedType == "Helmet" || LastEquippedType == "Circlet" && TargetActor.GetItemCount(LastEquippedHelmet) > 0 && !LastEquippedHelmet.HasKeywordString("RTR_ExcludeKW")
-				Bool Place
-				if LastEquippedHelmet == "Helmet"
-					LastEquippedHelmet = GetLastEquippedForm(TargetActor, 1, true, false)
-					if LastEquippedHelmet as String == "None"
-						LastEquippedHelmet = GetLastEquippedForm(TargetActor, 0, true, false)
-					endif
-				endif
-				if LastEquippedHelmet == "Circlet"
-					LastEquippedHelmet = GetLastEquippedForm(TargetActor, 12, true, false)
-				endif
-				if (LastEquippedHelmet as Armor).IsHelmet() || LastEquippedHelmet.HasKeywordString("ClothingCirclet")
-					Place = true
-				else
-					Place = false
-				endif
-				if Place
-					; @BOOKMARK
-					GlobalVariable[] anchor = new GlobalVariable[12]
-					if TargetActor.GetActorBase().GetSex() == 1
-						IsFemale = true
-						anchor = FemaleHipAnchor
-					else
-						IsFemale = False
-						anchor = MaleHandAnchor
-					endif
-
-					RTR_Attach(TargetActor, HelmetOnHip, LastEquippedHelmet, LastEquippedType, HipScale, HipNode, IsFemale, anchor)
-				endif
-			else
-				RTR_Detatch(TargetActor, HelmetOnHip)
-				if TargetActor == PlayerRef && TargetActor.GetItemCount(LastEquippedHood) > 0 && !LastEquippedHood.HasKeywordString("RTR_ExcludeKW")
-					TargetActor.EquipItem(LoweredLastEquippedHood, false, true)
-				endif
-			endif
-		endif
-		
-	endif
-EndEvent
-
 Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
-	if TargetActor.IsEquipped(LoweredLastEquippedHood)
-		if TargetActor.GetItemCount(LastEquippedHood) < 1
-			TargetActor.UnequipItem(LoweredLastEquippedHood)
-			LowerHood = true
-			RTR_Detatch(TargetActor, HelmetOnHand)
-		endif
+	Actor target_actor = akReference as Actor
+	if RTR_IsValidHeadWear(target_actor, akBaseObject, LoweredHoods)
+		RTR_Detatch(target_actor, HelmetOnHip)
 	endif
-	if LoweredHoods.Find(akBaseObject) == -1
-		Armor EquippedItem = akBaseObject as Armor
-		if EquippedItem.IsHelmet()
-			LastEquippedHelmet = EquippedItem
-			if EquippedItem.HasKeywordString("RTR_HoodKW")
-				LastEquippedType = "Hood"
-				LastEquippedHood = EquippedItem
-				if LowerableHoods.HasForm(LastEquippedHood)
-					LowerHood = true
-					LoweredLastEquippedHood = LoweredHoods.GetAt(LowerableHoods.Find(LastEquippedHood))
-				endif
-			else
-				LowerHood = false
-				LastEquippedType = "Helmet"
-			endif
-			RTR_Detatch(TargetActor, HelmetOnHand)
-		else
-			LowerHood = false
-		endif
-		if EquippedItem.HasKeywordString("ClothingCirclet")
-			LastEquippedType = "Circlet"
-			LastEquippedHelmet = akBaseObject
-		endif
-	endif
+	RTR_Detatch(target_actor, HelmetOnHand)
 EndEvent
 
 Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
 	if (RemoveHelmetWithoutArmor.GetValueInt() == 1 && !IsTorsoEquipped())
 		RTR_DetatchAllActor(TargetActor)
 	endif
-	if TargetActor.IsEquipped(LoweredLastEquippedHood)
-		if TargetActor.GetItemCount(LastEquippedHood) < 1
-			TargetActor.UnequipItem(LoweredLastEquippedHood)
-			LowerHood = true
-		endif
-	endif
+	RTR_Detatch(target_actor, HelmetOnHand)
 EndEvent 
 
 Event OnRaceSwitchComplete()
 	RTR_DetatchAllActor(TargetActor)
 EndEvent
-
-Bool Function CheckLocationForKeyword(Location current_loc, FormList keywords_to_check)
-	int i = 0
-	while i < keywords_to_check.GetSize()
-		if current_loc.HasKeyword(keywords_to_check.GetAt(i) as Keyword)
-			return true
-		endif
-		i += 1
-	endwhile
-	return false
-EndFunction
-
-Bool Function EquipActorHeadgear()
-	Bool Equip
-	if !LowerHood
-		if LastEquippedType == "Helmet"
-			LastEquippedHelmet = GetLastEquippedForm(TargetActor, 1, true, false)
-			if LastEquippedHelmet as String == "None"
-				LastEquippedHelmet = GetLastEquippedForm(TargetActor, 0, true, false)
-			endif
-		elseif LastEquippedType == "Circlet"
-			LastEquippedHelmet = GetLastEquippedForm(TargetActor, 12, true, false)
-		endif
-
-		; Check if last equipped is a hood
-		if LastEquippedHelmet.HasKeywordString("RTR_HoodKW")
-			LastEquippedType = "Hood"
-			LastEquippedHood = LastEquippedHelmet
-			LowerHood = true
-			LoweredLastEquippedHood = LoweredHoods.GetAt(LowerableHoods.Find(LastEquippedHood))
-		endif
-
-		if (LastEquippedHelmet as Armor).IsHelmet() || (ManageCirclets.GetValueInt() == 1 && LastEquippedHelmet.HasKeywordString("ClothingCirclet")) || (WasToggle && LastEquippedHelmet.HasKeywordString("ClothingCirclet"))
-			Equip = true
-		else
-			Equip = false
-		endif
-	else 
-		Equip = true
-	endif
-	
-	if Equip
-		if (!LowerHood && TargetActor.GetItemCount(LastEquippedHelmet) > 0) || (LowerHood && TargetActor.GetItemCount(LastEquippedHood) > 0)
-			if CombatEquip.GetValueInt() == 1 || TargetActor.GetCombatState() == 0 || WasToggle 
-				if TargetActor.GetSitState() == 0 && !TargetActor.IsSwimming() \ 
-					&& TargetActor.GetAnimationVariableInt("IsEquipping") == 0 \ 
-					&& TargetActor.GetAnimationVariableInt("bInJumpState") == 0 && TargetActor.GetAnimationVariableInt("IsUnequipping") == 0
-					WasDrawn = false
-					EquipAnimation = true
-					UnequipAnimation = false
-					if TargetActor.IsWeaponDrawn()
-						Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
-						WasDrawn = true
-						while TargetActor.GetAnimationVariableInt("IsUnequipping") == 1
-							utility.wait(0.01)
-						endwhile
-					endif
-					if TargetActor.GetActorBase().GetSex() == 1
-						IsFemale = true
-					else
-						IsFemale = False
-					endif
-					;Start animation
-					if TargetActor == PlayerRef
-						if TargetActor.GetAnimationVariableInt("i1stPerson") == 1 
-							WasFirstPerson = true
-							Game.ForceThirdPerson()
-						else
-							WasFirstPerson = false
-						endif
-					endif
-					RegisterForAnimationEvent(TargetActor, "SoundPlay.NPCHumanCombatIdleA") ;These are needed for animation annotations used in the animation to queue needed functions
-					RegisterForAnimationEvent(TargetActor, "SoundPlay.NPCHumanCombatIdleB")
-					RegisterForAnimationEvent(TargetActor, "SoundPlay.NPCHumanCombatIdleC")
-					Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
-					if !LowerHood
-						debug.sendAnimationEvent(TargetActor, "RTREquip")
-						Utility.wait(3.3);Waits for animation
-					else
-						debug.sendAnimationEvent(TargetActor, "RTREquipHood")
-						Utility.wait(1.0);Waits for animation
-					endif
-					debug.sendAnimationEvent(TargetActor, "OffsetStop")
-					Game.EnablePlayerControls()
-					WasToggle = false
-					if WasDrawn
-						TargetActor.DrawWeapon()
-					endif
-					if WasFirstPerson
-						Game.ForceFirstPerson()
-					endif
-				endif
-			endif
-		endif
-	endif
-	return Equip
-EndFunction
-
-Function FixInterruptedEquip()
-	RTR_Detatch(TargetActor, HelmetOnHip)
-	if !LowerHood
-		if TargetActor.GetItemCount(LastEquippedHelmet) > 0
-			TargetActor.EquipItem(LastEquippedHelmet, false, true)
-		endif
-	else
-		if TargetActor == PlayerRef
-			TargetActor.UnequipItem(LoweredLastEquippedHood, false, true)
-			TargetActor.RemoveItem(LoweredLastEquippedHood, 1, true)
-			TargetActor.EquipItem(LastEquippedHood, false, true)
-		else
-			TargetActor.UnequipItem(LoweredLastEquippedHood, true, true)
-			TargetActor.RemoveItem(LoweredLastEquippedHood, 1, true)
-			TargetActor.EquipItem(LastEquippedHood, true, true)
-		endif
-	endif
-	if WasFirstPerson
-		Game.ForceFirstPerson()
-	endif
-	RTR_Detatch(TargetActor, HelmetOnHand)
-EndFunction
-
-Function FixInterruptedUnequip()
-	; @BOOKMARK
-	GlobalVariable[] anchor = new GlobalVariable[12]
-	if IsFemale
-		anchor = FemaleHipAnchor
-	else
-		anchor = MaleHandAnchor
-	endif
-
-	RTR_Detatch(TargetActor, HelmetOnHip)
-	RTR_Detatch(TargetActor, HelmetOnHand)
-	TargetActor.UnequipItem(LastEquippedHelmet, false, true)
-
-	RTR_Attach(TargetActor, HelmetOnHip, LastEquippedHelmet, LastEquippedType, HipScale, HipNode, IsFemale, anchor)
-
-	if WasFirstPerson
-		Game.ForceFirstPerson()
-	endif
-EndFunction
-	
-Bool Function IsHelmetEquipped()
-	if LastEquippedType == "Helmet" || LastEquippedType == "Circlet"
-		if LastEquippedType == "Helmet"
-			LastEquippedHelmet = GetLastEquippedForm(TargetActor, 1, true, false)
-			if LastEquippedHelmet as String == "None"
-				LastEquippedHelmet = GetLastEquippedForm(TargetActor, 0, true, false)
-			endif
-		elseif LastEquippedType == "Circlet"
-			LastEquippedHelmet = GetLastEquippedForm(TargetActor, 12, true, false)
-		endif
-		if TargetActor.IsEquipped(LastEquippedHelmet)
-			return true
-		else
-			return false
-		endif
-	endif
-	if LastEquippedType == "Hood"
-		if TargetActor.IsEquipped(LastEquippedHood)
-			return true
-		else
-			return false
-		endif
-	endif
-EndFunction	
-
-Int Function IsInFormList(Form FormToCheck, FormList FormListToCheck)
-	int i = 0
-	while i < FormListToCheck.GetSize()
-		if FormListToCheck.GetAt(i) == FormToCheck
-			return i
-		endif
-		i += 1
-	endwhile
-	return -1
-endfunction
-
-Bool Function IsTorsoEquipped()
-	Form LastEquippedArmor = GetLastEquippedForm(TargetActor, 2, true, false)
-	if TargetActor.IsEquipped(LastEquippedArmor)
-		return true
-	else
-		return false
-	endif
-EndFunction	
-
-Bool Function UnequipPrecheck()
-	if !LowerHood
-		if LastEquippedType == "Helmet"
-			LastEquippedHelmet = GetLastEquippedForm(TargetActor, 1, true, false)
-			if LastEquippedHelmet as String == "None"
-				LastEquippedHelmet = GetLastEquippedForm(TargetActor, 0, true, false)
-			endif
-		elseif LastEquippedType == "Circlet"
-			LastEquippedHelmet = GetLastEquippedForm(TargetActor, 12, true, false)
-		endif
-		
-		; Check if last equipped is a hood
-		if LastEquippedHelmet.HasKeywordString("RTR_HoodKW")
-			LastEquippedType = "Hood"
-			LastEquippedHood = LastEquippedHelmet
-			LowerHood = true
-			LoweredLastEquippedHood = LoweredHoods.GetAt(LowerableHoods.Find(LastEquippedHood))
-		endif
-
-		if (LastEquippedHelmet as Armor).IsHelmet() || (ManageCirclets.GetValueInt() == 1 && LastEquippedHelmet.HasKeywordString("ClothingCirclet")) || (WasToggle && LastEquippedHelmet.HasKeywordString("ClothingCirclet"))
-			return true
-		else
-			return false
-		endif
-	else
-		return true
-	endif
-EndFunction
-
-Bool Function UnequipActorHeadgear()
-	Bool Unequip = UnequipPrecheck()
-	if Unequip
-		if TargetActor.GetCombatState() == 0 || WasToggle
-			if TargetActor.GetSitState() == 0 && !TargetActor.IsSwimming() \ 
-				&& TargetActor.GetAnimationVariableInt("bInJumpState") == 0 && TargetActor.GetAnimationVariableInt("IsEquipping") == 0 \ 
-				&& TargetActor.GetAnimationVariableInt("IsUnequipping") == 0
-				WasDrawn = false
-				EquipAnimation = false
-				UnequipAnimation = true
-				if TargetActor.IsWeaponDrawn()
-					Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
-					WasDrawn = true
-					while TargetActor.GetAnimationVariableInt("IsUnequipping") == 1
-						utility.wait(0.01)
-					endwhile
-				endif
-				if TargetActor.GetActorBase().GetSex() == 1
-					IsFemale = true
-				else
-					IsFemale = False
-				endif
-				if TargetActor.GetAnimationVariableInt("i1stPerson") == 1 
-					Game.ForceThirdPerson()
-					WasFirstPerson = true
-				endif
-				RegisterForAnimationEvent(TargetActor, "SoundPlay.NPCHumanCombatIdleA") ;These are needed for animation annotations used in the animation to queue needed functions
-				RegisterForAnimationEvent(TargetActor, "SoundPlay.NPCHumanCombatIdleB")
-				RegisterForAnimationEvent(TargetActor, "SoundPlay.NPCHumanCombatIdleC")
-				Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
-				if !LowerHood
-					debug.sendAnimationEvent(TargetActor, "RTRUnequip")
-					Utility.wait(3.25)
-				else
-					debug.sendAnimationEvent(TargetActor, "RTRUnequipHood")
-					Utility.wait(1.0)
-				endif
-				debug.sendAnimationEvent(TargetActor, "OffsetStop")
-				Game.EnablePlayerControls()
-				RTR_Detatch(TargetActor, HelmetOnHand)
-				WasToggle = false
-				if WasDrawn
-					TargetActor.DrawWeapon()
-				endif
-				if WasFirstPerson
-					Game.ForceFirstPerson()
-				endif
-				return true
-			endif
-		endif
-	endif
-EndFunction
