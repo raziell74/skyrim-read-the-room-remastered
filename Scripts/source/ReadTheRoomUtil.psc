@@ -8,7 +8,7 @@ Int Property kSlotMask42 = 0x00001000 AutoReadOnly ; Circlet
 Int Property kSlotMask32 = 0x00000004 AutoReadOnly ; BODY
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;; ReadTheRoom Functions ;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;; ReadTheRoom Helpers ;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; RTR_IsValidHeadWear
@@ -147,6 +147,57 @@ String function RTR_GetLocationAction(Location loc, Bool has_valid_helmet, Bool 
     endif
 
     return "None"
+endFunction
+
+; RTR_SheathWeapon
+; If actors weapons are drawn, sheath them
+;
+; @param Actor target_actor
+; @return Bool true if weapons were sheathed
+Bool function RTR_SheathWeapon(Actor target_actor) global
+    if target_actor.IsWeaponDrawn()
+		Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
+		while target_actor.GetAnimationVariableInt("IsUnequipping") == 1
+			utility.wait(0.01)
+		endwhile
+        return true
+	endif
+    return false
+endFunction
+
+; RTR_ForceThirdPerson
+; If the player is in first person, force them into third person
+; NPCs don't have a i1stPerson animation var so this will ignore followers
+;
+; @param Actor target_actor
+; @return Bool true if player was forced into third person
+Bool function RTR_ForceThirdPerson(Actor target_actor) global
+    if target_actor.GetAnimationVariableInt("i1stPerson") == 1 
+		Game.ForceThirdPerson()
+		return true
+	endif
+    return false
+endFunction
+
+function RTR_PlayAnimation(Actor target_actor, String animation, Float animation_time, Bool draw_weapon, Bool return_to_first_person) global
+    ; Start Animation
+	Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
+	Debug.sendAnimationEvent(target_actor, animation)
+	Utility.wait(animation_time)
+
+	; End Animation
+	Debug.sendAnimationEvent(target_actor, "OffsetStop")
+	Game.EnablePlayerControls()
+
+	; Draw Weapon
+	if draw_weapon
+		target_actor.DrawWeapon()
+	endif
+
+	; If actor was in first person, return to first person
+	if return_to_first_person
+		Game.ForceFirstPerson()
+	endif
 endFunction
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

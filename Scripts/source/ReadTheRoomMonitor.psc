@@ -1,46 +1,55 @@
 ScriptName ReadTheRoomMonitor extends ActiveMagicEffect
 
+; ReadTheRoomMonitor script
+; Monitors the player's location, combat state, 
+; key toggles, and other events to trigger Read The Room headgear 
+; management for both the player and followers.
+
 Import IED ; Immersive Equipment Display
 Import MiscUtil ; PapyrusUtil SE
 Import PO3_Events_Alias ; powerofthree's Papyrus Extender
 
 Import ReadTheRoomUtil
 
-; @todo Use the RTR_GlobalEnable
-GlobalVariable property RTR_GlobalEnable auto
+; Player reference and script application perk
+Actor property PlayerRef auto
+Perk property ReadTheRoomPerk auto
 
+; KeyBindings
 GlobalVariable property ToggleKey auto
 GlobalVariable property DeleteKey auto
 GlobalVariable property EnableKey auto
 
+; IED Hip/Hand Anchors
 GlobalVariable[] property MaleHandAnchor auto
 GlobalVariable[] property MaleHipAnchor auto
 GlobalVariable[] property FemaleHandAnchor auto
 GlobalVariable[] property FemaleHipAnchor auto
 
+; Equip Scenario Settings
 GlobalVariable property CombatEquip auto
 GlobalVariable property CombatEquipAnimation auto
 GlobalVariable property EquipWhenSafe auto
 GlobalVariable property UnequipWhenUnsafe auto
+GlobalVariable property RemoveHelmetWithoutArmor auto
 
+; Management Settings
 GlobalVariable property ManageCirclets auto
 GlobalVariable property ManageFollowers auto
 
-GlobalVariable property RemoveHelmetWithoutArmor auto
-
+; Location Identification Settings
 FormList property SafeKeywords auto
 FormList property HostileKeywords auto
 
+; Lowerable Hood Configuration
 FormList property LowerableHoods auto
 FormList property LoweredHoods auto
 
-Perk property ReadTheRoomPerk auto
-
-; @todo Add more keywords that are used in string form
+; ReadTheRoom dedicated keywords
 Keyword property RTR_Follower auto
 
-Actor property PlayerRef auto
-
+; Local Script Variables
+String MostRecentLocationAction = "None"
 String HelmetOnHip = "HelmetOnHip"
 String HelmetOnHand = "HelmetOnHand"
 String HipNode = "NPC Pelvis [Pelv]"
@@ -48,22 +57,43 @@ String HandNode = "NPC R Hand [RHnd]"
 Float HipScale = 0.9150
 Float HandScale = 1.05
 
-String MostRecentLocationAction = "None"
-
 Event OnInit()
-	RegisterForMenu("InventoryMenu")
 	RegisterForKey(ToggleKey.GetValueInt())
 	RegisterForKey(DeleteKey.GetValueInt())
 	RegisterForKey(EnableKey.GetValueInt())
+
+	; Register To Animation Events for RTR annotations
+	; Annotations trigger IED node attachment and Gear Equipping/Unequipping at specific points during the animation
+	RegisterForAnimationEvent(target_actor, "RTR.Equip.Start")
+	RegisterForAnimationEvent(target_actor, "RTR.Equip.Attach")
+	RegisterForAnimationEvent(target_actor, "RTR.Equip.End")
+
+	RegisterForAnimationEvent(target_actor, "RTR.Hood.Equip.Start")
+	RegisterForAnimationEvent(target_actor, "RTR.Hood.Equip.End")
+
+	RegisterForAnimationEvent(target_actor, "RTR.Unequip.Start")
+	RegisterForAnimationEvent(target_actor, "RTR.Unequip.Attach")
+	RegisterForAnimationEvent(target_actor, "RTR.Unequip.End")
+
+	RegisterForAnimationEvent(target_actor, "RTR.Hood.Unequip.Start")
+	RegisterForAnimationEvent(target_actor, "RTR.Hood.Unequip.End")
 EndEvent
 
+;;;; Event Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; OnKeyDown Event Handler
+; Processes Key Events for configured keybindings
+;
+; EnableKey: Read the Room enable/disable
+; ToggleKey: Toggle Headgear
+; DeleteKey: Force Clear Attachment Nodes
 Event OnKeyDown(Int KeyCode)
-	; Prevent keypresses from being registered if in menu mode or text input mode (console)
+	; Prevent keypresses from being registered if in menu or text-input mode
 	if Utility.IsInMenuMode() || ui.IsTextInputEnabled()
 		return
 	endif
 
-	; Toggle Read the Room
+	; Toggle Read the Room on/off
 	if KeyCode == EnableKey.GetValueInt()
 		if PlayerRef.hasperk(ReadTheRoomPerk)
 			PlayerRef.removeperk(ReadTheRoomPerk)
@@ -107,11 +137,15 @@ Event OnKeyDown(Int KeyCode)
 	; Force clear attachment nodes
 	if KeyCode == DeleteKey.GetValueInt()
 		RTR_DetatchAll()
-		; TargetActor.UnequipItem(LoweredLastEquippedHood)
 	endif
 EndEvent
 
-; @todo Test to see if this will need "debounce" logic for when rapidly changing Locations
+; OnAnimationEvent Event Handler
+; Updates locational triggers/actions
+;
+; Records Most Recent Location Action
+; Equips/Unequips based off of Config Settings
+; @todo Test to see if we need "debounce" logic for when rapidly changing Locations
 Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 	Form equipped = RTR_GetEquipped(PlayerRef, ManageCirclets.getValueInt() == 1)
 	Bool is_valid = RTR_IsValidHeadWear(PlayerRef, equipped, LoweredHoods)
@@ -129,6 +163,8 @@ Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 	endif
 EndEvent
 
+; OnAnimationEvent Event Handler
+; Toggles Headgear based off Players Combat State
 Event OnCombatStateChanged(Actor akTarget, int aeCombatState)
 	if akTarget == PlayerRef && CombatEquip.GetValueInt() == 1
 		if aeCombatState == 1
@@ -150,20 +186,106 @@ Event OnCombatStateChanged(Actor akTarget, int aeCombatState)
 	endif
 endEvent
 
-Function EquipWithNoAnimation(Actor target_actor, Form last_equipped)
-	String last_equipped_type = RTR_InferItemType(last_equipped, LowerableHoods)
+; OnAnimationEvent Event Handler
+; Applys IED node attachments and head gear equipping for RTR annotated animations
+Event OnAnimationEvent(ObjectReference akSource, string asEventName)
+	Actor target_actor = akSource as Actor
+	Form last_equipped = RTR_GetLastEquipped(target_actor)
 
-	if last_equipped_type == "Hood"
-		Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(last_equipped))
-		target_actor.UnequipItem(lowered_hood, false, true)
+	if !RTR_IsValidHeadWear(target_actor, last_equipped, LoweredHoods)
+		return ; Exit early if last_equipped isn't a valid Helmet, Hood, or Circlet
+	endif
+
+	String last_equipped_type = RTR_InferItemType(last_equipped, LowerableHoods)
+	if last_equipped_type == "None"
+		return ; Exit early if we can't infer the item type
+	endif
+
+	Bool is_female = target_actor.GetActorBase().GetSex() == 1
+	GlobalVariable[] hip_anchor = HipAnchor(is_female)
+	GlobalVariable[] hand_anchor = HandAnchor(is_female)
+
+	; Prevent follower re-equip
+	Bool prevent_equip = target_actor != PlayerRef
+
+	; Helmet/Circlet
+	if asEventName == "RTR.Equip.Start"
+		RTR_Detatch(target_actor, HelmetOnHip)
+		RTR_Attach(target_actor, HelmetOnHand, last_equipped, last_equipped_type, HandScale, HandNode, is_female, hand_anchor)
+	elseif asEventName == "RTR.Equip.Attach"
 		target_actor.EquipItem(last_equipped, false, true)
-	else
+		RTR_Detatch(target_actor, HelmetOnHand)
+	elseif asEventName == "RTR.Equip.End"
+		Debug.sendAnimationEvent(target_actor, "OffsetStop")
+	endif
+
+	if asEventName == "RTR.Unequip.Start"
+		RTR_Attach(target_actor, HelmetOnHand, last_equipped, last_equipped_type, HandScale, HandNode, is_female, hand_anchor)
+		target_actor.UnequipItem(last_equipped, prevent_equip, true)
+	elseif asEventName == "RTR.Unequip.Attach"
+		RTR_Attach(target_actor, HelmetOnHip, last_equipped, last_equipped_type, HipScale, HipNode, is_female, hip_anchor)
+		RTR_Detatch(target_actor, HelmetOnHand)
+	elseif asEventName == "RTR.Unequip.End"
+		Debug.sendAnimationEvent(target_actor, "OffsetStop")
+	endif
+
+	; Lowerable Hoods
+	; @todo Should be switched to IED attach/detatch lowered hood Form instead physically eqiupping the item
+	if asEventName == "RTR.Hood.Equip.Start"
+		if LowerableHoods.HasForm(last_equipped) 
+			Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(last_equipped))
+			target_actor.UnequipItem(lowered_hood, false, true)
+			target_actor.RemoveItem(lowered_hood, 1, true)
+		endif
 		target_actor.EquipItem(last_equipped, false, true)
+	elseif asEventName == "RTR.Hood.Equip.End"
+		Debug.sendAnimationEvent(target_actor, "OffsetStop")
+	endif
+
+	if asEventName == "RTR.Hood.Unequip.Start"
+		if LowerableHoods.HasForm(last_equipped)
+			Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(last_equipped))
+			target_actor.UnequipItem(last_equipped, false, true)
+			target_actor.EquipItem(lowered_hood, prevent_equip, true)
+		Else
+			target_actor.UnequipItem(last_equipped, prevent_equip, true)
+		endif
+	elseif asEventName == "RTR.Hood.Unequip.End"
+		Debug.sendAnimationEvent(target_actor, "OffsetStop")
+	endif
+EndEvent
+
+; OnObjectEquipped Event Handler
+; Detatching last equipped head gear from hip and hand
+Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
+	Actor target_actor = akReference as Actor
+	if RTR_IsValidHeadWear(target_actor, akBaseObject, LoweredHoods)
+		RTR_Detatch(target_actor, HelmetOnHip)
+	endif
+	RTR_Detatch(target_actor, HelmetOnHand)
+EndEvent
+
+; OnObjectUnequipped Event Handler
+Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
+	Actor target_actor = akReference as Actor
+	if (RemoveHelmetWithoutArmor.GetValueInt() == 1 && !RTR_IsTorsoEquipped(target_actor))
 		RTR_DetatchAllActor(target_actor)
 	endif
-endFunction
+	RTR_Detatch(target_actor, HelmetOnHand)
+EndEvent 
 
-; @todo refactor duplicated logic from EquipActorHeadgear and UnequipActorHeadgear
+; OnRaceSwitchComplete Event Handler
+Event OnRaceSwitchComplete()
+	RTR_DetatchAllActor(PlayerRef)
+EndEvent
+
+;;;; Action functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; EquipActorHeadgear
+; Triggers equipping head gear to an actor
+; 
+; @param Actor target_actor
+; @param Form last_equipped
 Function EquipActorHeadgear(Actor target_actor, Form last_equipped)
 	; Exit early if the actor is already wearing the item
 	if target_actor.IsEquipped(last_equipped)
@@ -197,95 +319,51 @@ Function EquipActorHeadgear(Actor target_actor, Form last_equipped)
 	endif
 
 	; Animated Equip
-	bool was_drawn = false
-	bool was_first_person = false
-
-	; If weapon is drawn, sheath it
-	if target_actor.IsWeaponDrawn()
-		Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
-		was_drawn = true
-		while target_actor.GetAnimationVariableInt("IsUnequipping") == 1
-			utility.wait(0.01)
-		endwhile
-	endif
-
-	; If actor is in first person, force third person
-	if target_actor.GetAnimationVariableInt("i1stPerson") == 1 
-		Game.ForceThirdPerson()
-		was_first_person = true
-	endif
-
 	String animation = "RTREquip"
 	Float animation_time = 3.3
-	Bool is_hood = LowerableHoods.hasForm(last_equipped)
 
-	; Register for animation events
-	; These are needed for the animation annotations used in the animation to queue needed functions
-	if is_hood
+	; Switch animation if equipping a lowerable hood
+	if LowerableHoods.hasForm(last_equipped)
 		animation = "RTREquipHood"
 		animation_time = 1.0
-		RegisterForAnimationEvent(target_actor, "RTR.Hood.Equip.Start")
-		RegisterForAnimationEvent(target_actor, "RTR.Hood.Equip.End")
-	else
-		RegisterForAnimationEvent(target_actor, "RTR.Equip.Start")
-		RegisterForAnimationEvent(target_actor, "RTR.Equip.Attach")
-		RegisterForAnimationEvent(target_actor, "RTR.Equip.End")
 	endif
 
-	; Play the equip animation
-	Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
-	Debug.sendAnimationEvent(target_actor, animation)
-	Utility.wait(animation_time)
+	Bool was_drawn = RTR_SheathWeapon(target_actor)
+	Bool was_first_person = RTR_ForceThirdPerson(target_actor)
 
-	; End equip animation
-	Debug.sendAnimationEvent(target_actor, "OffsetStop")
-	Game.EnablePlayerControls()
+	RTR_PlayAnimation(target_actor, animation, animation_time, was_drawn, was_first_person)
 
-	; If actor was drawn, redraw weapon
-	if was_drawn
-		target_actor.DrawWeapon()
-		while target_actor.GetAnimationVariableInt("IsEquipping") == 1
-			utility.wait(0.01)
-		endwhile
-	endif
-
-	; If actor was in first person, return to first person
-	if was_first_person
-		Game.ForceFirstPerson()
-	endif
-
-	; Check attachment node accuracy. Just in case the animation was interrupted
+	; Check attachment node accuracy...
+	; Just in case the animation was interrupted
 	RTR_Detatch(target_actor, HelmetOnHand)
 	if RTR_IsAttached(target_actor, HelmetOnHip, target_actor.GetActorBase().getSex())
 		EquipWithNoAnimation(target_actor, last_equipped)
 	endif
 EndFunction
 
-Function UnequipWithNoAnimation(Actor target_actor, Form equipped)
-	; Prevent game from re-equipping the helmet if actor is an NPC
-	Bool prevent_equip = target_actor != PlayerRef
-	String equipped_type = RTR_InferItemType(equipped, LowerableHoods)
+; EquipWithNoAnimation
+; Equips an item to an actor without playing an animation
+;
+; @param Actor target_actor
+; @param Form last_equipped
+Function EquipWithNoAnimation(Actor target_actor, Form last_equipped)
+	String last_equipped_type = RTR_InferItemType(last_equipped, LowerableHoods)
 
-	if equipped_type == "Hood"
-		Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(equipped))
-		target_actor.UnequipItem(equipped, false, true)
-		target_actor.EquipItem(lowered_hood, prevent_equip, true)
+	if last_equipped_type == "Hood"
+		Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(last_equipped))
+		target_actor.UnequipItem(lowered_hood, false, true)
+		target_actor.EquipItem(last_equipped, false, true)
 	else
-		String last_equipped_type = RTR_InferItemType(equipped, LowerableHoods)
-		Bool is_female = target_actor.GetActorBase().getSex() == 1
-		GlobalVariable[] hip_anchor = new GlobalVariable[12]
-		if is_female 
-			hip_anchor = FemaleHipAnchor
-		else
-			hip_anchor = MaleHipAnchor
-		endif
-		
-		target_actor.UnequipItem(equipped, prevent_equip, true)
-		RTR_Detatch(target_actor, HelmetOnHand)
-		RTR_Attach(target_actor, HelmetOnHip, equipped, last_equipped_type, HipScale, HipNode, is_female, hip_anchor)
+		target_actor.EquipItem(last_equipped, false, true)
+		RTR_DetatchAllActor(target_actor)
 	endif
 endFunction
 
+; UnequipActorHeadgear
+; Triggers unequipping head gear from an actor
+;
+; @param Actor target_actor
+; @param Form equipped
 Function UnequipActorHeadgear(Actor target_actor, Form equipped)
 	; Exit early if the actor is not wearing the item
 	if !target_actor.IsEquipped(equipped)
@@ -319,168 +397,75 @@ Function UnequipActorHeadgear(Actor target_actor, Form equipped)
 	endif
 
 	; Animated Unequip
-	bool was_drawn = false
-	bool was_first_person = false
-
-	; If weapon is drawn, sheath it
-	if target_actor.IsWeaponDrawn()
-		Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
-		was_drawn = true
-		while target_actor.GetAnimationVariableInt("IsUnequipping") == 1
-			utility.wait(0.01)
-		endwhile
-	endif
-
-	; If actor is in first person, force third person
-	if target_actor.GetAnimationVariableInt("i1stPerson") == 1 
-		Game.ForceThirdPerson()
-		was_first_person = true
-	endif
-
 	String animation = "RTRUnequip"
 	Float animation_time = 3.25
-	Bool is_hood = LowerableHoods.hasForm(equipped)
 
-	; Register for animation events
-	; These are needed for the animation annotations used in the animation to queue needed functions
-	if is_hood
+	; Switch animation if equipping a lowerable hood
+	if LowerableHoods.hasForm(equipped)
 		animation = "RTRHoodUnequip"
 		animation_time = 1.0
-		RegisterForAnimationEvent(target_actor, "RTR.Hood.Unequip.Start")
-		RegisterForAnimationEvent(target_actor, "RTR.Hood.Unequip.End")
-	else
-		RegisterForAnimationEvent(target_actor, "RTR.Unequip.Start")
-		RegisterForAnimationEvent(target_actor, "RTR.Unequip.Attach")
-		RegisterForAnimationEvent(target_actor, "RTR.Unequip.End")
 	endif
 
-	; Play the unequip animation
-	Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
-	Debug.sendAnimationEvent(target_actor, animation)
-	Utility.wait(animation_time)
+	Bool was_drawn = RTR_SheathWeapon(target_actor)
+	Bool was_first_person = RTR_ForceThirdPerson(target_actor)
 
-	; End unequip animation
-	Debug.sendAnimationEvent(target_actor, "OffsetStop")
-	Game.EnablePlayerControls()
+	RTR_PlayAnimation(target_actor, animation, animation_time, was_drawn, was_first_person)
 
-	; If actor was drawn, redraw weapon
-	if was_drawn
-		target_actor.DrawWeapon()
-		while target_actor.GetAnimationVariableInt("IsEquipping") == 1
-			utility.wait(0.01)
-		endwhile
-	endif
-
-	; If actor was in first person, return to first person
-	if was_first_person
-		Game.ForceFirstPerson()
-	endif
-
-	; Check attachment node accuracy. Just in case the animation was interrupted
+	; Check attachment node accuracy...
+	; Just in case the animation was interrupted
 	RTR_Detatch(target_actor, HelmetOnHand)
 	if !RTR_IsAttached(target_actor, HelmetOnHip, target_actor.GetActorBase().getSex())
 		UnequipWithNoAnimation(target_actor, equipped)
 	endif
 EndFunction
 
-Event OnAnimationEvent(ObjectReference akSource, string asEventName)
-	Actor target_actor = akSource as Actor
-	Form last_equipped = RTR_GetLastEquipped(target_actor)
-
-	; Exit early if last_equipped isn't a valid Helmet, Hood, or Circlet
-	if !RTR_IsValidHeadWear(target_actor, last_equipped, LoweredHoods)
-		return
-	endif
-
-	; Determine hip/hand Anchors by gender 
-	GlobalVariable[] hip_anchor = new GlobalVariable[12]
-	GlobalVariable[] hand_anchor = new GlobalVariable[12]
-
-	Bool is_female = target_actor.GetActorBase().GetSex() == 1
-	if is_female 
-		hip_anchor = FemaleHipAnchor
-		hand_anchor = FemaleHandAnchor 
-	else
-		hip_anchor = MaleHipAnchor
-		hand_anchor = MaleHandAnchor
-	endif
-
-	String last_equipped_type = RTR_InferItemType(last_equipped, LowerableHoods)
-
-	if last_equipped_type == "None"
-		return
-	endif
-
-	; Prevent game from re-equipping the helmet if actor is an NPC
+; UnequipWithNoAnimation
+; Unequips an item from an actor without playing an animation
+;
+; @param Actor target_actor
+; @param Form equipped
+Function UnequipWithNoAnimation(Actor target_actor, Form equipped)
+	; Prevent follower re-equip
 	Bool prevent_equip = target_actor != PlayerRef
+	String equipped_type = RTR_InferItemType(equipped, LowerableHoods)
 
-	; Helmet/Circlet Equip
-	if asEventName == "RTR.Equip.Start"
-		RTR_Detatch(target_actor, HelmetOnHip)
-		RTR_Attach(target_actor, HelmetOnHand, last_equipped, last_equipped_type, HandScale, HandNode, is_female, hand_anchor)
-	elseif asEventName == "RTR.Equip.Attach"
-		target_actor.EquipItem(last_equipped, false, true)
+	if equipped_type == "Hood"
+		Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(equipped))
+		target_actor.UnequipItem(equipped, false, true)
+		target_actor.EquipItem(lowered_hood, prevent_equip, true)
+	else
+		String last_equipped_type = RTR_InferItemType(equipped, LowerableHoods)
+		Bool is_female = target_actor.GetActorBase().getSex() == 1
+		GlobalVariable[] hip_anchor = HipAnchor(is_female)
+		
+		target_actor.UnequipItem(equipped, prevent_equip, true)
 		RTR_Detatch(target_actor, HelmetOnHand)
-	elseif asEventName == "RTR.Equip.End"
-		Debug.sendAnimationEvent(target_actor, "OffsetStop")
+		RTR_Attach(target_actor, HelmetOnHip, equipped, last_equipped_type, HipScale, HipNode, is_female, hip_anchor)
 	endif
+endFunction
 
-	; Helmet/Circlet Unequip
-	if asEventName == "RTR.Unequip.Start"
-		RTR_Attach(target_actor, HelmetOnHand, last_equipped, last_equipped_type, HandScale, HandNode, is_female, hand_anchor)
-		target_actor.UnequipItem(last_equipped, prevent_equip, true)
-	elseif asEventName == "RTR.Unequip.Attach"
-		RTR_Attach(target_actor, HelmetOnHip, last_equipped, last_equipped_type, HipScale, HipNode, is_female, hip_anchor)
-		RTR_Detatch(target_actor, HelmetOnHand)
-	elseif asEventName == "RTR.Unequip.End"
-		Debug.sendAnimationEvent(target_actor, "OffsetStop")
+;;;; Local Script Helper Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; HipAnchor
+; Returns the correct hip anchor for the actor's gender
+;
+; @param Bool is_female
+; @return GlobalVariable[12]
+GlobalVariable[] function HipAnchor(Bool is_female)
+	if is_female 
+		return FemaleHipAnchor
 	endif
+	return MaleHipAnchor
+endFunction
 
-	; Hood Equip
-	; @TODO Should be switched to IED attach/detatch lowered hood Form instead physically eqiupping the item
-	if asEventName == "RTR.Hood.Equip.Start"
-		if LowerableHoods.HasForm(last_equipped)
-			Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(last_equipped))
-			target_actor.UnequipItem(lowered_hood, false, true)
-			target_actor.RemoveItem(lowered_hood, 1, true)
-		endif
-
-		target_actor.EquipItem(last_equipped, false, true)
-	elseif asEventName == "RTR.Hood.Equip.End"
-		Debug.sendAnimationEvent(target_actor, "OffsetStop")
+; HandAnchor
+; Returns the correct hand anchor for the actor's gender
+;
+; @param Bool is_female
+; @return GlobalVariable[12]
+GlobalVariable[] function HandAnchor(Bool is_female)
+	if is_female 
+		return FemaleHandAnchor
 	endif
-
-	; Hood Unequip
-	; @TODO Should be switched to IED attach/detatch lowered hood Form instead physically eqiupping the item
-	if asEventName == "RTR.Hood.Unequip.Start"
-		if LowerableHoods.HasForm(last_equipped)
-			Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(last_equipped))
-			target_actor.UnequipItem(last_equipped, false, true)
-			target_actor.EquipItem(lowered_hood, prevent_equip, true)
-		Else
-			target_actor.UnequipItem(last_equipped, prevent_equip, true)
-		endif
-	elseif asEventName == "RTR.Hood.Unequip.End"
-		Debug.sendAnimationEvent(target_actor, "OffsetStop")
-	endif
-EndEvent
-
-Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
-	Actor target_actor = akReference as Actor
-	if RTR_IsValidHeadWear(target_actor, akBaseObject, LoweredHoods)
-		RTR_Detatch(target_actor, HelmetOnHip)
-	endif
-	RTR_Detatch(target_actor, HelmetOnHand)
-EndEvent
-
-Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
-	Actor target_actor = akReference as Actor
-	if (RemoveHelmetWithoutArmor.GetValueInt() == 1 && !RTR_IsTorsoEquipped(target_actor))
-		RTR_DetatchAllActor(target_actor)
-	endif
-	RTR_Detatch(target_actor, HelmetOnHand)
-EndEvent 
-
-Event OnRaceSwitchComplete()
-	RTR_DetatchAllActor(PlayerRef)
-EndEvent
+	return MaleHandAnchor
+endFunction
