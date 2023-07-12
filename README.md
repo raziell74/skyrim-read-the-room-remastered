@@ -35,6 +35,10 @@ I absolutely love the idea but it has a lot of buggy behavior, half finished fea
   - Fixing the followers required some extra functionality. Had to add [PapyrusUtil SE](https://www.nexusmods.com/skyrimspecialedition/mods/13048) as a dependency. I've heard that PapyrusUtil is incompatible with 1.6.640 *sad_face* so if I can find another solution I'll remove it as a dependency but for now it was the quickiest and easiest solution. I'll keep work shopping different solutions to find the best one! Apologies for those on the latest version, for now just disable follower support and the mod should still work for the player.
   - I did some digging and some users managed to get PapyrusUtil working again by installing the [All in one (Anniversary Edition)](https://www.nexusmods.com/skyrimspecialedition/mods/32444?tab=files) version of Address Library for SKSE Plugins. 
   - I'll keep looking for a different work around though because I don't like having to include SKSE dependencies if I can help it because of this exact reason.
+- [ ] Lowered Hoods should be attached through IED
+  - Currently they are physically equipped and unequipped
+  - Causes compatibility issues when it comes to mods like Trade and Barter that give benefits to not having head gear equipped
+  - It also does not match how RTR handles EVERY other piece of head equipment...
 
 ## Tweaks and Enhancements
 
