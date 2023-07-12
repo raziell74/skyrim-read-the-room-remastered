@@ -6,7 +6,10 @@ Import PO3_Events_Alias ; powerofthree's Papyrus Extender
 
 Import ReadTheRoomUtil
 
-; @todo Clear unused properites
+; @todo the magic effect is not needed. Add an onCombatStateChange event to the script to post combat logic
+; MagicEffect property RTR_CombatEffect auto
+
+; @todo Use the RTR_GlobalEnable
 GlobalVariable property RTR_GlobalEnable auto
 
 GlobalVariable property ToggleKey auto
@@ -34,39 +37,19 @@ FormList property HostileKeywords auto
 FormList property LowerableHoods auto
 FormList property LoweredHoods auto
 
-MagicEffect property RTR_CombatEffect auto
 Perk property ReadTheRoomPerk auto
 
+; @todo Add more keywords that are used in string form
 Keyword property RTR_Follower auto
 
 Actor property PlayerRef auto
-Actor TargetActor
 
-Bool HelmetEquipped = false
-Bool HelmetWasEquipped = false
-Bool Status
-Bool InventoryRequired = true
-Bool IsFemale = false
-Bool DismountIsEquip = false
-Bool EquipAnimation = false
-Bool UnequipAnimation = false
-Bool WasDrawn = false
-Bool WasToggle = false
-Bool Active = false
-Bool WasFirstPerson = false
-Bool LowerHood = false
-String plugin = "ReadTheRoom.esp"
 String HelmetOnHip = "HelmetOnHip"
 String HelmetOnHand = "HelmetOnHand"
 String HipNode = "NPC Pelvis [Pelv]"
 String HandNode = "NPC R Hand [RHnd]"
-String LastEquippedType = "None"
 Float HipScale = 0.9150
 Float HandScale = 1.05
-
-Form LastEquippedHelmet
-Form LastEquippedHood
-Form LoweredLastEquippedHood
 
 Event OnInit()
 	RegisterForMenu("InventoryMenu")
@@ -125,7 +108,7 @@ Event OnKeyDown(Int KeyCode)
 	; Force clear attachment nodes
 	if KeyCode == DeleteKey.GetValueInt()
 		RTR_DetatchAll()
-		TargetActor.UnequipItem(LoweredLastEquippedHood)
+		; TargetActor.UnequipItem(LoweredLastEquippedHood)
 	endif
 EndEvent
 
@@ -253,7 +236,7 @@ Function EquipActorHeadgear(Actor target_actor, Form last_equipped)
 	Utility.wait(animation_time)
 
 	; End equip animation
-	Debug.sendAnimationEvent(TargetActor, "OffsetStop")
+	Debug.sendAnimationEvent(target_actor, "OffsetStop")
 	Game.EnablePlayerControls()
 
 	; If actor was drawn, redraw weapon
@@ -362,7 +345,7 @@ Function UnequipActorHeadgear(Actor target_actor, Form equipped)
 	Utility.wait(animation_time)
 
 	; End unequip animation
-	Debug.sendAnimationEvent(TargetActor, "OffsetStop")
+	Debug.sendAnimationEvent(target_actor, "OffsetStop")
 	Game.EnablePlayerControls()
 
 	; If actor was drawn, redraw weapon
@@ -421,7 +404,7 @@ Event OnAnimationEvent(ObjectReference akSource, string asEventName)
 		RTR_Detatch(target_actor, HelmetOnHip)
 		RTR_Attach(target_actor, HelmetOnHand, last_equipped, last_equipped_type, HandScale, HandNode, is_female, hand_anchor)
 	elseif asEventName == "RTR.Equip.Attach"
-		target_actor.EquipItem(LastEquippedHelmet, false, true)
+		target_actor.EquipItem(last_equipped, false, true)
 		RTR_Detatch(target_actor, HelmetOnHand)
 	elseif asEventName == "RTR.Equip.End"
 		Debug.sendAnimationEvent(target_actor, "OffsetStop")
@@ -476,12 +459,13 @@ Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
 EndEvent
 
 Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
+	Actor target_actor = akReference as Actor
 	if (RemoveHelmetWithoutArmor.GetValueInt() == 1 && !IsTorsoEquipped())
-		RTR_DetatchAllActor(TargetActor)
+		RTR_DetatchAllActor(target_actor)
 	endif
 	RTR_Detatch(target_actor, HelmetOnHand)
 EndEvent 
 
 Event OnRaceSwitchComplete()
-	RTR_DetatchAllActor(TargetActor)
+	RTR_DetatchAllActor(PlayerRef)
 EndEvent
