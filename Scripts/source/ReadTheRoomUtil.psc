@@ -295,24 +295,24 @@ endFunction
 ; @return Form
 Form function RTR_GetLastEquipped(Actor target_actor) global
     Form last_equipped
-    Int circlet_aiBipedSlot = 12
     Int helmet_aiBipedSlot = 1
     Int hair_aiBipedSlot = 0
+    Int circlet_aiBipedSlot = 12
+    
+    ; Attempt to Get From helmet_aiBipedSlot
+    last_equipped = GetLastEquippedForm(target_actor, helmet_aiBipedSlot, true, false)
+    MiscUtil.PrintConsole("RTR_GetLastEquipped: helmet_aiBipedSlot " + last_equipped as String)
 
-    ; Attempt to Get From Circlet BipedSlot
-    last_equipped = GetLastEquippedForm(target_actor, circlet_aiBipedSlot, true, false)
-    MiscUtil.PrintConsole("RTR_GetLastEquipped: circlet_aiBipedSlot " + last_equipped as String)
-
-    ; Attempt to Get From Helmet BipedSlot
-    if last_equipped as String == "None"
-        last_equipped = GetLastEquippedForm(target_actor, helmet_aiBipedSlot, true, false)
-        MiscUtil.PrintConsole("RTR_GetLastEquipped: helmet_aiBipedSlot " + last_equipped as String)
-    endif
-
-    ; Attempt to Get From Hair BipedSlot
+    ; Attempt to Get From hair_aiBipedSlots
     if last_equipped as String == "None"
         last_equipped = GetLastEquippedForm(target_actor, hair_aiBipedSlot, true, false)
         MiscUtil.PrintConsole("RTR_GetLastEquipped: hair_aiBipedSlot " + last_equipped as String)
+    endif
+
+    ; Attempt to Get From circlet_aiBipedSlot
+    if last_equipped as String == "None"
+        last_equipped = GetLastEquippedForm(target_actor, circlet_aiBipedSlot, true, false)
+        MiscUtil.PrintConsole("RTR_GetLastEquipped: circlet_aiBipedSlot " + last_equipped as String)
     endif
 
     return last_equipped
