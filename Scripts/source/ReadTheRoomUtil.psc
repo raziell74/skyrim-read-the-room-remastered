@@ -1,6 +1,7 @@
 ScriptName ReadTheRoomUtil 
 
 Import IED
+Import MiscUtil ; PapyrusUtil SE
 
 String Property PluginName = "ReadTheRoom.esp" Auto
 Int Property kSlotMask30 = 0x00000001 AutoReadOnly ; HEAD
@@ -19,12 +20,15 @@ Int Property kSlotMask32 = 0x00000004 AutoReadOnly ; BODY
 Bool function RTR_IsValidHeadWear(Actor target_actor, Form item, FormList LoweredHoods) global
     ; Make sure there really is an item to check against
     if !item
+        MiscUtil.PrintConsole("RTR_IsValidHeadWear: item is False")
+        MiscUtil.PrintConsole("RTR_IsValidHeadWear: item name " + item.GetName())
         return false
     endif
 
     ; Has this item been assigned to the exclusion list?
     Bool isExcluded = item.HasKeywordString("RTR_ExcludeKW")
     if isExcluded
+        MiscUtil.PrintConsole("RTR_IsValidHeadWear: item is excluded")
         return false
     endif
 
@@ -34,9 +38,9 @@ Bool function RTR_IsValidHeadWear(Actor target_actor, Form item, FormList Lowere
     Bool isHood = item.HasKeywordString("RTR_HoodKW")
     if isHelmet || isCirclet || isHood
         ; Since Lowered Hoods are equipped (dumb) make sure the item isn't one of those
-        if isHood && LoweredHoods.HasForm(item)
-            return false
-        endif
+        ; if isHood && LoweredHoods.HasForm(item)
+        ;     return false
+        ; endif
 
         ; Does the actor have the item in their inventory?
         if target_actor.GetItemCount(item) <= 0
@@ -58,13 +62,17 @@ endFunction
 Bool function RTR_InferItemType(Form item, FormList LowerableHoods) global
     ; Check if a hood has been set up to be lowered
     if item.HasKeywordString("RTR_HoodKW") && LowerableHoods.HasForm(item)
+        MiscUtil.PrintConsole("RTR_InferItemType: Hood")
         return "Hood"
     elseif item.HasKeywordString("ClothingCirclet")
+        MiscUtil.PrintConsole("RTR_InferItemType: Circlet")
         return "Circlet"
     elseif (item as Armor).IsHelmet()
+        MiscUtil.PrintConsole("RTR_InferItemType: Helmet")
         return "Helmet"
     endif
 
+    MiscUtil.PrintConsole("RTR_InferItemType: None")
     return "None"
 endFunction
 
@@ -73,18 +81,27 @@ endFunction
 ;
 ; @param Actor target_actor
 ; @param Bool manage_circlets
-; @return Form
+; @return Armor
 Form function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
     ReadTheRoomUtil s
+    MiscUtil.PrintConsole("RTR_GetEquipped: target_actor " + (target_actor as String))
     ; Get any item equipped in the HEAD biped slot
-    Form equipped = target_actor.GetWornForm(s.kSlotMask30)
+    Form equipped = RTR_GetLastEquipped(target_actor)
+    ; Form equipped = target_actor.GetEquippedArmorInSlot(30) as Form
+    MiscUtil.PrintConsole("RTR_GetEquipped: last equipped on actor " + (equipped as String))
     
     ; Check for a circlet
-    if manage_circlets && !equipped
-        equipped = target_actor.GetWornForm(s.kSlotMask42)
+    ; if manage_circlets && !equipped
+    ;     equipped = target_actor.GetEquippedArmorInSlot(42)
+    ;     MiscUtil.PrintConsole("RTR_GetEquipped: Slot 42 " + equipped.GetName())
+    ; endif
+
+    if target_actor.IsEquipped(equipped)
+        MiscUtil.PrintConsole("RTR_GetEquipped: target_actor has equipped " + (equipped as String))
+        return equipped
     endif
 
-    return equipped
+    return None
 endFunction
 
 ; RTR_IsTorsoEquipped
@@ -93,7 +110,7 @@ endFunction
 ; @return Bool
 Bool Function RTR_IsTorsoEquipped(Actor target_actor) global
     ReadTheRoomUtil s
-	Armor TorsoArmor = target_actor.GetWornForm(s.kSlotMask32) as Armor
+	Armor TorsoArmor = target_actor.GetEquippedArmorInSlot(32) as Armor
 	return TorsoArmor != None
 EndFunction
 
@@ -180,6 +197,8 @@ Bool function RTR_ForceThirdPerson(Actor target_actor) global
 endFunction
 
 function RTR_PlayAnimation(Actor target_actor, Bool is_player, String animation, Float animation_time, Bool draw_weapon, Bool return_to_first_person) global
+    MiscUtil.PrintConsole("RTR_PlayAnimation: " + animation)
+
     ; Start Animation
     if is_player
 	    Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
@@ -282,15 +301,18 @@ Form function RTR_GetLastEquipped(Actor target_actor) global
 
     ; Attempt to Get From Circlet BipedSlot
     last_equipped = GetLastEquippedForm(target_actor, circlet_aiBipedSlot, true, false)
+    MiscUtil.PrintConsole("RTR_GetLastEquipped: circlet_aiBipedSlot " + last_equipped as String)
 
     ; Attempt to Get From Helmet BipedSlot
     if last_equipped as String == "None"
         last_equipped = GetLastEquippedForm(target_actor, helmet_aiBipedSlot, true, false)
+        MiscUtil.PrintConsole("RTR_GetLastEquipped: helmet_aiBipedSlot " + last_equipped as String)
     endif
 
     ; Attempt to Get From Hair BipedSlot
     if last_equipped as String == "None"
         last_equipped = GetLastEquippedForm(target_actor, hair_aiBipedSlot, true, false)
+        MiscUtil.PrintConsole("RTR_GetLastEquipped: hair_aiBipedSlot " + last_equipped as String)
     endif
 
     return last_equipped

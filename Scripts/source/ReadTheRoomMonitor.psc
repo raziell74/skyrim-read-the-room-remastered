@@ -111,7 +111,7 @@ Event OnKeyDown(Int KeyCode)
 	endif
 EndEvent
 
-; OnAnimationEvent Event Handler
+; OnLocationChange Event Handler
 ; Updates locational triggers/actions
 ;
 ; Records Most Recent Location Action
@@ -161,14 +161,17 @@ endEvent
 ; OnAnimationEvent Event Handler
 ; Applys IED node attachments and head gear equipping for RTR annotated animations
 Event OnAnimationEvent(ObjectReference akSource, string asEventName)
+	MiscUtil.PrintConsole("OnAnimationEvent: " + asEventName)
 	Actor target_actor = akSource as Actor
 	Form last_equipped = RTR_GetLastEquipped(target_actor)
 
 	if !RTR_IsValidHeadWear(target_actor, last_equipped, LoweredHoods)
+		MiscUtil.PrintConsole("OnAnimationEvent: Invalid Headwear")
 		return ; Exit early if last_equipped isn't a valid Helmet, Hood, or Circlet
 	endif
 
 	String last_equipped_type = RTR_InferItemType(last_equipped, LowerableHoods)
+	MiscUtil.PrintConsole("OnAnimationEvent: last_equipped_type" + last_equipped_type)
 	if last_equipped_type == "None"
 		return ; Exit early if we can't infer the item type
 	endif
@@ -181,40 +184,40 @@ Event OnAnimationEvent(ObjectReference akSource, string asEventName)
 	Bool prevent_equip = target_actor != PlayerRef
 
 	; Helmet/Circlet
-	if asEventName == "RTR.Equip.Start"
+	if asEventName == "PIE.RTR_EQUIP_START"
 		RTR_Detatch(target_actor, HelmetOnHip)
 		RTR_Attach(target_actor, HelmetOnHand, last_equipped, last_equipped_type, HandScale, HandNode, is_female, hand_anchor)
-	elseif asEventName == "RTR.Equip.Attach"
+	elseif asEventName == "PIE.RTR_EQUIP_ATTACH"
 		target_actor.EquipItem(last_equipped, false, true)
 		RTR_Detatch(target_actor, HelmetOnHand)
-	elseif asEventName == "RTR.Equip.End"
+	elseif asEventName == "PIE.RTR_EQUIP_END"
 		Debug.sendAnimationEvent(target_actor, "OffsetStop")
 	endif
 
-	if asEventName == "RTR.Unequip.Start"
+	if asEventName == "PIE.RTR_UNEQUIP_START"
 		RTR_Attach(target_actor, HelmetOnHand, last_equipped, last_equipped_type, HandScale, HandNode, is_female, hand_anchor)
 		target_actor.UnequipItem(last_equipped, prevent_equip, true)
-	elseif asEventName == "RTR.Unequip.Attach"
+	elseif asEventName == "PIE.RTR_UNEQUIP_ATTACH"
 		RTR_Attach(target_actor, HelmetOnHip, last_equipped, last_equipped_type, HipScale, HipNode, is_female, hip_anchor)
 		RTR_Detatch(target_actor, HelmetOnHand)
-	elseif asEventName == "RTR.Unequip.End"
+	elseif asEventName == "PIE.RTR_UNEQUIP_END"
 		Debug.sendAnimationEvent(target_actor, "OffsetStop")
 	endif
 
 	; Lowerable Hoods
 	; @todo Should be switched to IED attach/detatch lowered hood Form instead physically eqiupping the item
-	if asEventName == "RTR.Hood.Equip.Start"
+	if asEventName == "PIE.RTR_HOOD_EQUIP_START"
 		if LowerableHoods.HasForm(last_equipped) 
 			Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(last_equipped))
 			target_actor.UnequipItem(lowered_hood, false, true)
 			target_actor.RemoveItem(lowered_hood, 1, true)
 		endif
 		target_actor.EquipItem(last_equipped, false, true)
-	elseif asEventName == "RTR.Hood.Equip.End"
+	elseif asEventName == "PIE.RTR_HOOD_EQUIP_END"
 		Debug.sendAnimationEvent(target_actor, "OffsetStop")
 	endif
 
-	if asEventName == "RTR.Hood.Unequip.Start"
+	if asEventName == "PIE.RTR_HOOD_UNEQUIP_START"
 		if LowerableHoods.HasForm(last_equipped)
 			Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(last_equipped))
 			target_actor.UnequipItem(last_equipped, false, true)
@@ -222,7 +225,7 @@ Event OnAnimationEvent(ObjectReference akSource, string asEventName)
 		Else
 			target_actor.UnequipItem(last_equipped, prevent_equip, true)
 		endif
-	elseif asEventName == "RTR.Hood.Unequip.End"
+	elseif asEventName == "PIE.RTR_HOOD_UNEQUIP_END"
 		Debug.sendAnimationEvent(target_actor, "OffsetStop")
 	endif
 EndEvent
@@ -259,6 +262,11 @@ EndEvent
 ; @param Actor target_actor
 ; @param Form last_equipped
 Function EquipActorHeadgear(Actor target_actor, Form last_equipped)
+	if target_actor.GetAnimationVariableInt("RTR_Active") == 1
+		MiscUtil.PrintConsole("EquipActorHeadgear: RTR_Active")
+		return
+	endif
+
 	; Exit early if the actor is already wearing the item
 	if target_actor.IsEquipped(last_equipped)
 		RTR_DetatchAllActor(target_actor)
@@ -341,6 +349,11 @@ endFunction
 ; @param Actor target_actor
 ; @param Form equipped
 Function UnequipActorHeadgear(Actor target_actor, Form equipped)
+	if target_actor.GetAnimationVariableInt("RTR_Active") == 1
+		MiscUtil.PrintConsole("UnequipActorHeadgear: RTR_Active")
+		return
+	endif
+
 	; Exit early if the actor is not wearing the item
 	if !target_actor.IsEquipped(equipped)
 		RTR_Detatch(target_actor, HelmetOnHand)
@@ -432,19 +445,21 @@ endFunction
 ;
 ; @param Actor target_actor
 function RegisterForAnnotationEvents(Actor target_actor)
-	RegisterForAnimationEvent(target_actor, "RTR.Equip.Start")
-	RegisterForAnimationEvent(target_actor, "RTR.Equip.Attach")
-	RegisterForAnimationEvent(target_actor, "RTR.Equip.End")
+	RegisterForAnimationEvent(target_actor, "PIE.@SGVI|RTR_Active|1")
 
-	RegisterForAnimationEvent(target_actor, "RTR.Hood.Equip.Start")
-	RegisterForAnimationEvent(target_actor, "RTR.Hood.Equip.End")
+	RegisterForAnimationEvent(target_actor, "PIE.RTR_EQUIP_START")
+	RegisterForAnimationEvent(target_actor, "PIE.RTR_EQUIP_ATTACH")
+	RegisterForAnimationEvent(target_actor, "PIE.RTR_EQUIP_END")
 
-	RegisterForAnimationEvent(target_actor, "RTR.Unequip.Start")
-	RegisterForAnimationEvent(target_actor, "RTR.Unequip.Attach")
-	RegisterForAnimationEvent(target_actor, "RTR.Unequip.End")
+	RegisterForAnimationEvent(target_actor, "PIE.RTR_HOOD_EQUIP_START")
+	RegisterForAnimationEvent(target_actor, "PIE.RTR_HOOD_EQUIP_END")
 
-	RegisterForAnimationEvent(target_actor, "RTR.Hood.Unequip.Start")
-	RegisterForAnimationEvent(target_actor, "RTR.Hood.Unequip.End")
+	RegisterForAnimationEvent(target_actor, "PIE.RTR_UNEQUIP_START")
+	RegisterForAnimationEvent(target_actor, "PIE.RTR_UNEQUIP_ATTACH")
+	RegisterForAnimationEvent(target_actor, "PIE.RTR_UNEQUIP_END")
+
+	RegisterForAnimationEvent(target_actor, "PIE.RTR_HOOD_UNEQUIP_START")
+	RegisterForAnimationEvent(target_actor, "PIE.RTR_HOOD_UNEQUIP_END")
 endFunction
 
 ; RegisterManagedFollowers

@@ -1,6 +1,7 @@
 # numOriginalFrames: 30
 # duration: 1.000000
 # numAnnotationTracks: 97
-# numAnnotations: 2
-0.466667 RTR.Hood.Equip.Start
-0.800000 RTR.Hood.Equip.End
+# numAnnotations: 3
+0.000000 PIE.@SGVI|RTR_Active|1
+0.466667 PIE.RTR_HOOD_EQUIP_START
+0.800000 PIE.RTR_HOOD_EQUIP_END
