@@ -1,12 +1,9 @@
 ScriptName ReadTheRoomUtil 
 
-Import IED
+Import IED ; Immersive Equipment Display
 Import MiscUtil ; PapyrusUtil SE
 
 String Property PluginName = "ReadTheRoom.esp" Auto
-Int Property kSlotMask30 = 0x00000001 AutoReadOnly ; HEAD
-Int Property kSlotMask42 = 0x00001000 AutoReadOnly ; Circlet
-Int Property kSlotMask32 = 0x00000004 AutoReadOnly ; BODY
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;; ReadTheRoom Helpers ;;;;;;;;;;;;;;;;
@@ -18,17 +15,17 @@ Int Property kSlotMask32 = 0x00000004 AutoReadOnly ; BODY
 ; @param Form item
 ; @return Bool
 Bool function RTR_IsValidHeadWear(Actor target_actor, Form item, FormList LoweredHoods) global
+    MiscUtil.PrintConsole(">>>>>>>> [RTRUtil] RTR_IsValidHeadWear")
     ; Make sure there really is an item to check against
     if !item
-        MiscUtil.PrintConsole("RTR_IsValidHeadWear: item is False")
-        MiscUtil.PrintConsole("RTR_IsValidHeadWear: item name " + item.GetName())
+        MiscUtil.PrintConsole(">> Provided form is null")
         return false
     endif
 
     ; Has this item been assigned to the exclusion list?
     Bool isExcluded = item.HasKeywordString("RTR_ExcludeKW")
     if isExcluded
-        MiscUtil.PrintConsole("RTR_IsValidHeadWear: item is excluded")
+        MiscUtil.PrintConsole(">> " + (item as Armor).GetName() + " has exclusion keyword (RTR_ExcludeKW). Invalid")
         return false
     endif
 
@@ -38,19 +35,23 @@ Bool function RTR_IsValidHeadWear(Actor target_actor, Form item, FormList Lowere
     Bool isHood = item.HasKeywordString("RTR_HoodKW")
     if isHelmet || isCirclet || isHood
         ; Since Lowered Hoods are equipped (dumb) make sure the item isn't one of those
-        ; if isHood && LoweredHoods.HasForm(item)
-        ;     return false
-        ; endif
-
-        ; Does the actor have the item in their inventory?
-        if target_actor.GetItemCount(item) <= 0
+        if isHood && LoweredHoods.HasForm(item)
+            MiscUtil.PrintConsole(">> Detected Lowered Hood. Invalid")
             return false
         endif
 
+        ; Does the actor have the item in their inventory?
+        if target_actor.GetItemCount(item as Armor) == 0
+            MiscUtil.PrintConsole(">> Missing from inventory. Invalid")
+            return false
+        endif
+
+        MiscUtil.PrintConsole(">> Valid")
         return true
     endif
 
     ; Item is not head gear
+    MiscUtil.PrintConsole(">> " + (item as Armor).GetName() + " is not head wear")
     return false
 endFunction
 
@@ -59,20 +60,22 @@ endFunction
 ;
 ; @param Form item
 ; @return String
-Bool function RTR_InferItemType(Form item, FormList LowerableHoods) global
+String function RTR_InferItemType(Form item, FormList LowerableHoods) global
+    MiscUtil.PrintConsole(">>>>>>>> [RTRUtil] RTR_InferItemType")
+
     ; Check if a hood has been set up to be lowered
     if item.HasKeywordString("RTR_HoodKW") && LowerableHoods.HasForm(item)
-        MiscUtil.PrintConsole("RTR_InferItemType: Hood")
+        MiscUtil.PrintConsole(">> item " + (item as Armor).GetName() + " type: Hood")
         return "Hood"
-    elseif item.HasKeywordString("ClothingCirclet")
-        MiscUtil.PrintConsole("RTR_InferItemType: Circlet")
+    elseif (item as Armor).IsClothingHead()
+        MiscUtil.PrintConsole(">> item " + (item as Armor).GetName() + " type: Circlet")
         return "Circlet"
     elseif (item as Armor).IsHelmet()
-        MiscUtil.PrintConsole("RTR_InferItemType: Helmet")
+        MiscUtil.PrintConsole(">> item " + (item as Armor).GetName() + " type: Helmet")
         return "Helmet"
     endif
 
-    MiscUtil.PrintConsole("RTR_InferItemType: None")
+    MiscUtil.PrintConsole(">> Type could not be inferred for item " + (item as Armor).GetName())
     return "None"
 endFunction
 
@@ -83,25 +86,52 @@ endFunction
 ; @param Bool manage_circlets
 ; @return Armor
 Form function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
+    MiscUtil.PrintConsole(">>>>>>>> [RTRUtil] RTR_GetEquipped")
+
     ReadTheRoomUtil s
-    MiscUtil.PrintConsole("RTR_GetEquipped: target_actor " + (target_actor as String))
-    ; Get any item equipped in the HEAD biped slot
-    Form equipped = RTR_GetLastEquipped(target_actor)
-    ; Form equipped = target_actor.GetEquippedArmorInSlot(30) as Form
-    MiscUtil.PrintConsole("RTR_GetEquipped: last equipped on actor " + (equipped as String))
+    Form equipped_head_wear
+
+    ; Ignore slots that are not possible head wear
+    int slotsChecked
+    slotsChecked += 0x00000004 ; Body
+    slotsChecked += 0x00000008 ; Hands
+    slotsChecked += 0x00000010 ; Forearms
+    slotsChecked += 0x00000020 ; Amulet
+    slotsChecked += 0x00000040 ; Ring
+    slotsChecked += 0x00000080 ; Feet
+    slotsChecked += 0x00000100 ; Calves
+    slotsChecked += 0x00000200 ; Shield
+    slotsChecked += 0x00000400 ; Tail
+
+    int maxSlot = 0x00040000 ; Only check up unreserved named slots (up to 43)
+ 
+    int thisSlot = 0x01 
+    while (thisSlot < 0x00040000) 
+        if (Math.LogicalAnd(slotsChecked, thisSlot) != thisSlot) ; only check slots we haven't found anything equipped on already
+            Armor thisArmor = target_actor.GetWornForm(thisSlot) as Armor
+            if (thisArmor)
+                if (thisArmor.isHelmet()) ; Equipped item is a helmet/hood
+                    if (thisArmor.HasKeywordString("RTR_HoodKW"))
+                        MiscUtil.PrintConsole(">> Found a Worn Hood " + thisArmor.GetName())
+                        equipped_head_wear = thisArmor
+                    else
+                        MiscUtil.PrintConsole(">> Found a Worn Helmet " + thisArmor.GetName())
+                        equipped_head_wear = thisArmor
+                    endif
+                elseif (manage_circlets && thisArmor.IsClothingHead()) ; if this is a circlet or hat
+                    MiscUtil.PrintConsole(">> Found a Worn Circlet/Hat " + thisArmor.GetName())
+                    MiscUtil.PrintConsole(">> Circlet/Hat SlotMask " + thisArmor.GetSlotMask())
+                    return thisArmor
+                endif
+                slotsChecked += thisArmor.GetSlotMask() ; add all slots this item covers to our slotsChecked variable
+            else ; no armor was found on this slot
+                slotsChecked += thisSlot
+            endif
+        endif
+        thisSlot *= 2 ; double the number to move on to the next slot
+    endWhile
     
-    ; Check for a circlet
-    ; if manage_circlets && !equipped
-    ;     equipped = target_actor.GetEquippedArmorInSlot(42)
-    ;     MiscUtil.PrintConsole("RTR_GetEquipped: Slot 42 " + equipped.GetName())
-    ; endif
-
-    if target_actor.IsEquipped(equipped)
-        MiscUtil.PrintConsole("RTR_GetEquipped: target_actor has equipped " + (equipped as String))
-        return equipped
-    endif
-
-    return None
+    return equipped_head_wear
 endFunction
 
 ; RTR_IsTorsoEquipped
@@ -196,33 +226,6 @@ Bool function RTR_ForceThirdPerson(Actor target_actor) global
     return false
 endFunction
 
-function RTR_PlayAnimation(Actor target_actor, Bool is_player, String animation, Float animation_time, Bool draw_weapon, Bool return_to_first_person) global
-    MiscUtil.PrintConsole("RTR_PlayAnimation: " + animation)
-
-    ; Start Animation
-    if is_player
-	    Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
-    endif
-	Debug.sendAnimationEvent(target_actor, animation)
-	Utility.wait(animation_time)
-
-	; End Animation
-	Debug.sendAnimationEvent(target_actor, "OffsetStop")
-	if is_player
-        Game.EnablePlayerControls()
-    endif
-
-	; Draw Weapon
-	if draw_weapon
-		target_actor.DrawWeapon()
-	endif
-
-	; If actor was in first person, return to first person
-	if is_player && return_to_first_person
-		Game.ForceFirstPerson()
-	endif
-endFunction
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;; Positioning Helpers ;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -245,15 +248,23 @@ Int Property CircletIndexOffset = 6 Auto
 ; @param GlobalVariable[] Anchor
 ; Returns Float[3] = {x, y, z}
 Float[] function RTR_GetPosition(String helm_type, GlobalVariable[] anchor)
+    MiscUtil.PrintConsole(">>>>>>>> [RTRUtil] RTR_GetPosition")
     Float[] position = new Float[3]
     
     if helm_type == "Circlet"
+        MiscUtil.PrintConsole(">> Applying CircletIndexOffset: " + CircletIndexOffset)
+        MiscUtil.PrintConsole(">>  PosX Index" + (PosXIndex + CircletIndexOffset) + " Obj: " + anchor[PosXIndex + CircletIndexOffset])
         position[0] = anchor[PosXIndex + CircletIndexOffset].getValue()
+        MiscUtil.PrintConsole(">>  PosY Index" + (PosYIndex + CircletIndexOffset) + " Obj: " + anchor[PosYIndex + CircletIndexOffset])
         position[1] = anchor[PosYIndex + CircletIndexOffset].getValue()
+        MiscUtil.PrintConsole(">>  PosZ Index" + (PosZIndex + CircletIndexOffset) + " Obj: " + anchor[PosZIndex + CircletIndexOffset])
         position[2] = anchor[PosZIndex + CircletIndexOffset].getValue()
     else
+        MiscUtil.PrintConsole(">>  PosX Index" + PosXIndex + " Obj: " + anchor[PosXIndex])
         position[0] = anchor[PosXIndex].getValue()
+        MiscUtil.PrintConsole(">>  PosY Index" + PosYIndex + " Obj: " + anchor[PosYIndex])
         position[1] = anchor[PosYIndex].getValue()
+        MiscUtil.PrintConsole(">>  PosZ Index" + PosZIndex + " Obj: " + anchor[PosZIndex])
         position[2] = anchor[PosZIndex].getValue()
     endif
 
@@ -294,25 +305,20 @@ endFunction
 ; @param String prev_equip_type
 ; @return Form
 Form function RTR_GetLastEquipped(Actor target_actor) global
+    MiscUtil.PrintConsole(">>>>>>>> [RTRUtil] RTR_GetLastEquipped")
+
     Form last_equipped
     Int helmet_aiBipedSlot = 1
-    Int hair_aiBipedSlot = 0
     Int circlet_aiBipedSlot = 12
     
     ; Attempt to Get From helmet_aiBipedSlot
     last_equipped = GetLastEquippedForm(target_actor, helmet_aiBipedSlot, true, false)
-    MiscUtil.PrintConsole("RTR_GetLastEquipped: helmet_aiBipedSlot " + last_equipped as String)
-
-    ; Attempt to Get From hair_aiBipedSlots
-    if last_equipped as String == "None"
-        last_equipped = GetLastEquippedForm(target_actor, hair_aiBipedSlot, true, false)
-        MiscUtil.PrintConsole("RTR_GetLastEquipped: hair_aiBipedSlot " + last_equipped as String)
-    endif
+    MiscUtil.PrintConsole(">> found helmet " + (last_equipped as Armor).GetName() + " in IED.aiBipedSlot 1")
 
     ; Attempt to Get From circlet_aiBipedSlot
     if last_equipped as String == "None"
         last_equipped = GetLastEquippedForm(target_actor, circlet_aiBipedSlot, true, false)
-        MiscUtil.PrintConsole("RTR_GetLastEquipped: circlet_aiBipedSlot " + last_equipped as String)
+        MiscUtil.PrintConsole(">> found Circlet/Hat  " + (last_equipped as Armor).GetName() + "  in IED.aiBipedSlot 12")
     endif
 
     return last_equipped
@@ -331,22 +337,55 @@ endFunction
 ; @param bool is_female
 ; @param GlobalVariable[] anchor
 ; @return void
+; 
+; @todo Create hip and hand attachments on init
+;       Refactor this function to update the item Form and Scale
+;       Implement `SetItemAnimationEventEnabledActor` to show/hide based on RTR animation event
+;       Create new RTR function to enable and disable attachments with `SetItemEnabledActor`
 function RTR_Attach(Actor target_actor, String attachment_name, Form item, String item_type, Float item_scale, String node_name, bool is_female, GlobalVariable[] anchor) global
+    MiscUtil.PrintConsole(">>>>>>>> [RTRUtil] RTR_Attach")
     ReadTheRoomUtil s
     Bool inventory_required = true
 
+    MiscUtil.PrintConsole(">> Resolving position data for item_type  " + item_type + "  where is_female " + (is_female as String))
     Float[] pos = s.RTR_GetPosition(item_type, anchor)
     Float[] rot = s.RTR_GetRotation(item_type, anchor)
 
-    CreateItemActor(target_actor, s.PluginName, attachment_name, is_female, item, inventory_required, node_name)
-    SetItemFormActor(target_actor, s.PluginName, attachment_name, is_female, item)
-    SetItemNodeActor(target_actor, s.PluginName, attachment_name, is_female, node_name)
-    SetItemPositionActor(target_actor, s.PluginName, attachment_name, is_female, pos)
-    SetItemRotationActor(target_actor, s.PluginName, attachment_name, is_female, rot)
+    MiscUtil.PrintConsole(">> posX: " + pos[0] + " posY: " + pos[1] + " posZ: " + pos[2])
+    MiscUtil.PrintConsole(">> rotPitch: " + rot[0] + " rotRoll: " + rot[1] + " rotYaw: " + rot[2])
+
+    ; Create IED Attachment
+    MiscUtil.PrintConsole(">> Creating IED Attachment")
+    MiscUtil.PrintConsole(">>>> On Actor " + target_actor.GetName())
+    MiscUtil.PrintConsole(">>>> PluginName " + s.PluginName)
+    MiscUtil.PrintConsole(">>>> With Form " + (item as Armor).GetName())
+    MiscUtil.PrintConsole(">>>> With Attachment Name " + attachment_name)
+    MiscUtil.PrintConsole(">>>> With Node Name " + node_name)
+    IED.CreateItemActor(target_actor, s.PluginName, attachment_name, is_female, item, inventory_required, node_name)
+
+    ; Set the form to show
+    MiscUtil.PrintConsole(">> Setting IED Form on Actor")
+    IED.SetItemFormActor(target_actor, s.PluginName, attachment_name, is_female, item)
+
+    ; Set the node to attach to
+    MiscUtil.PrintConsole(">> Setting IED Item Node on Actor")
+    IED.SetItemNodeActor(target_actor, s.PluginName, attachment_name, is_female, node_name)
+
+    ; Position the attachment
+    MiscUtil.PrintConsole(">> Setting IED Item Position on Actor")
+    IED.SetItemPositionActor(target_actor, s.PluginName, attachment_name, is_female, pos)
+    MiscUtil.PrintConsole(">> Setting IED Item Rotation on Actor")
+    IED.SetItemRotationActor(target_actor, s.PluginName, attachment_name, is_female, rot)
+
+    ; Set the item scale if it's a helmet
     if item_type == "Helmet"
-        SetItemScaleActor(target_actor, s.PluginName, attachment_name, is_female, item_scale)
+        MiscUtil.PrintConsole(">> Setting IED Item Scale on Actor")
+        IED.SetItemScaleActor(target_actor, s.PluginName, attachment_name, is_female, item_scale)
     endif
-    SetItemEnabledActor(target_actor, s.PluginName, attachment_name, is_female, true)
+
+    ; Enable the attachment
+    MiscUtil.PrintConsole(">> Enabling IED Item on Actor")
+    IED.SetItemEnabledActor(target_actor, s.PluginName, attachment_name, is_female, true)
 endFunction
 
 ; RTR_IsAttached

@@ -12,6 +12,7 @@ I absolutely love the idea but it has a lot of buggy behavior, half finished fea
 - [x] Hoods would periodically use the helmet animations, better hood detection implemented
 - [x] OnMagicEffectApply issue 
   - OnMagicEffectApply is notorious for causing save bloat and script lag, replacing with OnMagicEffectApplyEx from [po3's Papyrus Extender](https://www.nexusmods.com/skyrimspecialedition/mods/22854)
+  - Update: The OnMagicEffectApply was used as a cloaking spell on NPCs for detecting the 'searching for player' combat state to trigger the helmet to equip. I've removed this for now and might add it back in later  
 - [x] RTR_MonitorEffect xEdit error
 - [x] Dirt and Blood animations break helmet management
 - [x] First helmet from new save works great, rest doesn't

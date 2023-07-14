@@ -1,0 +1,76 @@
+[
+    {
+        "projectPath": "Actors",
+        "type": "kInt",
+        "name": "RTR_Action",
+        "value": 0
+    },
+    {
+        "projectPath": "Actors",
+        "type": "kFloat",
+        "name": "RTR_Timeout",
+        "value": 0.0
+    },
+    {
+        "projectPath": "Actors",
+        "type": "kBool",
+        "name": "RTR_RedrawWeapons",
+        "value": false
+    },
+    {
+        "projectPath": "Actors",
+        "type": "kBool",
+        "name": "RTR_ReturnToFirstPerson",
+        "value": false
+    },
+    {
+        "projectPath": "Actors",
+        "type": "kEvent",
+        "name": "RTR_SetTimeout"
+    },
+    {
+        "projectPath": "Actors",
+        "type": "kEvent",
+        "name": "RTR_Equip"
+    },
+    {
+        "projectPath": "Actors",
+        "type": "kEvent",
+        "name": "RTR_Unequip"
+    },
+    {
+        "projectPath": "Actors",
+        "type": "kEvent",
+        "name": "RTR_AttachToHand"
+    },
+    {
+        "projectPath": "Actors",
+        "type": "kEvent",
+        "name": "RTR_RemoveFromHand"
+    },
+    {
+        "projectPath": "Actors",
+        "type": "kEvent",
+        "name": "RTR_AttachToHip"
+    },
+    {
+        "projectPath": "Actors",
+        "type": "kEvent",
+        "name": "RTR_RemoveFromHip"
+    },
+    {
+        "projectPath": "Actors",
+        "type": "kEvent",
+        "name": "RTR_AttachLoweredHood"
+    },
+    {
+        "projectPath": "Actors",
+        "type": "kEvent",
+        "name": "RTR_RemoveLoweredHood"
+    },
+    {
+        "projectPath": "Actors",
+        "type": "kEvent",
+        "name": "RTR_OffsetStop"
+    }
+]

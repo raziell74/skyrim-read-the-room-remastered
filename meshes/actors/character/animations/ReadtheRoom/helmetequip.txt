@@ -1,8 +1,13 @@
 # numOriginalFrames: 99
 # duration: 3.300000
 # numAnnotationTracks: 97
-# numAnnotations: 4
-0.000000 PIE.@SGVI|RTR_Active|1
-0.333333 PIE.RTR_EQUIP_START
-2.500000 PIE.RTR_EQUIP_ATTACH
-3.220000 PIE.RTR_EQUIP_END
+# numAnnotations: 9
+0.000000 PIE.@SGVI|RTR_Action|1
+0.000000 PIE.@SGVF|RTR_Timeout|3.300000
+0.100000 RTR_SetTimeout
+0.333333 RTR_RemoveFromHip
+0.353333 RTR_AttachToHand
+2.500000 RTR_RemoveFromHand
+2.520000 RTR_Equip
+3.220000 RTR_OffsetStop
+3.250000 PIE.@SGVI|RTR_Action|0

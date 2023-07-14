@@ -1,7 +1,11 @@
 # numOriginalFrames: 30
 # duration: 1.000000
 # numAnnotationTracks: 97
-# numAnnotations: 3
-0.000000 PIE.@SGVI|RTR_Active|1
-0.466667 PIE.RTR_HOOD_UNEQUIP_START
-0.800000 PIE.RTR_HOOD_UNEQUIP_END
+# numAnnotations: 7
+0.000000 PIE.@SGVI|RTR_Action|4
+0.000000 PIE.@SGVF|RTR_Timeout|1.000000
+0.100000 RTR_SetTimeout
+0.466667 RTR_Unequip
+0.486667 RTR_AttachLoweredHood
+0.800000 RTR_OffsetStop
+0.820000 PIE.@SGVI|RTR_Action|0
