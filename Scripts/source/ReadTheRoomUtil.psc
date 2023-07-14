@@ -231,41 +231,38 @@ endFunction
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Anchor Array Index Mapping from Script Property
-; The ReadTheRoom.esp plugin provies Anchors as arrays of GlobalVariables
+; The ReadTheRoom.esp plugin provies Anchors as arrays of GlobalVariable Objects
 ; Example: [PosX, PosY, PosZ, RotRoll, RotPitch, RotYaw, CircletPosX, CircletPosY, CircletPosZ, CircletRotRoll, CircletRotPitch, CircletRotYaw]
-Int Property PosXIndex = 0 Auto
-Int Property PosYIndex = 1 Auto
-Int Property PosZIndex = 2 Auto
-Int Property RotRollIndex = 3 Auto
-Int Property RotPitchIndex = 4 Auto
-Int Property RotYawIndex = 5 Auto
-Int Property CircletIndexOffset = 6 Auto
 
 ; RTR_GetPosition
 ; Takes an Anchor Positioning Array and translates it to an IED positoin variable
 ;
 ; @param String HelmType
-; @param GlobalVariable[] Anchor
+; @param FormList Anchor
 ; Returns Float[3] = {x, y, z}
-Float[] function RTR_GetPosition(String helm_type, GlobalVariable[] anchor)
+Float[] function RTR_GetPosition(String helm_type, FormList anchor)
     MiscUtil.PrintConsole(">>>>>>>> [RTRUtil] RTR_GetPosition")
+    Int PosXIndex = 0
+    Int PosYIndex = 1
+    Int PosZIndex = 2
+    Int CircletIndexOffset = 6
     Float[] position = new Float[3]
     
     if helm_type == "Circlet"
         MiscUtil.PrintConsole(">> Applying CircletIndexOffset: " + CircletIndexOffset)
-        MiscUtil.PrintConsole(">>  PosX Index" + (PosXIndex + CircletIndexOffset) + " Obj: " + anchor[PosXIndex + CircletIndexOffset])
-        position[0] = anchor[PosXIndex + CircletIndexOffset].getValue()
-        MiscUtil.PrintConsole(">>  PosY Index" + (PosYIndex + CircletIndexOffset) + " Obj: " + anchor[PosYIndex + CircletIndexOffset])
-        position[1] = anchor[PosYIndex + CircletIndexOffset].getValue()
-        MiscUtil.PrintConsole(">>  PosZ Index" + (PosZIndex + CircletIndexOffset) + " Obj: " + anchor[PosZIndex + CircletIndexOffset])
-        position[2] = anchor[PosZIndex + CircletIndexOffset].getValue()
+        MiscUtil.PrintConsole(">>  PosX Index" + (PosXIndex + CircletIndexOffset))
+        position[0] = (anchor.GetAt(PosXIndex + CircletIndexOffset) as GlobalVariable).GetValue()
+        MiscUtil.PrintConsole(">>  PosY Index" + (PosYIndex + CircletIndexOffset))
+        position[1] = (anchor.GetAt(PosYIndex + CircletIndexOffset) as GlobalVariable).GetValue()
+        MiscUtil.PrintConsole(">>  PosZ Index" + (PosZIndex + CircletIndexOffset))
+        position[2] = (anchor.GetAt(PosZIndex + CircletIndexOffset) as GlobalVariable).GetValue()
     else
-        MiscUtil.PrintConsole(">>  PosX Index" + PosXIndex + " Obj: " + anchor[PosXIndex])
-        position[0] = anchor[PosXIndex].getValue()
-        MiscUtil.PrintConsole(">>  PosY Index" + PosYIndex + " Obj: " + anchor[PosYIndex])
-        position[1] = anchor[PosYIndex].getValue()
-        MiscUtil.PrintConsole(">>  PosZ Index" + PosZIndex + " Obj: " + anchor[PosZIndex])
-        position[2] = anchor[PosZIndex].getValue()
+        MiscUtil.PrintConsole(">>  PosX Index" + PosXIndex)
+        position[0] = (anchor.GetAt(PosXIndex) as GlobalVariable).GetValue()
+        MiscUtil.PrintConsole(">>  PosY Index" + PosYIndex)
+        position[1] = (anchor.GetAt(PosYIndex) as GlobalVariable).GetValue()
+        MiscUtil.PrintConsole(">>  PosZ Index" + PosZIndex)
+        position[2] = (anchor.GetAt(PosZIndex) as GlobalVariable).GetValue()
     endif
 
     return position
@@ -277,17 +274,21 @@ endFunction
 ; @param String helm_type
 ; @param GlobalVariable[] anchor
 ; @return Float[3] = {pitch, roll, yaw}
-Float[] function RTR_GetRotation(String helm_type, GlobalVariable[] anchor)
+Float[] function RTR_GetRotation(String helm_type, FormList anchor)
+    Int RotPitchIndex = 3 
+    Int RotRollIndex = 4 
+    Int RotYawIndex = 5
+    Int CircletIndexOffset = 6
     Float[] rotation = new Float[3]
     
     if helm_type == "Circlet"
-        rotation[0] = anchor[RotPitchIndex + CircletIndexOffset].getValue()
-        rotation[1] = anchor[RotRollIndex + CircletIndexOffset].getValue()
-        rotation[2] = anchor[RotYawIndex + CircletIndexOffset].getValue()
+        rotation[0] = (anchor.GetAt(RotPitchIndex + CircletIndexOffset) as GlobalVariable).GetValue()
+        rotation[1] = (anchor.GetAt(RotRollIndex + CircletIndexOffset) as GlobalVariable).GetValue()
+        rotation[2] = (anchor.GetAt(RotYawIndex + CircletIndexOffset) as GlobalVariable).GetValue()
     else
-        rotation[0] = anchor[RotPitchIndex].getValue()
-        rotation[1] = anchor[RotRollIndex].getValue()
-        rotation[2] = anchor[RotYawIndex].getValue()
+        rotation[0] = (anchor.GetAt(RotPitchIndex) as GlobalVariable).GetValue()
+        rotation[1] = (anchor.GetAt(RotRollIndex) as GlobalVariable).GetValue()
+        rotation[2] = (anchor.GetAt(RotYawIndex) as GlobalVariable).GetValue()
     endif
 
     return rotation
@@ -335,14 +336,14 @@ endFunction
 ; @param Float item_scale
 ; @param String node_name
 ; @param bool is_female
-; @param GlobalVariable[] anchor
+; @param FormList anchor
 ; @return void
 ; 
 ; @todo Create hip and hand attachments on init
 ;       Refactor this function to update the item Form and Scale
 ;       Implement `SetItemAnimationEventEnabledActor` to show/hide based on RTR animation event
 ;       Create new RTR function to enable and disable attachments with `SetItemEnabledActor`
-function RTR_Attach(Actor target_actor, String attachment_name, Form item, String item_type, Float item_scale, String node_name, bool is_female, GlobalVariable[] anchor) global
+function RTR_Attach(Actor target_actor, String attachment_name, Form item, String item_type, Float item_scale, String node_name, bool is_female, FormList anchor) global
     MiscUtil.PrintConsole(">>>>>>>> [RTRUtil] RTR_Attach")
     ReadTheRoomUtil s
     Bool inventory_required = true

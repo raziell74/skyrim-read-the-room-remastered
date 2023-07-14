@@ -20,12 +20,6 @@ GlobalVariable property ToggleKey auto
 GlobalVariable property DeleteKey auto
 GlobalVariable property EnableKey auto
 
-; IED Hip/Hand Anchors
-GlobalVariable[] property MaleHandAnchor auto
-GlobalVariable[] property MaleHipAnchor auto
-GlobalVariable[] property FemaleHandAnchor auto
-GlobalVariable[] property FemaleHipAnchor auto
-
 ; Equip Scenario Settings
 GlobalVariable property CombatEquip auto
 GlobalVariable property CombatEquipAnimation auto
@@ -36,7 +30,7 @@ GlobalVariable property RemoveHelmetWithoutArmor auto
 ; Management Settings
 GlobalVariable property ManageCirclets auto
 GlobalVariable property ManageFollowers auto
-FormList property ManagedFollowers auto
+FormList property ManagedActors auto
 
 ; Location Identification Settings
 FormList property SafeKeywords auto
@@ -48,6 +42,12 @@ FormList property LoweredHoods auto
 
 ; ReadTheRoom dedicated keywords
 Keyword property RTR_Follower auto
+
+; IED Hip/Hand Anchors
+FormList property MaleHandAnchor auto
+FormList property MaleHipAnchor auto
+FormList property FemaleHandAnchor auto
+FormList property FemaleHipAnchor auto
 
 ; Local Script Variables
 String MostRecentLocationAction = "None"
@@ -90,6 +90,14 @@ Event OnKeyDown(Int KeyCode)
 
 	; Manually Toggle Head Gear
 	if KeyCode == ToggleKey.GetValueInt()
+		MiscUtil.PrintConsole("[RTR] DEBUG --------------------------------------------------------------------")
+		Form male_hand_anchor_posX = MaleHandAnchor.GetAt(0)
+		GlobalVariable male_hand_anchor_posXGV = male_hand_anchor_posX as GlobalVariable
+		Float male_hand_anchor_posX_Value = male_hand_anchor_posXGV.GetValue()
+		MiscUtil.PrintConsole("[RTR] DEBUG: MaleHandAnchor.GetAt(0) returned Form As String " + (male_hand_anchor_posX as String))
+		MiscUtil.PrintConsole("[RTR] DEBUG: GV MaleHandAnchorPosX value" + male_hand_anchor_posX_Value)
+		MiscUtil.PrintConsole("[RTR] DEBUG: GV MaleHandAnchorPosX value as string" + male_hand_anchor_posX_Value)
+
 		MiscUtil.PrintConsole(" ")
 		MiscUtil.PrintConsole(" ")
 		MiscUtil.PrintConsole("[RTR] Toggle --------------------------------------------------------------------")
@@ -184,8 +192,8 @@ Event OnAnimationEvent(ObjectReference akSource, String asEventName)
 		return ; Exit early if we can't infer the item type
 	endif
 
-	GlobalVariable[] hip_anchor = HipAnchor(is_female)
-	GlobalVariable[] hand_anchor = HandAnchor(is_female)
+	FormList hip_anchor = HipAnchor(is_female)
+	FormList hand_anchor = HandAnchor(is_female)
 
 	; RTR Event Handlers
 	; @todo Pass to an RTR Action Delegate?
@@ -602,7 +610,7 @@ Function UnequipWithNoAnimation(Actor target_actor, Form equipped)
 	else
 		String last_equipped_type = RTR_InferItemType(equipped, LowerableHoods)
 		Bool is_female = target_actor.GetActorBase().getSex() == 1
-		GlobalVariable[] hip_anchor = HipAnchor(is_female)
+		FormList hip_anchor = HipAnchor(is_female)
 		
 		target_actor.UnequipItem(equipped, prevent_equip, true)
 		RTR_Detatch(target_actor, HelmetOnHand)
@@ -644,18 +652,18 @@ function UpdateManagedFollowersList()
 	endif
 
 	; ManagedFollowers
-	Actor[] found_followers = ScanCellNPCs(PlayerRef, 500.0, RTR_Follower)
+	; Actor[] found_followers = ScanCellNPCs(PlayerRef, 500.0, RTR_Follower)
 	
-	int i = 0
-	int managedFollowerCount = ManagedFollowers.GetSize()
-	while (i < managedFollowerCount)
-		Actor followerActor = ManagedFollowers.GetAt(i) as Actor
-		ManagedFollowers.AddForm(followerActor)
-		; @DEBUG Output Current Managed Followers
-		string followerActorName = followerActor.GetActorBase().GetName()
-		Debug.Notification("RTR Detected Follower: " + followerActorName)
-		i += 1
-	endwhile
+	; int i = 0
+	; int managedFollowerCount = ManagedFollowers.GetSize()
+	; while (i < managedFollowerCount)
+	; 	Actor followerActor = ManagedFollowers.GetAt(i) as Actor
+	; 	ManagedFollowers.AddForm(followerActor)
+	; 	; @DEBUG Output Current Managed Followers
+	; 	string followerActorName = followerActor.GetActorBase().GetName()
+	; 	Debug.Notification("RTR Detected Follower: " + followerActorName)
+	; 	i += 1
+	; endwhile
 endFunction
 
 function UnequipFollowerHeadgear()
@@ -663,21 +671,21 @@ function UnequipFollowerHeadgear()
 		return
 	endif
 
-	int i = 0
-	int managedFollowerCount = ManagedFollowers.GetSize()
-	while (i < managedFollowerCount)
-		Actor follower = ManagedFollowers.GetAt(i) as Actor
-		Form equipped = RTR_GetEquipped(follower, ManageCirclets.getValueInt() == 1)
-		Bool is_valid = RTR_IsValidHeadWear(follower, equipped, LoweredHoods)
+	; int i = 0
+	; int managedFollowerCount = ManagedFollowers.GetSize()
+	; while (i < managedFollowerCount)
+	; 	Actor follower = ManagedFollowers.GetAt(i) as Actor
+	; 	Form equipped = RTR_GetEquipped(follower, ManageCirclets.getValueInt() == 1)
+	; 	Bool is_valid = RTR_IsValidHeadWear(follower, equipped, LoweredHoods)
 		
-		if is_valid
-			UnequipActorHeadgear(follower, equipped)
-		endif
+	; 	if is_valid
+	; 		UnequipActorHeadgear(follower, equipped)
+	; 	endif
 
-		; Make Absolutely sure their hand nodes are clear
-		RTR_Detatch(follower, HelmetOnHand)
-		i += 1 ; NEXT
-	endwhile
+	; 	; Make Absolutely sure their hand nodes are clear
+	; 	RTR_Detatch(follower, HelmetOnHand)
+	; 	i += 1 ; NEXT
+	; endwhile
 endFunction
 
 function EquipFollowerHeadgear()
@@ -685,29 +693,29 @@ function EquipFollowerHeadgear()
 		return
 	endif
 	
-	int i = 0
-	int managedFollowerCount = ManagedFollowers.GetSize()
-	while (i < managedFollowerCount)
-		Actor follower = ManagedFollowers.GetAt(i) as Actor
-		Form last_equipped = RTR_GetLastEquipped(follower)
-		Bool is_valid = RTR_IsValidHeadWear(follower, last_equipped, LoweredHoods)
+	; int i = 0
+	; int managedFollowerCount = ManagedFollowers.GetSize()
+	; while (i < managedFollowerCount)
+	; 	Actor follower = ManagedFollowers.GetAt(i) as Actor
+	; 	Form last_equipped = RTR_GetLastEquipped(follower)
+	; 	Bool is_valid = RTR_IsValidHeadWear(follower, last_equipped, LoweredHoods)
 		
-		if is_valid
-			EquipActorHeadgear(follower, last_equipped)
-		endif
+	; 	if is_valid
+	; 		EquipActorHeadgear(follower, last_equipped)
+	; 	endif
 
-		; Make Absolutely sure their hand nodes are clear
-		RTR_Detatch(follower, HelmetOnHand)
-		i += 1 ; NEXT
-	endwhile
+	; 	; Make Absolutely sure their hand nodes are clear
+	; 	RTR_Detatch(follower, HelmetOnHand)
+	; 	i += 1 ; NEXT
+	; endwhile
 endFunction
 
 ; HipAnchor
 ; Returns the correct hip anchor for the actor's gender
 ;
 ; @param Bool is_female
-; @return GlobalVariable[12]
-GlobalVariable[] function HipAnchor(Bool is_female)
+; @return FormList
+FormList function HipAnchor(Bool is_female)
 	if is_female 
 		return FemaleHipAnchor
 	endif
@@ -718,8 +726,8 @@ endFunction
 ; Returns the correct hand anchor for the actor's gender
 ;
 ; @param Bool is_female
-; @return GlobalVariable[12]
-GlobalVariable[] function HandAnchor(Bool is_female)
+; @return FormList
+FormList function HandAnchor(Bool is_female)
 	if is_female 
 		return FemaleHandAnchor
 	endif
