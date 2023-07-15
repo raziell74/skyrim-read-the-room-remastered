@@ -86,3 +86,107 @@ Options:
     - Will Inject new unique RTR animation events and animation variables into the behavior graphs
 - [Payload Interpreter](https://www.nexusmods.com/skyrimspecialedition/mods/65089)
     - Uses updated animation annotations to trigger updates on the new animation variables
+
+
+
+# Placement and positioning
+
+HipPositionX [GLOB:FE00080F]
+12.800000
+HipPositionY [GLOB:FE000810]
+-10.250000
+HipPositionZ [GLOB:FE000811]
+-0.650000
+HipRotationPitch [GLOB:FE000813]
+15.000000
+HipRotationRoll [GLOB:FE000812]
+-52.900002
+HipRotationYaw [GLOB:FE000814]
+94.449997
+HipPositionXCirclet [GLOB:FE000A4B]
+12.800000
+HipPositionYCirclet [GLOB:FE000A4C]
+-10.250000
+HipPositionZCirclet [GLOB:FE000A4D]
+-0.650000
+HipRotationPitchCirclet [GLOB:FE000A4F]
+46.000000
+HipRotationRollCirclet [GLOB:FE000A4E]
+15.000000
+HipRotationYawCirclet [GLOB:FE000A50]
+68.900002
+
+HandPositionX [GLOB:FE000F5D]
+6.800000
+HandPositionY [GLOB:FE000F5E]
+-11.750000
+HandPositionZ [GLOB:FE000F5F]
+10.850000
+HandRotationPitch [GLOB:FE000F61]
+270.600006
+HandRotationRoll [GLOB:FE000F60]
+0.440000
+HandRotationYaw [GLOB:FE000F62]
+260.450012
+HandPositionXCirclet [GLOB:FE000F63]
+-0.200000
+HandPositionYCirclet [GLOB:FE000F64]
+-11.250000
+HandPositionZCirclet [GLOB:FE000F65]
+10.850000
+HandRotationPitchCirclet [GLOB:FE000F67]
+270.600006
+HandRotationRollCirclet [GLOB:FE000F66]
+22.940001
+HandRotationYawCirclet [GLOB:FE000F68]
+260.450012
+
+HipPositionXFemale [GLOB:FE000F69]
+12.800000
+HipPositionYFemale [GLOB:FE000F6A]
+-10.250000
+HipPositionZFemale [GLOB:FE000F6B]
+-0.650000
+HipRotationPitchFemale [GLOB:FE000F6D]
+-52.900002
+HipRotationRollFemale [GLOB:FE000F6C]
+15.000000
+HipRotationYawFemale [GLOB:FE000F6E]
+94.449997
+HipPositionXCircletFemale [GLOB:FE000F6F]
+12.800000
+HipPositionYCircletFemale [GLOB:FE000F70]
+-10.250000
+HipPositionZCircletFemale [GLOB:FE000F71]
+-0.650000
+HipRotationRollCircletFemale [GLOB:FE000F72]
+15.000000
+HipRotationPitchCircletFemale [GLOB:FE000F73]
+46.000000
+HipRotationYawCircletFemale [GLOB:FE000F74]
+68.900002
+
+HandPositionXFemale [GLOB:FE000F75]
+8.000000
+HandPositionYFemale [GLOB:FE000F76]
+-15.000000
+HandPositionZFemale [GLOB:FE000F77]
+10.850000
+HandRotationPitchFemale [GLOB:FE000F79]
+260.000000
+HandRotationRollFemale [GLOB:FE000F78]
+29.000000
+HandRotationYawFemale [GLOB:FE000F7A]
+245.000000
+HandPositionXCircletFemale [GLOB:FE000F7B]
+-0.200000
+HandPositionYCircletFemale [GLOB:FE000F7C]
+-15.000000
+HandPositionZCircletFemale [GLOB:FE000F7D]
+10.850000
+HandRotationPitchCircletFemale [GLOB:FE000F7F]
+270.600006
+HandRotationRollCircletFemale [GLOB:FE000F7E]
+22.940001
+HandRotationYawCircletFemale [GLOB:FE000F80]
+260.450012
