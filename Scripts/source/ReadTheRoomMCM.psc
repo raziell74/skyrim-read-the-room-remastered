@@ -1,486 +1,915 @@
-ScriptName ReadTheRoomMCM Extends MCM_ConfigBase
+scriptname ReadTheRoomMCM extends SKI_ConfigBase
 
-;--- Imports --------------------------------------------------------------
-import IED
+GlobalVariable property ToggleKey auto
+GlobalVariable property DeleteKey auto
+GlobalVariable property EnableKey auto
+GlobalVariable property HipPositionX auto
+GlobalVariable property HipPositionY auto
+GlobalVariable property HipPositionZ auto
+GlobalVariable property HipRotationPitch auto
+GlobalVariable property HipRotationRoll auto
+GlobalVariable property HipRotationYaw auto
+GlobalVariable property HipPositionXCirclet auto
+GlobalVariable property HipPositionYCirclet auto
+GlobalVariable property HipPositionZCirclet auto
+GlobalVariable property HipRotationPitchCirclet auto
+GlobalVariable property HipRotationRollCirclet auto
+GlobalVariable property HipRotationYawCirclet auto
+GlobalVariable property HandPositionX auto
+GlobalVariable property HandPositionY auto
+GlobalVariable property HandPositionZ auto
+GlobalVariable property HandRotationPitch auto
+GlobalVariable property HandRotationRoll auto
+GlobalVariable property HandRotationYaw auto
+GlobalVariable property HandPositionXCirclet auto
+GlobalVariable property HandPositionYCirclet auto
+GlobalVariable property HandPositionZCirclet auto
+GlobalVariable property HandRotationPitchCirclet auto
+GlobalVariable property HandRotationRollCirclet auto
+GlobalVariable property HandRotationYawCirclet auto
+GlobalVariable property HipPositionXFemale auto
+GlobalVariable property HipPositionYFemale auto
+GlobalVariable property HipPositionZFemale auto
+GlobalVariable property HipRotationPitchFemale auto
+GlobalVariable property HipRotationRollFemale auto
+GlobalVariable property HipRotationYawFemale auto
+GlobalVariable property HipPositionXCircletFemale auto
+GlobalVariable property HipPositionYCircletFemale auto
+GlobalVariable property HipPositionZCircletFemale auto
+GlobalVariable property HipRotationPitchCircletFemale auto
+GlobalVariable property HipRotationRollCircletFemale auto
+GlobalVariable property HipRotationYawCircletFemale auto
+GlobalVariable property HandPositionXFemale auto
+GlobalVariable property HandPositionYFemale auto
+GlobalVariable property HandPositionZFemale auto
+GlobalVariable property HandRotationPitchFemale auto
+GlobalVariable property HandRotationRollFemale auto
+GlobalVariable property HandRotationYawFemale auto
+GlobalVariable property HandPositionXCircletFemale auto
+GlobalVariable property HandPositionYCircletFemale auto
+GlobalVariable property HandPositionZCircletFemale auto
+GlobalVariable property HandRotationPitchCircletFemale auto
+GlobalVariable property HandRotationRollCircletFemale auto
+GlobalVariable property HandRotationYawCircletFemale auto
+GlobalVariable property EquipWhenSafe auto
+GlobalVariable property UnequipWhenUnsafe auto
+GlobalVariable property CombatEquip auto
+GlobalVariable property CombatEquipAnimation auto
+GlobalVariable property ManageCirclets auto
+GlobalVariable property ManageFollowers auto
+GlobalVariable property RemoveHelmetWithoutArmor auto
+Perk property ReadTheRoomPerk auto
 
-;--- Properties -----------------------------------------------------------
-Perk Property ReadTheRoomPerk Auto
-GlobalVariable Property EquipWhenSafe Auto
-GlobalVariable Property UnequipWhenUnsafe Auto
-GlobalVariable Property ManageFollowers Auto
-GlobalVariable Property CombatEquip Auto
-GlobalVariable Property CombatEquipAnimation Auto
-GlobalVariable Property ManageCirclets Auto
-GlobalVariable Property RemoveHelmetWithoutArmor Auto
-GlobalVariable Property ToggleKey Auto
-GlobalVariable Property DeleteKey Auto
-GlobalVariable Property EnableKey Auto
-GlobalVariable Property HipPositionX Auto
-GlobalVariable Property HipPositionY Auto
-GlobalVariable Property HipPositionZ Auto
-GlobalVariable Property HipRotationPitch Auto
-GlobalVariable Property HipRotationRoll Auto
-GlobalVariable Property HipRotationYaw Auto
-GlobalVariable Property HipPositionXCirclet Auto
-GlobalVariable Property HipPositionYCirclet Auto
-GlobalVariable Property HipPositionZCirclet Auto
-GlobalVariable Property HipRotationPitchCirclet Auto
-GlobalVariable Property HipRotationRollCirclet Auto
-GlobalVariable Property HipRotationYawCirclet Auto
-GlobalVariable Property HandPositionX Auto
-GlobalVariable Property HandPositionY Auto
-GlobalVariable Property HandPositionZ Auto
-GlobalVariable Property HandRotationPitch Auto
-GlobalVariable Property HandRotationRoll Auto
-GlobalVariable Property HandRotationYaw Auto
-GlobalVariable Property HandPositionXCirclet Auto
-GlobalVariable Property HandPositionYCirclet Auto
-GlobalVariable Property HandPositionZCirclet Auto
-GlobalVariable Property HandRotationPitchCirclet Auto
-GlobalVariable Property HandRotationRollCirclet Auto
-GlobalVariable Property HandRotationYawCirclet Auto
-GlobalVariable Property HipPositionXFemale Auto
-GlobalVariable Property HipPositionYFemale Auto
-GlobalVariable Property HipPositionZFemale Auto
-GlobalVariable Property HipRotationPitchFemale Auto
-GlobalVariable Property HipRotationRollFemale Auto
-GlobalVariable Property HipRotationYawFemale Auto
-GlobalVariable Property HipPositionXCircletFemale Auto
-GlobalVariable Property HipPositionYCircletFemale Auto
-GlobalVariable Property HipPositionZCircletFemale Auto
-GlobalVariable Property HipRotationPitchCircletFemale Auto
-GlobalVariable Property HipRotationRollCircletFemale Auto
-GlobalVariable Property HipRotationYawCircletFemale Auto
-GlobalVariable Property HandPositionXFemale Auto
-GlobalVariable Property HandPositionYFemale Auto
-GlobalVariable Property HandPositionZFemale Auto
-GlobalVariable Property HandRotationPitchFemale Auto
-GlobalVariable Property HandRotationRollFemale Auto
-GlobalVariable Property HandRotationYawFemale Auto
-GlobalVariable Property HandPositionXCircletFemale Auto
-GlobalVariable Property HandPositionYCircletFemale Auto
-GlobalVariable Property HandPositionZCircletFemale Auto
-GlobalVariable Property HandRotationPitchCircletFemale Auto
-GlobalVariable Property HandRotationRollCircletFemale Auto
-GlobalVariable Property HandRotationYawCircletFemale Auto
-
-;--- Private Variables ----------------------------------------------------
-Bool migrated = False
-String plugin = "ReadTheRoom.esp"
+Import IED
+Int OID_ManageFollowers
+Int OID_CombatEquip
+Int OID_CombatEquipAnimation
+Int OID_ManageCirclets
+Int OID_RemoveHelmetWithoutArmor
+Int OID_EquipWhenSafe
+Int OID_UnequipWhenUnsafe
+Int OID_AddPerk
+Int OID_RemovePerk
+Int OID_DeleteAll
+Int OID_ToggleKey
+Int OID_DeleteKey
+Int OID_EnableKey
+Int OID_HipPositionX
+Int OID_HipPositionY
+Int OID_HipPositionZ
+Int OID_HipRotationPitch
+Int OID_HipRotationRoll
+Int OID_HipRotationYaw
+Int OID_HipPositionXCirclet
+Int OID_HipPositionYCirclet
+Int OID_HipPositionZCirclet
+Int OID_HipRotationPitchCirclet
+Int OID_HipRotationRollCirclet
+Int OID_HipRotationYawCirclet
+Int OID_HandPositionX
+Int OID_HandPositionY
+Int OID_HandPositionZ
+Int OID_HandRotationPitch
+Int OID_HandRotationRoll
+Int OID_HandRotationYaw
+Int OID_HandPositionXCirclet
+Int OID_HandPositionYCirclet
+Int OID_HandPositionZCirclet
+Int OID_HandRotationPitchCirclet
+Int OID_HandRotationRollCirclet
+Int OID_HandRotationYawCirclet
+Int OID_HipPositionXFemale
+Int OID_HipPositionYFemale
+Int OID_HipPositionZFemale
+Int OID_HipRotationPitchFemale
+Int OID_HipRotationRollFemale
+Int OID_HipRotationYawFemale
+Int OID_HipPositionXCircletFemale
+Int OID_HipPositionYCircletFemale
+Int OID_HipPositionZCircletFemale
+Int OID_HipRotationPitchCircletFemale
+Int OID_HipRotationRollCircletFemale
+Int OID_HipRotationYawCircletFemale
+Int OID_HandPositionXFemale
+Int OID_HandPositionYFemale
+Int OID_HandPositionZFemale
+Int OID_HandRotationPitchFemale
+Int OID_HandRotationRollFemale
+Int OID_HandRotationYawFemale
+Int OID_HandPositionXCircletFemale
+Int OID_HandPositionYCircletFemale
+Int OID_HandPositionZCircletFemale
+Int OID_HandRotationPitchCircletFemale
+Int OID_HandRotationRollCircletFemale
+Int OID_HandRotationYawCircletFemale
+Int CurrentEquipWhenSafe = 0
+Int CurrentUnequipWhenUnsafe = 0
 Actor player
+String[] EquipOptions
+String[] UnequipOptions
+String plugin = "ReadTheRoom.esp"
+String precision = "{1}"
+Bool CombatEquipVal
+Bool CombatEquipAnimationVal
+Bool ManageCircletsVal
+Bool RemoveHelmetWithoutArmorVal
+Bool ManageFollowersVal
 
-;--- Functions ------------------------------------------------------------
-
-; Returns version of this script.
-Int Function GetVersion()
-    return 1 ;MCM Helper
-EndFunction 
-
-; Event called periodically if the active magic effect/alias/form is registered for update events. This event will not be sent if the game is in menu mode. 
-Event OnUpdate()
-    parent.OnUpdate()
-    If !migrated
-        MigrateToMCMHelper()
-        migrated = True
-        VerboseMessage("OnUpdate: Settings imported!")
-    EndIf
-EndEvent
-
-; Called when game is reloaded.
-Event OnGameReload()
-    parent.OnGameReload()
-    If !migrated
-        MigrateToMCMHelper()
-        migrated = True
-        VerboseMessage("OnGameReload: Settings imported!")
-    EndIf
-    If GetModSettingBool("bLoadSettingsonReload:Maintenance")
-        LoadSettings()
-        VerboseMessage("OnGameReload: Settings autoloaded!")
-    EndIf
-EndEvent
-
-; Called when this config menu is opened.
-Event OnConfigOpen()
-    parent.OnConfigOpen()
-    If !migrated
-        MigrateToMCMHelper()
-        migrated = True
-        VerboseMessage("OnConfigOpen: Settings imported!")
-    EndIf
-EndEvent
-
-; Called when a new page is selected, including the initial empty page.
-Event OnPageSelect(String a_page)
-    parent.OnPageSelect(a_page)
-    SetModSettingString("sAddPerk:TroubleshootingUninstall", "Enable Mod - Player")
-    SetModSettingString("sRemovePerk:TroubleshootingUninstall", "Disabe Mod - Player")
-    SetModSettingString("sDisableAllHelmets:TroubleshootingUninstall", "Clear any placed headgear")
-    RefreshMenu()
-EndEvent
-
-; Called when this config menu is initialized.
 Event OnConfigInit()
-    parent.OnConfigInit()
-    migrated = True
-    LoadSettings()
+	EquipOptions = new string[3]
+	EquipOptions[0] = "Nearing danger"
+	EquipOptions[1] = "Leaving safety"
+	EquipOptions[2] = "Only with toggle key"
+	UnequipOptions = new string[3]
+	UnequipOptions[0] = "Entering safety"
+	UnequipOptions[1] = "Leaving danger"
+	UnequipOptions[2] = "Only with toggle key"
+	
+	Pages = new string[2]
+	Pages[0] = "General"
+	Pages[1] = "Positioning"
+	
+	if CombatEquip.GetValue() == 1
+		CombatEquipVal = true
+	else
+		CombatEquipVal = false
+	endif
+	if CombatEquipAnimation.GetValue() == 1
+		CombatEquipAnimationVal = true
+	else
+		CombatEquipAnimationVal = false
+	endif
+	if ManageCirclets.GetValue() == 1
+		ManageCircletsVal = true
+	else
+		ManageCircletsVal = false
+	endif
+	if RemoveHelmetWithoutArmor.GetValue() == 1
+		RemoveHelmetWithoutArmorVal = true
+	else
+		RemoveHelmetWithoutArmorVal = false
+	endif
+	if ManageFollowers.GetValue() == 1
+		ManageFollowersVal = true
+	else
+		ManageFollowersVal = false
+	endif
 EndEvent
 
-; Called when setting changed to different value.
-Event OnSettingChange(String a_ID)
-    parent.OnSettingChange(a_ID)
-    If a_ID == "iEquipWhen:HelmetEquipUnequip"
-        EquipWhenSafe.SetValue(GetModSettingInt("iEquipWhen:HelmetEquipUnequip") as Float)
-    ElseIf a_ID == "iUnequipWhen:HelmetEquipUnequip"
-        UnequipWhenUnsafe.SetValue(GetModSettingInt("iUnequipWhen:HelmetEquipUnequip") as Float)
-    ElseIf a_ID == "bManageFollowerHeadgear:HelmetEquipUnequip"
-        ManageFollowers.SetValue(GetModSettingBool("bManageFollowerHeadgear:HelmetEquipUnequip") as Float)
-    ElseIf a_ID == "bCombatEquip:HelmetEquipUnequip"
-        CombatEquip.SetValue(GetModSettingBool("bCombatEquip:HelmetEquipUnequip") as Float)
-    ElseIf a_ID == "bCombatequipusesanimation:HelmetEquipUnequip"
-        CombatEquipAnimation.SetValue(GetModSettingBool("bCombatequipusesanimation:HelmetEquipUnequip") as Float)
-    ElseIf a_ID == "bManageCircletslikeHelmets:HelmetEquipUnequip"
-        ManageCirclets.SetValue(GetModSettingBool("bManageCircletslikeHelmets:HelmetEquipUnequip") as Float)
-    ElseIf a_ID == "bRequirearmorforhipplacement:HelmetEquipUnequip"
-        RemoveHelmetWithoutArmor.SetValue(GetModSettingBool("bRequirearmorforhipplacement:HelmetEquipUnequip") as Float)
-    ElseIf a_ID == "iToggleequipped:Keybinds"
-        ToggleKey.SetValue(GetModSettingInt("iToggleequipped:Keybinds") as Float)
-        HotkeyGuard("iToggleequipped:Keybinds", ToggleKey)
-    ElseIf a_ID == "iClearplacedheadgear:Keybinds"
-        DeleteKey.SetValue(GetModSettingInt("iClearplacedheadgear:Keybinds") as Float)
-        HotkeyGuard("iClearplacedheadgear:Keybinds", DeleteKey)
-    ElseIf a_ID == "iDisablesPlayerFunctionality:Keybinds"
-        EnableKey.SetValue(GetModSettingInt("iDisablesPlayerFunctionality:Keybinds") as Float)
-        HotkeyGuard("iDisablesPlayerFunctionality:Keybinds", EnableKey)
-    ElseIf a_ID == "fX:HelmetHipPositionMale"
-        HipPositionX.SetValue(GetModSettingFloat("fX:HelmetHipPositionMale") as Float)
-    ElseIf a_ID == "fY:HelmetHipPositionMale"
-        HipPositionY.SetValue(GetModSettingFloat("fY:HelmetHipPositionMale") as Float)
-    ElseIf a_ID == "fZ:HelmetHipPositionMale"
-        HipPositionZ.SetValue(GetModSettingFloat("fZ:HelmetHipPositionMale") as Float)
-    ElseIf a_ID == "fPitch:HelmetHipPositionMale"
-        HipRotationPitch.SetValue(GetModSettingFloat("fPitch:HelmetHipPositionMale") as Float)
-    ElseIf a_ID == "fRoll:HelmetHipPositionMale"
-        HipRotationRoll.SetValue(GetModSettingFloat("fRoll:HelmetHipPositionMale") as Float)
-    ElseIf a_ID == "fYaw:HelmetHipPositionMale"
-        HipRotationYaw.SetValue(GetModSettingFloat("fYaw:HelmetHipPositionMale") as Float)
-    ElseIf a_ID == "fX:CircletHipPositionMale"
-        HipPositionXCirclet.SetValue(GetModSettingFloat("fX:CircletHipPositionMale") as Float)
-    ElseIf a_ID == "fY:CircletHipPositionMale"
-        HipPositionYCirclet.SetValue(GetModSettingFloat("fY:CircletHipPositionMale") as Float)
-    ElseIf a_ID == "fZ:CircletHipPositionMale"
-        HipPositionZCirclet.SetValue(GetModSettingFloat("fZ:CircletHipPositionMale") as Float)
-    ElseIf a_ID == "fPitch:CircletHipPositionMale"
-        HipRotationPitchCirclet.SetValue(GetModSettingFloat("fPitch:CircletHipPositionMale") as Float)
-    ElseIf a_ID == "fRoll:CircletHipPositionMale"
-        HipRotationRollCirclet.SetValue(GetModSettingFloat("fRoll:CircletHipPositionMale") as Float)
-    ElseIf a_ID == "fYaw:CircletHipPositionMale"
-        HipRotationYawCirclet.SetValue(GetModSettingFloat("fYaw:CircletHipPositionMale") as Float)
-    ElseIf a_ID == "fX:HelmetHandPositionMale"
-        HandPositionX.SetValue(GetModSettingFloat("fX:HelmetHandPositionMale") as Float)
-    ElseIf a_ID == "fY:HelmetHandPositionMale"
-        HandPositionY.SetValue(GetModSettingFloat("fY:HelmetHandPositionMale") as Float)
-    ElseIf a_ID == "fZ:HelmetHandPositionMale"
-        HandPositionZ.SetValue(GetModSettingFloat("fZ:HelmetHandPositionMale") as Float)
-    ElseIf a_ID == "fPitch:HelmetHandPositionMale"
-        HandRotationPitch.SetValue(GetModSettingFloat("fPitch:HelmetHandPositionMale") as Float)
-    ElseIf a_ID == "fRoll:HelmetHandPositionMale"
-        HandRotationRoll.SetValue(GetModSettingFloat("fRoll:HelmetHandPositionMale") as Float)
-    ElseIf a_ID == "fYaw:HelmetHandPositionMale"
-        HandRotationYaw.SetValue(GetModSettingFloat("fYaw:HelmetHandPositionMale") as Float)
-    ElseIf a_ID == "fX:CircletHandPositionMale"
-        HandPositionXCirclet.SetValue(GetModSettingFloat("fX:CircletHandPositionMale") as Float)
-    ElseIf a_ID == "fY:CircletHandPositionMale"
-        HandPositionYCirclet.SetValue(GetModSettingFloat("fY:CircletHandPositionMale") as Float)
-    ElseIf a_ID == "fZ:CircletHandPositionMale"
-        HandPositionZCirclet.SetValue(GetModSettingFloat("fZ:CircletHandPositionMale") as Float)
-    ElseIf a_ID == "fPitch:CircletHandPositionMale"
-        HandRotationPitchCirclet.SetValue(GetModSettingFloat("fPitch:CircletHandPositionMale") as Float)
-    ElseIf a_ID == "fRoll:CircletHandPositionMale"
-        HandRotationRollCirclet.SetValue(GetModSettingFloat("fRoll:CircletHandPositionMale") as Float)
-    ElseIf a_ID == "fYaw:CircletHandPositionMale"
-        HandRotationYawCirclet.SetValue(GetModSettingFloat("fYaw:CircletHandPositionMale") as Float)
-    ElseIf a_ID == "fX:HelmetHipPositionFemale"
-        HipPositionXFemale.SetValue(GetModSettingFloat("fX:HelmetHipPositionFemale") as Float)
-    ElseIf a_ID == "fY:HelmetHipPositionFemale"
-        HipPositionYFemale.SetValue(GetModSettingFloat("fY:HelmetHipPositionFemale") as Float)
-    ElseIf a_ID == "fZ:HelmetHipPositionFemale"
-        HipPositionZFemale.SetValue(GetModSettingFloat("fZ:HelmetHipPositionFemale") as Float)
-    ElseIf a_ID == "fPitch:HelmetHipPositionFemale"
-        HipRotationPitchFemale.SetValue(GetModSettingFloat("fPitch:HelmetHipPositionFemale") as Float)
-    ElseIf a_ID == "fRoll:HelmetHipPositionFemale"
-        HipRotationRollFemale.SetValue(GetModSettingFloat("fRoll:HelmetHipPositionFemale") as Float)
-    ElseIf a_ID == "fYaw:HelmetHipPositionFemale"
-        HipRotationYawFemale.SetValue(GetModSettingFloat("fYaw:HelmetHipPositionFemale") as Float)
-    ElseIf a_ID == "fX:CircletHipPositionFemale"
-        HipPositionXCircletFemale.SetValue(GetModSettingFloat("fX:CircletHipPositionFemale") as Float)
-    ElseIf a_ID == "fY:CircletHipPositionFemale"
-        HipPositionYCircletFemale.SetValue(GetModSettingFloat("fY:CircletHipPositionFemale") as Float)
-    ElseIf a_ID == "fZ:CircletHipPositionFemale"
-        HipPositionZCircletFemale.SetValue(GetModSettingFloat("fZ:CircletHipPositionFemale") as Float)
-    ElseIf a_ID == "fPitch:CircletHipPositionFemale"
-        HipRotationPitchCircletFemale.SetValue(GetModSettingFloat("fPitch:CircletHipPositionFemale") as Float)
-    ElseIf a_ID == "fRoll:CircletHipPositionFemale"
-        HipRotationRollCircletFemale.SetValue(GetModSettingFloat("fRoll:CircletHipPositionFemale") as Float)
-    ElseIf a_ID == "fYaw:CircletHipPositionFemale"
-        HipRotationYawCircletFemale.SetValue(GetModSettingFloat("fYaw:CircletHipPositionFemale") as Float)
-    ElseIf a_ID == "fX:HelmetHandPositionFemale"
-        HandPositionXFemale.SetValue(GetModSettingFloat("fX:HelmetHandPositionFemale") as Float)
-    ElseIf a_ID == "fY:HelmetHandPositionFemale"
-        HandPositionYFemale.SetValue(GetModSettingFloat("fY:HelmetHandPositionFemale") as Float)
-    ElseIf a_ID == "fZ:HelmetHandPositionFemale"
-        HandPositionZFemale.SetValue(GetModSettingFloat("fZ:HelmetHandPositionFemale") as Float)
-    ElseIf a_ID == "fPitch:HelmetHandPositionFemale"
-        HandRotationPitchFemale.SetValue(GetModSettingFloat("fPitch:HelmetHandPositionFemale") as Float)
-    ElseIf a_ID == "fRoll:HelmetHandPositionFemale"
-        HandRotationRollFemale.SetValue(GetModSettingFloat("fRoll:HelmetHandPositionFemale") as Float)
-    ElseIf a_ID == "fYaw:HelmetHandPositionFemale"
-        HandRotationYawFemale.SetValue(GetModSettingFloat("fYaw:HelmetHandPositionFemale") as Float)
-    ElseIf a_ID == "fX:CircletHandPositionFemale"
-        HandPositionXCircletFemale.SetValue(GetModSettingFloat("fX:CircletHandPositionFemale") as Float)
-    ElseIf a_ID == "fY:CircletHandPositionFemale"
-        HandPositionYCircletFemale.SetValue(GetModSettingFloat("fY:CircletHandPositionFemale") as Float)
-    ElseIf a_ID == "fZ:CircletHandPositionFemale"
-        HandPositionZCircletFemale.SetValue(GetModSettingFloat("fZ:CircletHandPositionFemale") as Float)
-    ElseIf a_ID == "fPitch:CircletHandPositionFemale"
-        HandRotationPitchCircletFemale.SetValue(GetModSettingFloat("fPitch:CircletHandPositionFemale") as Float)
-    ElseIf a_ID == "fRoll:CircletHandPositionFemale"
-        HandRotationRollCircletFemale.SetValue(GetModSettingFloat("fRoll:CircletHandPositionFemale") as Float)
-    ElseIf a_ID == "fYaw:CircletHandPositionFemale"
-        HandRotationYawCircletFemale.SetValue(GetModSettingFloat("fYaw:CircletHandPositionFemale") as Float)
-    EndIf
+Event OnPageReset(String page)
+	SetCursorFillMode(TOP_TO_BOTTOM)
+	SetCursorPosition(0)
+	if page == "General"
+		AddHeaderOption("Helmet Equip/Unequip")
+		OID_EquipWhenSafe = AddMenuOption("Equip When:", EquipOptions[CurrentEquipWhenSafe])
+		OID_UnequipWhenUnsafe = AddMenuOption("Unequip When:", UnequipOptions[CurrentUnequipWhenUnsafe])
+		OID_ManageFollowers = AddToggleOption("Manage Follower Headgear", ManageFollowersVal)
+		OID_CombatEquip = AddToggleOption("Combat Equip", CombatEquipVal)
+		OID_CombatEquipAnimation = AddToggleOption("Combat equip uses animation", CombatEquipAnimationVal)
+		OID_ManageCirclets = AddToggleOption("Manage Circlets like Helmets", ManageCircletsVal)
+		OID_RemoveHelmetWithoutArmor = AddToggleOption("Require armor for hip placement", RemoveHelmetWithoutArmorVal)
+		AddHeaderOption("Keybinds")
+		OID_ToggleKey = AddKeyMapOption("Toggle equipped:", ToggleKey.GetValueInt(), 0)
+		OID_DeleteKey = AddKeyMapOption("Clear placed headgear:", DeleteKey.GetValueInt(), 0)
+		OID_EnableKey = AddKeyMapOption("Disables Player Functionality:", EnableKey.GetValueInt(), 0)
+		AddEmptyOption()
+		AddHeaderOption("Troubleshooting/Uninstall")
+		OID_AddPerk = AddTextOption("", "Enable Mod - Player")
+		OID_RemovePerk = AddTextOption("", "Disabe Mod - Player")
+		OID_DeleteAll = AddTextOption("", "Clear any placed headgear")
+	endif
+	if page == "Positioning"
+		AddHeaderOption("Helmet Hip Position - Male")
+		OID_HipPositionX = AddSliderOption("X:", HipPositionX.GetValue(), precision)
+		OID_HipPositionY = AddSliderOption("Y:", HipPositionY.GetValue(), precision)
+		OID_HipPositionZ = AddSliderOption("Z:", HipPositionZ.GetValue(), precision)
+		OID_HipRotationPitch = AddSliderOption("Pitch:", HipRotationPitch.GetValue(), precision)
+		OID_HipRotationRoll = AddSliderOption("Roll:", HipRotationRoll.GetValue(), precision)
+		OID_HipRotationYaw = AddSliderOption("Yaw:", HipRotationYaw.GetValue(), precision)
+		AddEmptyOption()
+		AddHeaderOption("Circlet Hip Position - Male")
+		OID_HipPositionXCirclet = AddSliderOption("X:", HipPositionXCirclet.GetValue(), precision)
+		OID_HipPositionYCirclet = AddSliderOption("Y:", HipPositionYCirclet.GetValue(), precision)
+		OID_HipPositionZCirclet = AddSliderOption("Z:", HipPositionZCirclet.GetValue(), precision)
+		OID_HipRotationPitchCirclet = AddSliderOption("Pitch:", HipRotationPitchCirclet.GetValue(), precision)
+		OID_HipRotationRollCirclet = AddSliderOption("Roll:", HipRotationRollCirclet.GetValue(), precision)
+		OID_HipRotationYawCirclet = AddSliderOption("Yaw:", HipRotationYawCirclet.GetValue(), precision)
+		AddEmptyOption()
+		AddHeaderOption("Helmet Hand Position - Male")
+		OID_HandPositionX = AddSliderOption("X:", HandPositionX.GetValue(), precision)
+		OID_HandPositionY = AddSliderOption("Y:", HandPositionY.GetValue(), precision)
+		OID_HandPositionZ = AddSliderOption("Z:", HandPositionZ.GetValue(), precision)
+		OID_HandRotationPitch = AddSliderOption("Pitch:", HandRotationPitch.GetValue(), precision)
+		OID_HandRotationRoll = AddSliderOption("Roll:", HandRotationRoll.GetValue(), precision)
+		OID_HandRotationYaw = AddSliderOption("Yaw:", HandRotationYaw.GetValue(), precision)
+		AddEmptyOption()
+		AddHeaderOption("Circlet Hand Position - Male")
+		OID_HandPositionXCirclet = AddSliderOption("X:", HandPositionXCirclet.GetValue(), precision)
+		OID_HandPositionYCirclet = AddSliderOption("Y:", HandPositionYCirclet.GetValue(), precision)
+		OID_HandPositionZCirclet = AddSliderOption("Z:", HandPositionZCirclet.GetValue(), precision)
+		OID_HandRotationPitchCirclet = AddSliderOption("Pitch:", HandRotationPitchCirclet.GetValue(), precision)
+		OID_HandRotationRollCirclet = AddSliderOption("Roll:", HandRotationRollCirclet.GetValue(), precision)
+		OID_HandRotationYawCirclet = AddSliderOption("Yaw:", HandRotationYawCirclet.GetValue(), precision)
+		
+		AddHeaderOption("Helmet Hip Position - Female")
+		OID_HipPositionXFemale = AddSliderOption("X:", HipPositionXFemale.GetValue(), precision)
+		OID_HipPositionYFemale = AddSliderOption("Y:", HipPositionYFemale.GetValue(), precision)
+		OID_HipPositionZFemale = AddSliderOption("Z:", HipPositionZFemale.GetValue(), precision)
+		OID_HipRotationPitchFemale = AddSliderOption("Pitch:", HipRotationPitchFemale.GetValue(), precision)
+		OID_HipRotationRollFemale = AddSliderOption("Roll:", HipRotationRollFemale.GetValue(), precision)
+		OID_HipRotationYawFemale = AddSliderOption("Yaw:", HipRotationYawFemale.GetValue(), precision)
+		AddEmptyOption()
+		AddHeaderOption("Circlet Hip Position - Female")
+		OID_HipPositionXCircletFemale = AddSliderOption("X:", HipPositionXCircletFemale.GetValue(), precision)
+		OID_HipPositionYCircletFemale = AddSliderOption("Y:", HipPositionYCircletFemale.GetValue(), precision)
+		OID_HipPositionZCircletFemale = AddSliderOption("Z:", HipPositionZCircletFemale.GetValue(), precision)
+		OID_HipRotationPitchCircletFemale = AddSliderOption("Pitch:", HipRotationPitchCircletFemale.GetValue(), precision)
+		OID_HipRotationRollCircletFemale = AddSliderOption("Roll:", HipRotationRollCircletFemale.GetValue(), precision)
+		OID_HipRotationYawCircletFemale = AddSliderOption("Yaw:", HipRotationYawCircletFemale.GetValue(), precision)
+		AddEmptyOption()
+		AddHeaderOption("Helmet Hand Position - Female")
+		OID_HandPositionXFemale = AddSliderOption("X:", HandPositionXFemale.GetValue(), precision)
+		OID_HandPositionYFemale = AddSliderOption("Y:", HandPositionYFemale.GetValue(), precision)
+		OID_HandPositionZFemale = AddSliderOption("Z:", HandPositionZFemale.GetValue(), precision)
+		OID_HandRotationPitchFemale = AddSliderOption("Pitch:", HandRotationPitchFemale.GetValue(), precision)
+		OID_HandRotationRollFemale = AddSliderOption("Roll:", HandRotationRollFemale.GetValue(), precision)
+		OID_HandRotationYawFemale = AddSliderOption("Yaw:", HandRotationYawFemale.GetValue(), precision)
+		AddEmptyOption()
+		AddHeaderOption("Circlet Hand Position - Female")
+		OID_HandPositionXCircletFemale = AddSliderOption("X:", HandPositionXCircletFemale.GetValue(), precision)
+		OID_HandPositionYCircletFemale = AddSliderOption("Y:", HandPositionYCircletFemale.GetValue(), precision)
+		OID_HandPositionZCircletFemale = AddSliderOption("Z:", HandPositionZCircletFemale.GetValue(), precision)
+		OID_HandRotationPitchCircletFemale = AddSliderOption("Pitch:", HandRotationPitchCircletFemale.GetValue(), precision)
+		OID_HandRotationRollCircletFemale = AddSliderOption("Roll:", HandRotationRollCircletFemale.GetValue(), precision)
+		OID_HandRotationYawCircletFemale = AddSliderOption("Yaw:", HandRotationYawCircletFemale.GetValue(), precision)
+	endif
 EndEvent
 
-Function Default()
-    SetModSettingInt("iEquipWhen:HelmetEquipUnequip", 0)
-    SetModSettingInt("iUnequipWhen:HelmetEquipUnequip", 0)
-    SetModSettingBool("bManageFollowerHeadgear:HelmetEquipUnequip", True)
-    SetModSettingBool("bCombatEquip:HelmetEquipUnequip", True)
-    SetModSettingBool("bCombatequipusesanimation:HelmetEquipUnequip", True)
-    SetModSettingBool("bManageCircletslikeHelmets:HelmetEquipUnequip", True)
-    SetModSettingBool("bRequirearmorforhipplacement:HelmetEquipUnequip", True)
-    SetModSettingInt("iToggleequipped:Keybinds", 27)
-    SetModSettingInt("iClearplacedheadgear:Keybinds", 40)
-    SetModSettingInt("iDisablesPlayerFunctionality:Keybinds", 26)
-    SetModSettingFloat("fX:HelmetHipPositionMale", 12.8)
-    SetModSettingFloat("fY:HelmetHipPositionMale", -10.25)
-    SetModSettingFloat("fZ:HelmetHipPositionMale", -0.65)
-    SetModSettingFloat("fPitch:HelmetHipPositionMale", -52.9)
-    SetModSettingFloat("fRoll:HelmetHipPositionMale", 15.0)
-    SetModSettingFloat("fYaw:HelmetHipPositionMale", 94.5)
-    SetModSettingFloat("fX:CircletHipPositionMale", 12.8)
-    SetModSettingFloat("fY:CircletHipPositionMale", -10.25)
-    SetModSettingFloat("fZ:CircletHipPositionMale", -0.65)
-    SetModSettingFloat("fPitch:CircletHipPositionMale", 46.0)
-    SetModSettingFloat("fRoll:CircletHipPositionMale", 15.0)
-    SetModSettingFloat("fYaw:CircletHipPositionMale", 68.9)
-    SetModSettingFloat("fX:HelmetHandPositionMale", 6.8)
-    SetModSettingFloat("fY:HelmetHandPositionMale", -11.75)
-    SetModSettingFloat("fZ:HelmetHandPositionMale", -10.85)
-    SetModSettingFloat("fPitch:HelmetHandPositionMale", 270.6)
-    SetModSettingFloat("fRoll:HelmetHandPositionMale", 0.44)
-    SetModSettingFloat("fYaw:HelmetHandPositionMale", 260.45)
-    SetModSettingFloat("fX:CircletHandPositionMale", -0.2)
-    SetModSettingFloat("fY:CircletHandPositionMale", -11.25)
-    SetModSettingFloat("fZ:CircletHandPositionMale", 10.85)
-    SetModSettingFloat("fPitch:CircletHandPositionMale", 270.6)
-    SetModSettingFloat("fRoll:CircletHandPositionMale", 22.94)
-    SetModSettingFloat("fYaw:CircletHandPositionMale", 260.45)
-    SetModSettingFloat("fX:HelmetHipPositionFemale", 12.8)
-    SetModSettingFloat("fY:HelmetHipPositionFemale", -10.25)
-    SetModSettingFloat("fZ:HelmetHipPositionFemale", -0.65)
-    SetModSettingFloat("fPitch:HelmetHipPositionFemale", -52.9)
-    SetModSettingFloat("fRoll:HelmetHipPositionFemale", 15.0)
-    SetModSettingFloat("fYaw:HelmetHipPositionFemale", 94.4)
-    SetModSettingFloat("fX:CircletHipPositionFemale", 12.8)
-    SetModSettingFloat("fY:CircletHipPositionFemale", -10.25)
-    SetModSettingFloat("fZ:CircletHipPositionFemale", -0.65)
-    SetModSettingFloat("fPitch:CircletHipPositionFemale", 46.0)
-    SetModSettingFloat("fRoll:CircletHipPositionFemale", 15.0)
-    SetModSettingFloat("fYaw:CircletHipPositionFemale", 68.9)
-    SetModSettingFloat("fX:HelmetHandPositionFemale", 8.0)
-    SetModSettingFloat("fY:HelmetHandPositionFemale", -15.0)
-    SetModSettingFloat("fZ:HelmetHandPositionFemale", 10.85)
-    SetModSettingFloat("fPitch:HelmetHandPositionFemale", 260.0)
-    SetModSettingFloat("fRoll:HelmetHandPositionFemale", 29.0)
-    SetModSettingFloat("fYaw:HelmetHandPositionFemale", 245.0)
-    SetModSettingFloat("fX:CircletHandPositionFemale", -0.2)
-    SetModSettingFloat("fY:CircletHandPositionFemale", -15.0)
-    SetModSettingFloat("fZ:CircletHandPositionFemale", 10.85)
-    SetModSettingFloat("fPitch:CircletHandPositionFemale", 270.6)
-    SetModSettingFloat("fRoll:CircletHandPositionFemale", 22.94)
-    SetModSettingFloat("fYaw:CircletHandPositionFemale", 260.45)
-    SetModSettingBool("bEnabled:Maintenance", True)
-    SetModSettingInt("iLoadingDelay:Maintenance", 0)
-    SetModSettingBool("bLoadSettingsonReload:Maintenance", False)
-    SetModSettingBool("bVerbose:Maintenance", False)
-    VerboseMessage("Settings reset!")
-    Load()
-EndFunction
+Event OnOptionSliderOpen(int a_option)
+	if a_option == OID_HipPositionX
+		SetSliderDialogStartValue(HipPositionX.GetValue())
+		SetSliderDialogDefaultValue(12.8)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipPositionY
+		SetSliderDialogStartValue(HipPositionY.GetValue())
+		SetSliderDialogDefaultValue(-10.25)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipPositionZ
+		SetSliderDialogStartValue(HipPositionZ.GetValue())
+		SetSliderDialogDefaultValue(-0.65)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipRotationPitch
+		SetSliderDialogStartValue(HipRotationPitch.GetValue())
+		SetSliderDialogDefaultValue(-52.9)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipRotationRoll
+		SetSliderDialogStartValue(HipRotationRoll.GetValue())
+		SetSliderDialogDefaultValue(15.0)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipRotationYaw
+		SetSliderDialogStartValue(HipRotationYaw.GetValue())
+		SetSliderDialogDefaultValue(94.5)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipPositionXCirclet
+		SetSliderDialogStartValue(HipPositionXCirclet.GetValue())
+		SetSliderDialogDefaultValue(12.8)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipPositionYCirclet
+		SetSliderDialogStartValue(HipPositionYCirclet.GetValue())
+		SetSliderDialogDefaultValue(-10.25)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipPositionZCirclet
+		SetSliderDialogStartValue(HipPositionZCirclet.GetValue())
+		SetSliderDialogDefaultValue(-0.65)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipRotationPitchCirclet
+		SetSliderDialogStartValue(HipRotationPitchCirclet.GetValue())
+		SetSliderDialogDefaultValue(46.0)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipRotationRollCirclet
+		SetSliderDialogStartValue(HipRotationRollCirclet.GetValue())
+		SetSliderDialogDefaultValue(15.0)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipRotationYawCirclet
+		SetSliderDialogStartValue(HipRotationYawCirclet.GetValue())
+		SetSliderDialogDefaultValue(68.9)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	
+	if a_option == OID_HandPositionX
+		SetSliderDialogStartValue(HandPositionX.GetValue())
+		SetSliderDialogDefaultValue(6.8)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandPositionY
+		SetSliderDialogStartValue(HandPositionY.GetValue())
+		SetSliderDialogDefaultValue(-11.75)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandPositionZ
+		SetSliderDialogStartValue(HandPositionZ.GetValue())
+		SetSliderDialogDefaultValue(-10.85)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandRotationPitch
+		SetSliderDialogStartValue(HandRotationPitch.GetValue())
+		SetSliderDialogDefaultValue(270.6)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandRotationRoll
+		SetSliderDialogStartValue(HandRotationRoll.GetValue())
+		SetSliderDialogDefaultValue(0.44)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandRotationYaw
+		SetSliderDialogStartValue(HandRotationYaw.GetValue())
+		SetSliderDialogDefaultValue(260.45)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandPositionXCirclet
+		SetSliderDialogStartValue(HandPositionXCirclet.GetValue())
+		SetSliderDialogDefaultValue(-0.2)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandPositionYCirclet
+		SetSliderDialogStartValue(HandPositionYCirclet.GetValue())
+		SetSliderDialogDefaultValue(-11.25)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandPositionZCirclet
+		SetSliderDialogStartValue(HandPositionZCirclet.GetValue())
+		SetSliderDialogDefaultValue(10.85)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandRotationPitchCirclet
+		SetSliderDialogStartValue(HandRotationPitchCirclet.GetValue())
+		SetSliderDialogDefaultValue(270.6)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandRotationRollCirclet
+		SetSliderDialogStartValue(HandRotationRollCirclet.GetValue())
+		SetSliderDialogDefaultValue(22.94)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandRotationYawCirclet
+		SetSliderDialogStartValue(HandRotationYawCirclet.GetValue())
+		SetSliderDialogDefaultValue(260.45)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	
+	if a_option == OID_HipPositionXFemale
+		SetSliderDialogStartValue(HipPositionXFemale.GetValue())
+		SetSliderDialogDefaultValue(12.8)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipPositionYFemale
+		SetSliderDialogStartValue(HipPositionYFemale.GetValue())
+		SetSliderDialogDefaultValue(-10.25)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipPositionZFemale
+		SetSliderDialogStartValue(HipPositionZFemale.GetValue())
+		SetSliderDialogDefaultValue(-0.65)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipRotationPitchFemale
+		SetSliderDialogStartValue(HipRotationPitchFemale.GetValue())
+		SetSliderDialogDefaultValue(-52.9)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipRotationRollFemale
+		SetSliderDialogStartValue(HipRotationRollFemale.GetValue())
+		SetSliderDialogDefaultValue(15.0)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipRotationYaw
+		SetSliderDialogStartValue(HipRotationYaw.GetValue())
+		SetSliderDialogDefaultValue(94.5)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipPositionXCircletFemale
+		SetSliderDialogStartValue(HipPositionXCircletFemale.GetValue())
+		SetSliderDialogDefaultValue(12.8)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipPositionYCircletFemale
+		SetSliderDialogStartValue(HipPositionYCircletFemale.GetValue())
+		SetSliderDialogDefaultValue(-10.25)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipPositionZCircletFemale
+		SetSliderDialogStartValue(HipPositionZCircletFemale.GetValue())
+		SetSliderDialogDefaultValue(-0.65)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipRotationPitchCircletFemale
+		SetSliderDialogStartValue(HipRotationPitchCircletFemale.GetValue())
+		SetSliderDialogDefaultValue(46.0)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipRotationRollCircletFemale
+		SetSliderDialogStartValue(HipRotationRollCircletFemale.GetValue())
+		SetSliderDialogDefaultValue(15.0)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HipRotationYawCircletFemale
+		SetSliderDialogStartValue(HipRotationYawCircletFemale.GetValue())
+		SetSliderDialogDefaultValue(68.9)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	
+	if a_option == OID_HandPositionXFemale
+		SetSliderDialogStartValue(HandPositionXFemale.GetValue())
+		SetSliderDialogDefaultValue(6.8)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandPositionYFemale
+		SetSliderDialogStartValue(HandPositionYFemale.GetValue())
+		SetSliderDialogDefaultValue(-11.75)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandPositionZFemale
+		SetSliderDialogStartValue(HandPositionZFemale.GetValue())
+		SetSliderDialogDefaultValue(-10.85)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandRotationPitchFemale
+		SetSliderDialogStartValue(HandRotationPitchFemale.GetValue())
+		SetSliderDialogDefaultValue(270.6)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandRotationRollFemale
+		SetSliderDialogStartValue(HandRotationRollFemale.GetValue())
+		SetSliderDialogDefaultValue(0.44)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandRotationYawFemale
+		SetSliderDialogStartValue(HandRotationYawFemale.GetValue())
+		SetSliderDialogDefaultValue(260.45)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandPositionXCircletFemale
+		SetSliderDialogStartValue(HandPositionXCircletFemale.GetValue())
+		SetSliderDialogDefaultValue(-0.2)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandPositionYCircletFemale
+		SetSliderDialogStartValue(HandPositionYCircletFemale.GetValue())
+		SetSliderDialogDefaultValue(-11.25)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandPositionZCircletFemale
+		SetSliderDialogStartValue(HandPositionZCircletFemale.GetValue())
+		SetSliderDialogDefaultValue(10.85)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandRotationPitchCircletFemale
+		SetSliderDialogStartValue(HandRotationPitchCircletFemale.GetValue())
+		SetSliderDialogDefaultValue(270.6)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandRotationRollCircletFemale
+		SetSliderDialogStartValue(HandRotationRollCircletFemale.GetValue())
+		SetSliderDialogDefaultValue(22.94)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+	if a_option == OID_HandRotationYawCircletFemale
+		SetSliderDialogStartValue(HandRotationYawCircletFemale.GetValue())
+		SetSliderDialogDefaultValue(260.45)
+		SetSliderDialogRange(-360, 360)
+		SetSliderDialogInterval(0.1)
+	endif
+EndEvent
 
-Function Load()
-    EquipWhenSafe.SetValue(GetModSettingInt("iEquipWhen:HelmetEquipUnequip") as Float)
-    UnequipWhenUnsafe.SetValue(GetModSettingInt("iUnequipWhen:HelmetEquipUnequip") as Float)
-    ManageFollowers.SetValue(GetModSettingBool("bManageFollowerHeadgear:HelmetEquipUnequip") as Float)
-    CombatEquip.SetValue(GetModSettingBool("bCombatEquip:HelmetEquipUnequip") as Float)
-    CombatEquipAnimation.SetValue(GetModSettingBool("bCombatequipusesanimation:HelmetEquipUnequip") as Float)
-    ManageCirclets.SetValue(GetModSettingBool("bManageCircletslikeHelmets:HelmetEquipUnequip") as Float)
-    RemoveHelmetWithoutArmor.SetValue(GetModSettingBool("bRequirearmorforhipplacement:HelmetEquipUnequip") as Float)
-    ToggleKey.SetValue(GetModSettingInt("iToggleequipped:Keybinds") as Float)
-    DeleteKey.SetValue(GetModSettingInt("iClearplacedheadgear:Keybinds") as Float)
-    EnableKey.SetValue(GetModSettingInt("iDisablesPlayerFunctionality:Keybinds") as Float)
-    player = Game.GetPlayer()
-    player.removeperk(ReadTheRoomPerk)
-    player.addperk(ReadTheRoomPerk)
-    HipPositionX.SetValue(GetModSettingFloat("fX:HelmetHipPositionMale") as Float)
-    HipPositionY.SetValue(GetModSettingFloat("fY:HelmetHipPositionMale") as Float)
-    HipPositionZ.SetValue(GetModSettingFloat("fZ:HelmetHipPositionMale") as Float)
-    HipRotationPitch.SetValue(GetModSettingFloat("fPitch:HelmetHipPositionMale") as Float)
-    HipRotationRoll.SetValue(GetModSettingFloat("fRoll:HelmetHipPositionMale") as Float)
-    HipRotationYaw.SetValue(GetModSettingFloat("fYaw:HelmetHipPositionMale") as Float)
-    HipPositionXCirclet.SetValue(GetModSettingFloat("fX:CircletHipPositionMale") as Float)
-    HipPositionYCirclet.SetValue(GetModSettingFloat("fY:CircletHipPositionMale") as Float)
-    HipPositionZCirclet.SetValue(GetModSettingFloat("fZ:CircletHipPositionMale") as Float)
-    HipRotationPitchCirclet.SetValue(GetModSettingFloat("fPitch:CircletHipPositionMale") as Float)
-    HipRotationRollCirclet.SetValue(GetModSettingFloat("fRoll:CircletHipPositionMale") as Float)
-    HipRotationYawCirclet.SetValue(GetModSettingFloat("fYaw:CircletHipPositionMale") as Float)
-    HandPositionX.SetValue(GetModSettingFloat("fX:HelmetHandPositionMale") as Float)
-    HandPositionY.SetValue(GetModSettingFloat("fY:HelmetHandPositionMale") as Float)
-    HandPositionZ.SetValue(GetModSettingFloat("fZ:HelmetHandPositionMale") as Float)
-    HandRotationPitch.SetValue(GetModSettingFloat("fPitch:HelmetHandPositionMale") as Float)
-    HandRotationRoll.SetValue(GetModSettingFloat("fRoll:HelmetHandPositionMale") as Float)
-    HandRotationYaw.SetValue(GetModSettingFloat("fYaw:HelmetHandPositionMale") as Float)
-    HandPositionXCirclet.SetValue(GetModSettingFloat("fX:CircletHandPositionMale") as Float)
-    HandPositionYCirclet.SetValue(GetModSettingFloat("fY:CircletHandPositionMale") as Float)
-    HandPositionZCirclet.SetValue(GetModSettingFloat("fZ:CircletHandPositionMale") as Float)
-    HandRotationPitchCirclet.SetValue(GetModSettingFloat("fPitch:CircletHandPositionMale") as Float)
-    HandRotationRollCirclet.SetValue(GetModSettingFloat("fRoll:CircletHandPositionMale") as Float)
-    HandRotationYawCirclet.SetValue(GetModSettingFloat("fYaw:CircletHandPositionMale") as Float)
-    HipPositionXFemale.SetValue(GetModSettingFloat("fX:HelmetHipPositionFemale") as Float)
-    HipPositionYFemale.SetValue(GetModSettingFloat("fY:HelmetHipPositionFemale") as Float)
-    HipPositionZFemale.SetValue(GetModSettingFloat("fZ:HelmetHipPositionFemale") as Float)
-    HipRotationPitchFemale.SetValue(GetModSettingFloat("fPitch:HelmetHipPositionFemale") as Float)
-    HipRotationRollFemale.SetValue(GetModSettingFloat("fRoll:HelmetHipPositionFemale") as Float)
-    HipRotationYawFemale.SetValue(GetModSettingFloat("fYaw:HelmetHipPositionFemale") as Float)
-    HipPositionXCircletFemale.SetValue(GetModSettingFloat("fX:CircletHipPositionFemale") as Float)
-    HipPositionYCircletFemale.SetValue(GetModSettingFloat("fY:CircletHipPositionFemale") as Float)
-    HipPositionZCircletFemale.SetValue(GetModSettingFloat("fZ:CircletHipPositionFemale") as Float)
-    HipRotationPitchCircletFemale.SetValue(GetModSettingFloat("fPitch:CircletHipPositionFemale") as Float)
-    HipRotationRollCircletFemale.SetValue(GetModSettingFloat("fRoll:CircletHipPositionFemale") as Float)
-    HipRotationYawCircletFemale.SetValue(GetModSettingFloat("fYaw:CircletHipPositionFemale") as Float)
-    HandPositionXFemale.SetValue(GetModSettingFloat("fX:HelmetHandPositionFemale") as Float)
-    HandPositionYFemale.SetValue(GetModSettingFloat("fY:HelmetHandPositionFemale") as Float)
-    HandPositionZFemale.SetValue(GetModSettingFloat("fZ:HelmetHandPositionFemale") as Float)
-    HandRotationPitchFemale.SetValue(GetModSettingFloat("fPitch:HelmetHandPositionFemale") as Float)
-    HandRotationRollFemale.SetValue(GetModSettingFloat("fRoll:HelmetHandPositionFemale") as Float)
-    HandRotationYawFemale.SetValue(GetModSettingFloat("fYaw:HelmetHandPositionFemale") as Float)
-    HandPositionXCircletFemale.SetValue(GetModSettingFloat("fX:CircletHandPositionFemale") as Float)
-    HandPositionYCircletFemale.SetValue(GetModSettingFloat("fY:CircletHandPositionFemale") as Float)
-    HandPositionZCircletFemale.SetValue(GetModSettingFloat("fZ:CircletHandPositionFemale") as Float)
-    HandRotationPitchCircletFemale.SetValue(GetModSettingFloat("fPitch:CircletHandPositionFemale") as Float)
-    HandRotationRollCircletFemale.SetValue(GetModSettingFloat("fRoll:CircletHandPositionFemale") as Float)
-    HandRotationYawCircletFemale.SetValue(GetModSettingFloat("fYaw:CircletHandPositionFemale") as Float)
-    VerboseMessage("Settings applied!")
-EndFunction
+Event OnOptionSliderAccept(int a_option, float a_value)
+	if a_option == OID_HipPositionXCirclet
+		HipPositionXCirclet.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipPositionYCirclet
+		HipPositionYCirclet.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipPositionZCirclet
+		HipPositionZCirclet.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipRotationPitchCirclet
+		HipRotationPitchCirclet.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipRotationRollCirclet
+		HipRotationRollCirclet.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipRotationYawCirclet
+		HipRotationYawCirclet.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipPositionX
+		HipPositionX.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipPositionY
+		HipPositionY.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipPositionZ
+		HipPositionZ.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipRotationPitch
+		HipRotationPitch.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipRotationRoll
+		HipRotationRoll.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipRotationYaw
+		HipRotationYaw.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	
+	if a_option == OID_HandPositionXCirclet
+		HandPositionXCirclet.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandPositionYCirclet
+		HandPositionYCirclet.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandPositionZCirclet
+		HandPositionZCirclet.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandRotationPitchCirclet
+		HandRotationPitchCirclet.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandRotationRollCirclet
+		HandRotationRollCirclet.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandRotationYawCirclet
+		HandRotationYawCirclet.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandPositionX
+		HandPositionX.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandPositionY
+		HandPositionY.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandPositionZ
+		HandPositionZ.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandRotationPitch
+		HandRotationPitch.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandRotationRoll
+		HandRotationRoll.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandRotationYaw
+		HandRotationYaw.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	
+	if a_option == OID_HipPositionXCircletFemale
+		HipPositionXCircletFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipPositionYCircletFemale
+		HipPositionYCircletFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipPositionZCircletFemale
+		HipPositionZCircletFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipRotationPitchCircletFemale
+		HipRotationPitchCircletFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipRotationRollCircletFemale
+		HipRotationRollCircletFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipRotationYawCircletFemale
+		HipRotationYawCircletFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipPositionXFemale
+		HipPositionXFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipPositionYFemale
+		HipPositionYFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipPositionZFemale
+		HipPositionZFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipRotationPitchFemale
+		HipRotationPitchFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipRotationRollFemale
+		HipRotationRollFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HipRotationYawFemale
+		HipRotationYawFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	
+	if a_option == OID_HandPositionXCircletFemale
+		HandPositionXCircletFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandPositionYCircletFemale
+		HandPositionYCircletFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandPositionZCircletFemale
+		HandPositionZCircletFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandRotationPitchCircletFemale
+		HandRotationPitchCircletFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandRotationRollCircletFemale
+		HandRotationRollCircletFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandRotationYawCircletFemale
+		HandRotationYawCircletFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandPositionXFemale
+		HandPositionXFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandPositionYFemale
+		HandPositionYFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandPositionZFemale
+		HandPositionZFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandRotationPitchFemale
+		HandRotationPitchFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandRotationRollFemale
+		HandRotationRollFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+	if a_option == OID_HandRotationYawFemale
+		HandRotationYawFemale.SetValue(a_value)
+		SetSliderOptionValue(a_option, a_value)
+	endif
+EndEvent
 
-Function LoadSettings()
-    If GetModSettingBool("bEnabled:Maintenance") == false
-        return
-    EndIf
-    Utility.Wait(GetModSettingInt("iLoadingDelay:Maintenance"))
-    VerboseMessage("Settings autoloaded!")
-    Load()
-EndFunction
+Event OnOptionKeyMapChange(int a_option, int a_keyCode, string a_conflictControl, string a_conflictName)
+	if a_option == OID_ToggleKey
+		if a_keyCode == 1 || a_keyCode == 271
+			SetKeyMapOptionValue(a_option, -1, false)
+			ToggleKey.SetValueInt(-1)
+		else
+			SetKeyMapOptionValue(a_option, a_keyCode, false)
+			ToggleKey.SetValueInt(a_keyCode)
+		endif
+		player = Game.GetPlayer()
+		player.removeperk(ReadTheRoomPerk)
+		player.addperk(ReadTheRoomPerk)
+	endif
+	if a_option == OID_DeleteKey
+		if a_keyCode == 1 || a_keyCode == 271
+			SetKeyMapOptionValue(a_option, -1, false)
+			DeleteKey.SetValueInt(-1)
+		else
+			SetKeyMapOptionValue(a_option, a_keyCode, false)
+			DeleteKey.SetValueInt(a_keyCode)
+		endif
+		player = Game.GetPlayer()
+		player.removeperk(ReadTheRoomPerk)
+		player.addperk(ReadTheRoomPerk)
+	endif
+	if a_option == OID_EnableKey
+		if a_keyCode == 1 || a_keyCode == 271
+			SetKeyMapOptionValue(a_option, -1, false)
+			EnableKey.SetValueInt(-1)
+		else
+			SetKeyMapOptionValue(a_option, a_keyCode, false)
+			EnableKey.SetValueInt(a_keyCode)
+		endif
+		player = Game.GetPlayer()
+		player.removeperk(ReadTheRoomPerk)
+		player.addperk(ReadTheRoomPerk)
+	endif
+EndEvent
 
-Function AddPerk()
-    player = Game.GetPlayer()
-    player.AddPerk(ReadTheRoomPerk)
-    SetModSettingString("sAddPerk:TroubleshootingUninstall", "$Perkadded")
-    RefreshMenu()
-EndFunction
+Event OnOptionMenuOpen(int a_option)
+	if a_option ==  OID_EquipWhenSafe
+		SetMenuDialogStartIndex(CurrentEquipWhenSafe)
+		SetMenuDialogDefaultIndex(0)
+		SetMenuDialogOptions(EquipOptions)
+	endif
+	if a_option ==  OID_UnequipWhenUnsafe
+		SetMenuDialogStartIndex(CurrentUnequipWhenUnsafe)
+		SetMenuDialogDefaultIndex(0)
+		SetMenuDialogOptions(UnequipOptions)
+	endif
+EndEvent
 
-Function RemovePerk()
-    player = Game.GetPlayer()
-    player.RemovePerk(ReadTheRoomPerk)
-    SetModSettingString("sRemovePerk:TroubleshootingUninstall", "$Perkremoved")
-    RefreshMenu()
-EndFunction
+Event OnOptionMenuAccept(int a_option, int a_index)
+	if a_option ==  OID_EquipWhenSafe
+		CurrentEquipWhenSafe = a_index
+		SetMenuOptionValue(a_option, EquipOptions[CurrentEquipWhenSafe])
+		EquipWhenSafe.SetValueInt(CurrentEquipWhenSafe)
+	endif
+	if a_option ==  OID_UnequipWhenUnsafe
+		CurrentUnequipWhenUnsafe = a_index
+		SetMenuOptionValue(a_option, UnequipOptions[CurrentUnequipWhenUnsafe])
+		UnequipWhenUnsafe.SetValueInt(CurrentUnequipWhenUnsafe)
+	endif
+EndEvent
 
-Function HotkeyGuard(String SettingsName, GlobalVariable var)
-    If GetModSettingInt(SettingsName) == 271
-        SetModSettingInt(SettingsName, -1)
-        var.SetValueInt(-1)
-    EndIf
-    player = Game.GetPlayer()
-    player.removeperk(ReadTheRoomPerk)
-    player.addperk(ReadTheRoomPerk)
-EndFunction
+Event OnOptionSelect(int a_option)
+	if a_option == OID_RemovePerk
+		player = game.getplayer()
+		player.removeperk(ReadTheRoomPerk)
+		SetTextOptionValue(a_option, "Perk removed")
+	endif
+	if a_option == OID_AddPerk
+		player = game.getplayer()
+		player.addperk(ReadTheRoomPerk)
+		SetTextOptionValue(a_option, "Perk added")
+	endif
+	if a_option == OID_DeleteAll
+		DeleteAll(plugin)
+		SetTextOptionValue(a_option, "Objects deleted")
+	endif
+	if a_option == OID_ManageFollowers
+		ManageFollowersVal = !ManageFollowersVal
+		SetToggleOptionValue(a_option, ManageFollowersVal)
+		if ManageFollowers.GetValue() == 1
+			ManageFollowers.SetValueInt(0)
+		else
+			ManageFollowers.SetValueInt(1)
+		endif
+	endif
+	if a_option == OID_CombatEquip
+		CombatEquipVal = !CombatEquipVal
+		SetToggleOptionValue(a_option, CombatEquipVal)
+		if CombatEquip.GetValue() == 1
+			CombatEquip.SetValueInt(0)
+		else
+			CombatEquip.SetValueInt(1)
+		endif
+	endif
+	if a_option == OID_CombatEquipAnimation
+		CombatEquipAnimationVal = !CombatEquipAnimationVal
+		SetToggleOptionValue(a_option, CombatEquipAnimationVal)
+		if CombatEquipAnimation.GetValue() == 1
+			CombatEquipAnimation.SetValueInt(0)
+		else
+			CombatEquipAnimation.SetValueInt(1)
+		endif
+	endif
+	if a_option == OID_ManageCirclets
+		ManageCircletsVal = !ManageCircletsVal
+		SetToggleOptionValue(a_option, ManageCircletsVal)
+		if ManageCirclets.GetValue() == 1
+			ManageCirclets.SetValueInt(0)
+		else
+			ManageCirclets.SetValueInt(1)
+		endif
+	endif
+	if a_option == OID_RemoveHelmetWithoutArmor
+		RemoveHelmetWithoutArmorVal = !RemoveHelmetWithoutArmorVal
+		SetToggleOptionValue(a_option, RemoveHelmetWithoutArmorVal)
+		if RemoveHelmetWithoutArmor.GetValue() == 1
+			RemoveHelmetWithoutArmor.SetValueInt(0)
+		else
+			RemoveHelmetWithoutArmor.SetValueInt(1)
+		endif
+	endif
+EndEvent
 
-Function MigrateToMCMHelper()
-    ; Migrating to MCM Helper
-    SetModSettingInt("iEquipWhen:HelmetEquipUnequip", EquipWhenSafe.GetValue() as Int)
-    SetModSettingInt("iUnequipWhen:HelmetEquipUnequip", UnequipWhenUnsafe.GetValue() as Int)
-    SetModSettingBool("bManageFollowerHeadgear:HelmetEquipUnequip", ManageFollowers.GetValue() as Bool)
-    SetModSettingBool("bCombatEquip:HelmetEquipUnequip", CombatEquip.GetValue() as Bool)
-    SetModSettingBool("bCombatequipusesanimation:HelmetEquipUnequip", CombatEquipAnimation.GetValue() as Bool)
-    SetModSettingBool("bManageCircletslikeHelmets:HelmetEquipUnequip", ManageCirclets.GetValue() as Bool)
-    SetModSettingBool("bRequirearmorforhipplacement:HelmetEquipUnequip", RemoveHelmetWithoutArmor.GetValue() as Bool)
-    SetModSettingInt("iToggleequipped:Keybinds", ToggleKey.GetValue() as Int)
-    SetModSettingInt("iClearplacedheadgear:Keybinds", DeleteKey.GetValue() as Int)
-    SetModSettingInt("iDisablesPlayerFunctionality:Keybinds", EnableKey.GetValue() as Int)
-    SetModSettingFloat("fX:HelmetHipPositionMale", HipPositionX.GetValue())
-    SetModSettingFloat("fY:HelmetHipPositionMale", HipPositionY.GetValue())
-    SetModSettingFloat("fZ:HelmetHipPositionMale", HipPositionZ.GetValue())
-    SetModSettingFloat("fPitch:HelmetHipPositionMale", HipRotationPitch.GetValue())
-    SetModSettingFloat("fRoll:HelmetHipPositionMale", HipRotationRoll.GetValue())
-    SetModSettingFloat("fYaw:HelmetHipPositionMale", HipRotationYaw.GetValue())
-    SetModSettingFloat("fX:CircletHipPositionMale", HipPositionXCirclet.GetValue())
-    SetModSettingFloat("fY:CircletHipPositionMale", HipPositionYCirclet.GetValue())
-    SetModSettingFloat("fZ:CircletHipPositionMale", HipPositionZCirclet.GetValue())
-    SetModSettingFloat("fPitch:CircletHipPositionMale", HipRotationPitchCirclet.GetValue())
-    SetModSettingFloat("fRoll:CircletHipPositionMale", HipRotationRollCirclet.GetValue())
-    SetModSettingFloat("fYaw:CircletHipPositionMale", HipRotationYawCirclet.GetValue())
-    SetModSettingFloat("fX:HelmetHandPositionMale", HandPositionX.GetValue())
-    SetModSettingFloat("fY:HelmetHandPositionMale", HandPositionY.GetValue())
-    SetModSettingFloat("fZ:HelmetHandPositionMale", HandPositionZ.GetValue())
-    SetModSettingFloat("fPitch:HelmetHandPositionMale", HandRotationPitch.GetValue())
-    SetModSettingFloat("fRoll:HelmetHandPositionMale", HandRotationRoll.GetValue())
-    SetModSettingFloat("fYaw:HelmetHandPositionMale", HandRotationYaw.GetValue())
-    SetModSettingFloat("fX:CircletHandPositionMale", HandPositionXCirclet.GetValue())
-    SetModSettingFloat("fY:CircletHandPositionMale", HandPositionYCirclet.GetValue())
-    SetModSettingFloat("fZ:CircletHandPositionMale", HandPositionZCirclet.GetValue())
-    SetModSettingFloat("fPitch:CircletHandPositionMale", HandRotationPitchCirclet.GetValue())
-    SetModSettingFloat("fRoll:CircletHandPositionMale", HandRotationRollCirclet.GetValue())
-    SetModSettingFloat("fYaw:CircletHandPositionMale", HandRotationYawCirclet.GetValue())
-    SetModSettingFloat("fX:HelmetHipPositionFemale", HipPositionXFemale.GetValue())
-    SetModSettingFloat("fY:HelmetHipPositionFemale", HipPositionYFemale.GetValue())
-    SetModSettingFloat("fZ:HelmetHipPositionFemale", HipPositionZFemale.GetValue())
-    SetModSettingFloat("fPitch:HelmetHipPositionFemale", HipRotationPitchFemale.GetValue())
-    SetModSettingFloat("fRoll:HelmetHipPositionFemale", HipRotationRollFemale.GetValue())
-    SetModSettingFloat("fYaw:HelmetHipPositionFemale", HipRotationYawFemale.GetValue())
-    SetModSettingFloat("fX:CircletHipPositionFemale", HipPositionXCircletFemale.GetValue())
-    SetModSettingFloat("fY:CircletHipPositionFemale", HipPositionYCircletFemale.GetValue())
-    SetModSettingFloat("fZ:CircletHipPositionFemale", HipPositionZCircletFemale.GetValue())
-    SetModSettingFloat("fPitch:CircletHipPositionFemale", HipRotationPitchCircletFemale.GetValue())
-    SetModSettingFloat("fRoll:CircletHipPositionFemale", HipRotationRollCircletFemale.GetValue())
-    SetModSettingFloat("fYaw:CircletHipPositionFemale", HipRotationYawCircletFemale.GetValue())
-    SetModSettingFloat("fX:HelmetHandPositionFemale", HandPositionXFemale.GetValue())
-    SetModSettingFloat("fY:HelmetHandPositionFemale", HandPositionYFemale.GetValue())
-    SetModSettingFloat("fZ:HelmetHandPositionFemale", HandPositionZFemale.GetValue())
-    SetModSettingFloat("fPitch:HelmetHandPositionFemale", HandRotationPitchFemale.GetValue())
-    SetModSettingFloat("fRoll:HelmetHandPositionFemale", HandRotationRollFemale.GetValue())
-    SetModSettingFloat("fYaw:HelmetHandPositionFemale", HandRotationYawFemale.GetValue())
-    SetModSettingFloat("fX:CircletHandPositionFemale", HandPositionXCircletFemale.GetValue())
-    SetModSettingFloat("fY:CircletHandPositionFemale", HandPositionYCircletFemale.GetValue())
-    SetModSettingFloat("fZ:CircletHandPositionFemale", HandPositionZCircletFemale.GetValue())
-    SetModSettingFloat("fPitch:CircletHandPositionFemale", HandRotationPitchCircletFemale.GetValue())
-    SetModSettingFloat("fRoll:CircletHandPositionFemale", HandRotationRollCircletFemale.GetValue())
-    SetModSettingFloat("fYaw:CircletHandPositionFemale", HandRotationYawCircletFemale.GetValue())
-EndFunction
-
-Function VerboseMessage(String m)
-    Debug.Trace("[Read the Room - Immersive and Animated Helmet Management] " + m)
-    If GetModSettingBool("bVerbose:Maintenance")
-        Debug.Notification("[Read the Room - Immersive and Animated Helmet Management] " + m)
-    EndIf
-EndFunction
+Event OnOptionHighlight(Int Option)
+	if Option == OID_ManageFollowers
+		SetInfoText("Toggles whether followers will also have their headgear managed")
+	endif
+	if Option == OID_EquipWhenSafe
+		SetInfoText("Toggles if helmet is equipped when entering an unsafe area or when leaving a safe area")
+	endif
+	if Option == OID_UnequipWhenUnsafe
+		SetInfoText("Toggles if helmet is unequipped when entering a safe area or when leaving an unsafe area")
+	endif
+	if Option == OID_AddPerk
+		SetInfoText("For troubleshooting. Re-adds perk that allows mod functionality")
+	endif
+	if Option == OID_RemovePerk
+		SetInfoText("For troubleshooting/uninstall. Removes perk that allows mod functionality")
+	endif
+	if Option == OID_CombatEquip
+		SetInfoText("Helmet will automatically equip when entering combat")
+	endif
+	if Option == OID_CombatEquipAnimation
+		SetInfoText("Combat equip will use animation - player only")
+	endif
+	if Option == OID_ManageCirclets
+		SetInfoText("Circlets will equip/unequip like helmets - toggle will always work for circlets")
+	endif
+	if Option == OID_RemoveHelmetWithoutArmor
+		SetInfoText("Helmet will only appear on hip if a torso piece is equipped")
+	endif
+EndEvent
