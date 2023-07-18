@@ -440,78 +440,78 @@ Event OnMenuClose(String MenuName)
 			TargetActor.UnequipItem(LoweredLastEquippedHood, false, true)
 			TargetActor.RemoveItem(LoweredLastEquippedHood, 1, true)
 		else
-			if LastEquippedType == "Helmet" || LastEquippedType == "Circlet" && TargetActor.GetItemCount(LastEquippedHelmet) > 0 && !LastEquippedHelmet.HasKeywordString("RTR_ExcludeKW")
-				Bool Place
-				if LastEquippedHelmet == "Helmet"
-					LastEquippedHelmet = GetLastEquippedForm(TargetActor, 1, true, false)
-					if LastEquippedHelmet as String == "None"
-						LastEquippedHelmet = GetLastEquippedForm(TargetActor, 0, true, false)
-					endif
-				endif
-				if LastEquippedHelmet == "Circlet"
-					LastEquippedHelmet = GetLastEquippedForm(TargetActor, 12, true, false)
-				endif
-				if (LastEquippedHelmet as Armor).IsHelmet() || LastEquippedHelmet.HasKeywordString("ClothingCirclet")
-					Place = true
-				else
-					Place = false
-				endif
-				if Place
-					Float[] hip_position = new Float[3]
-					Float[] hip_rotation = new Float[3]
-					if LastEquippedType == "Helmet"
-						if IsFemale
-							hip_position[0] = HipPositionXFemale.GetValue()
-							hip_position[1] = HipPositionYFemale.GetValue()
-							hip_position[2] = HipPositionZFemale.GetValue()
-							hip_rotation[0] = HipRotationPitchFemale.GetValue()
-							hip_rotation[1] = HipRotationRollFemale.GetValue()
-							hip_rotation[2] = HipRotationYawFemale.GetValue()
-						else
-							hip_position[0] = HipPositionX.GetValue()
-							hip_position[1] = HipPositionY.GetValue()
-							hip_position[2] = HipPositionZ.GetValue()
-							hip_rotation[0] = HipRotationPitch.GetValue()
-							hip_rotation[1] = HipRotationRoll.GetValue()
-							hip_rotation[2] = HipRotationYaw.GetValue()
-						endif
-					elseif LastEquippedType == "Circlet"
-						if IsFemale
-							hip_position[0] = HipPositionXCircletFemale.GetValue()
-							hip_position[1] = HipPositionYCircletFemale.GetValue()
-							hip_position[2] = HipPositionZCircletFemale.GetValue()
-							hip_rotation[0] = HipRotationPitchCircletFemale.GetValue()
-							hip_rotation[1] = HipRotationRollCircletFemale.GetValue()
-							hip_rotation[2] = HipRotationYawCircletFemale.GetValue()
-						else
-							hip_position[0] = HipPositionXCirclet.GetValue()
-							hip_position[1] = HipPositionYCirclet.GetValue()
-							hip_position[2] = HipPositionZCirclet.GetValue()
-							hip_rotation[0] = HipRotationPitchCirclet.GetValue()
-							hip_rotation[1] = HipRotationRollCirclet.GetValue()
-							hip_rotation[2] = HipRotationYawCirclet.GetValue()
-						endif
-					endif
-					if TargetActor.GetActorBase().GetSex() == 1
-						IsFemale = true
-					else
-						IsFemale = False
-					endif
-					DeleteItemActor(TargetActor, plugin, hip_name)
-					Status = CreateItemActor(TargetActor, plugin, hip_name, IsFemale, LastEquippedHelmet, InventoryRequired, hip_node)
-					Status = SetItemFormActor(TargetActor, plugin, hip_name, IsFemale, LastEquippedHelmet)
-					Status = SetItemNodeActor(TargetActor, plugin, hip_name, IsFemale, hip_node)
-					Status = SetItemRotationActor(TargetActor, plugin, hip_name, IsFemale, hip_rotation)
-					Status = SetItemPositionActor(TargetActor, plugin, hip_name, IsFemale, hip_position)
-					Status = SetItemScaleActor(TargetActor, plugin, hip_name, IsFemale, hip_scale)
-					Status = SetItemEnabledActor(TargetActor, plugin, hip_name, IsFemale, true)
-				endif
-			else
-				DeleteItemActor(TargetActor, plugin, hip_name)
-				if TargetActor == PlayerRef && TargetActor.GetItemCount(LastEquippedHood) > 0 && !LastEquippedHood.HasKeywordString("RTR_ExcludeKW")
-					TargetActor.EquipItem(LoweredLastEquippedHood, false, true)
-				endif
-			endif
+			; if LastEquippedType == "Helmet" || LastEquippedType == "Circlet" && TargetActor.GetItemCount(LastEquippedHelmet) > 0 && !LastEquippedHelmet.HasKeywordString("RTR_ExcludeKW")
+			; 	Bool Place
+			; 	if LastEquippedHelmet == "Helmet"
+			; 		LastEquippedHelmet = GetLastEquippedForm(TargetActor, 1, true, false)
+			; 		if LastEquippedHelmet as String == "None"
+			; 			LastEquippedHelmet = GetLastEquippedForm(TargetActor, 0, true, false)
+			; 		endif
+			; 	endif
+			; 	if LastEquippedHelmet == "Circlet"
+			; 		LastEquippedHelmet = GetLastEquippedForm(TargetActor, 12, true, false)
+			; 	endif
+			; 	if (LastEquippedHelmet as Armor).IsHelmet() || LastEquippedHelmet.HasKeywordString("ClothingCirclet")
+			; 		Place = true
+			; 	else
+			; 		Place = false
+			; 	endif
+			; 	if Place
+			; 		Float[] hip_position = new Float[3]
+			; 		Float[] hip_rotation = new Float[3]
+			; 		if LastEquippedType == "Helmet"
+			; 			if IsFemale
+			; 				hip_position[0] = HipPositionXFemale.GetValue()
+			; 				hip_position[1] = HipPositionYFemale.GetValue()
+			; 				hip_position[2] = HipPositionZFemale.GetValue()
+			; 				hip_rotation[0] = HipRotationPitchFemale.GetValue()
+			; 				hip_rotation[1] = HipRotationRollFemale.GetValue()
+			; 				hip_rotation[2] = HipRotationYawFemale.GetValue()
+			; 			else
+			; 				hip_position[0] = HipPositionX.GetValue()
+			; 				hip_position[1] = HipPositionY.GetValue()
+			; 				hip_position[2] = HipPositionZ.GetValue()
+			; 				hip_rotation[0] = HipRotationPitch.GetValue()
+			; 				hip_rotation[1] = HipRotationRoll.GetValue()
+			; 				hip_rotation[2] = HipRotationYaw.GetValue()
+			; 			endif
+			; 		elseif LastEquippedType == "Circlet"
+			; 			if IsFemale
+			; 				hip_position[0] = HipPositionXCircletFemale.GetValue()
+			; 				hip_position[1] = HipPositionYCircletFemale.GetValue()
+			; 				hip_position[2] = HipPositionZCircletFemale.GetValue()
+			; 				hip_rotation[0] = HipRotationPitchCircletFemale.GetValue()
+			; 				hip_rotation[1] = HipRotationRollCircletFemale.GetValue()
+			; 				hip_rotation[2] = HipRotationYawCircletFemale.GetValue()
+			; 			else
+			; 				hip_position[0] = HipPositionXCirclet.GetValue()
+			; 				hip_position[1] = HipPositionYCirclet.GetValue()
+			; 				hip_position[2] = HipPositionZCirclet.GetValue()
+			; 				hip_rotation[0] = HipRotationPitchCirclet.GetValue()
+			; 				hip_rotation[1] = HipRotationRollCirclet.GetValue()
+			; 				hip_rotation[2] = HipRotationYawCirclet.GetValue()
+			; 			endif
+			; 		endif
+			; 		if TargetActor.GetActorBase().GetSex() == 1
+			; 			IsFemale = true
+			; 		else
+			; 			IsFemale = False
+			; 		endif
+			; 		DeleteItemActor(TargetActor, plugin, hip_name)
+			; 		Status = CreateItemActor(TargetActor, plugin, hip_name, IsFemale, LastEquippedHelmet, InventoryRequired, hip_node)
+			; 		Status = SetItemFormActor(TargetActor, plugin, hip_name, IsFemale, LastEquippedHelmet)
+			; 		Status = SetItemNodeActor(TargetActor, plugin, hip_name, IsFemale, hip_node)
+			; 		Status = SetItemRotationActor(TargetActor, plugin, hip_name, IsFemale, hip_rotation)
+			; 		Status = SetItemPositionActor(TargetActor, plugin, hip_name, IsFemale, hip_position)
+			; 		Status = SetItemScaleActor(TargetActor, plugin, hip_name, IsFemale, hip_scale)
+			; 		Status = SetItemEnabledActor(TargetActor, plugin, hip_name, IsFemale, true)
+			; 	endif
+			; else
+			; 	DeleteItemActor(TargetActor, plugin, hip_name)
+			; 	if TargetActor == PlayerRef && TargetActor.GetItemCount(LastEquippedHood) > 0 && !LastEquippedHood.HasKeywordString("RTR_ExcludeKW")
+			; 		TargetActor.EquipItem(LoweredLastEquippedHood, false, true)
+			; 	endif
+			; endif
 		endif
 		
 	endif
