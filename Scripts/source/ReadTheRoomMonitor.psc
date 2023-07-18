@@ -3,11 +3,8 @@ ScriptName ReadTheRoomMonitor extends ActiveMagicEffect
 ; ReadTheRoomMonitor script
 ; Monitors the player's location, combat state, 
 ; key toggles, and other events to trigger Read The Room headgear 
-; management for both the player and followers.
-; @TODO - Add "busy" state to prevent headgear management during certain animations instead of relying on the RTR_Action animation variable
-; @TODO - Optimize monitor will be for the player only, followers will be handled by a separate script and will utilize SKSE Mod Events
-; @TODO - Further optimize to reduce the amount of calls needed to get common values like: Gender, LastEquipped, LastEquippedType, LoweredHood, etc...
-; @TODO - Move script to a separate ESP to allow for easier updates and rename to ReadTheRoomPlayerMonitor
+; management for both the player and followers
+; @TODO - Move script to a separate ESP with new name "ReadTheRoomPlayerMonitor" to allow for easier updates
 
 Import IED ; Immersive Equipment Display
 Import MiscUtil ; PapyrusUtil SE
@@ -54,9 +51,8 @@ FormList property MaleHipAnchor auto
 FormList property FemaleHandAnchor auto
 FormList property FemaleHipAnchor auto
 
-; Local Script Variables
+; IED Constants
 String PluginName = "ReadTheRoom.esp"
-String MostRecentLocationAction = "None"
 String HelmetOnHip = "HelmetOnHip"
 String HelmetOnHand = "HelmetOnHand"
 String HipNode = "NPC Pelvis [Pelv]"
@@ -64,12 +60,14 @@ String HandNode = "NPC R Hand [RHnd]"
 Bool InventoryRequired = true
 Float HipScale = 0.9150
 Float HandScale = 1.05
-Float AnimTimeoutBuffer = 0.05
 
+; Local Script Variables
 Bool IsFemale = false
-Form LoweredHood auto
-Form LastEquipped auto
+Form LastEquipped = None
+Form LastLoweredHood = None
 String LastEquippedType = "None"
+Float AnimTimeoutBuffer = 0.05
+String MostRecentLocationAction = "None"
 
 Event OnInit()
 	RegisterForMenu("InventoryMenu")
@@ -81,6 +79,7 @@ EndEvent
 ;;;; Event Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; @TODO - Move duplicated code for IED node placements to a helper function
+;         test if it will work properly if called from ReadTheRoomUtil
 Event OnPlayerLoadGame()
 	RTR_PrintDebug(" ")
     RTR_PrintDebug("[RTR] OnPlayerLoadGame --------------------------------------------------------------------")
@@ -179,12 +178,10 @@ Event OnKeyDown(Int KeyCode)
 		RTR_PrintDebug("[RTR] Toggle Head Gear --------------------------------------------------------------------")
 		LastEquipped = RTR_GetEquipped(PlayerRef, ManageCirclets.getValueInt() == 1)
 		if RTR_IsValidHeadWear(PlayerRef, LastEquipped, LoweredHoods)
-			LastEquippedType = RTR_InferItemType(LastEquipped, LowerableHoods)
-			UnequipActorHeadgear(LastEquipped)
+			UnequipActorHeadgear()
 		else
 			LastEquipped = RTR_GetLastEquipped(PlayerRef)
-			LastEquippedType = RTR_InferItemType(LastEquipped, LowerableHoods)
-			EquipActorHeadgear(LastEquipped)
+			EquipActorHeadgear()
 		endif
 		RTR_PrintDebug(" ")
 	endif
@@ -219,9 +216,9 @@ Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 	
 	if MostRecentLocationAction == "Equip"
 		LastEquipped = RTR_GetLastEquipped(PlayerRef)
-		EquipActorHeadgear(LastEquipped)
+		EquipActorHeadgear()
 	elseif MostRecentLocationAction == "Unequip"
-		UnequipActorHeadgear(LastEquipped)		
+		UnequipActorHeadgear()		
 	endif
 	RTR_PrintDebug(" ")
 EndEvent
@@ -238,13 +235,13 @@ Event OnCombatStateChanged(Actor akTarget, int aeCombatState)
 	if aeCombatState == 1
 		; Player entered combat
 		LastEquipped = RTR_GetLastEquipped(PlayerRef)
-		EquipActorHeadgear(LastEquipped)
+		EquipActorHeadgear()
 	elseif aeCombatState == 0
 		; Player left combat
 		; Make sure to check the location to see if it's safe to unequip
 		if MostRecentLocationAction == "Unequip"
 			LastEquipped = RTR_GetEquipped(PlayerRef, ManageCirclets.getValueInt() == 1)
-			UnequipActorHeadgear(LastEquipped)
+			UnequipActorHeadgear()
 		endif
 	endIf
 
@@ -300,21 +297,15 @@ Event OnAnimationEvent(ObjectReference akSource, String asEventName)
 
 	if asEventName == "RTR_AttachLoweredHood"
 		; Attach Lowered Hood
-		if LowerableHoods.HasForm(LastEquipped)
-			Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(LastEquipped))
-			PlayerRef.EquipItem(lowered_hood, false, true)
-		endif
+			PlayerRef.EquipItem(LastLoweredHood, false, true)
 		return
 	endif
 
 	if asEventName == "RTR_RemoveLoweredHood"
 		; Remove Lowered Hood
-		if LowerableHoods.HasForm(LastEquipped) 
-			Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(LastEquipped))
-			PlayerRef.UnequipItem(lowered_hood, false, true)
-			PlayerRef.RemoveItem(lowered_hood, 1, true)
-			RTR_PrintDebug("- " + (lowered_hood as Armor).GetName() + " (Lowered Hood) Unequipped")
-		endif
+		PlayerRef.UnequipItem(LastLoweredHood, false, true)
+		PlayerRef.RemoveItem(LastLoweredHood, 1, true)
+		RTR_PrintDebug("- " + (LastLoweredHood as Armor).GetName() + " (Lowered Hood) Unequipped")
 		return
 	endif
 
@@ -357,23 +348,15 @@ Event OnAnimationEvent(ObjectReference akSource, String asEventName)
 		elseif anim_action == "EquipHood"
 			RTR_PrintDebug("- Timed Out on EquipHood")
 			; Finalize EquipHood
-			if LowerableHoods.HasForm(LastEquipped) 
-				Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(LastEquipped))
-				PlayerRef.UnequipItem(lowered_hood, false, true)
-				PlayerRef.RemoveItem(lowered_hood, 1, true)
-			endif
+			PlayerRef.UnequipItem(LastLoweredHood, false, true)
+			PlayerRef.RemoveItem(LastLoweredHood, 1, true)
 			PlayerRef.EquipItem(LastEquipped, false, true)
 			Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
 		elseif anim_action == "UnequipHood"
 			RTR_PrintDebug("- Timed Out on UnequipHood")
 			; Finalize UnequipHood
-			if LowerableHoods.HasForm(LastEquipped)
-				Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(LastEquipped))
-				PlayerRef.UnequipItem(LastEquipped, false, true)
-				PlayerRef.EquipItem(lowered_hood, false, true)
-			Else
-				PlayerRef.UnequipItem(LastEquipped, false, true)
-			endif
+			PlayerRef.UnequipItem(LastEquipped, false, true)
+			PlayerRef.EquipItem(LastLoweredHood, false, true)
 			Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
 		endif
 
@@ -423,17 +406,9 @@ Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
 		RemoveFromHip()
 		RemoveFromHand()
 		
-		; remove any lowered hoods from actor
-		int i = 0
-		int loweredHoodsCount = LoweredHoods.GetSize()
-		while (i < loweredHoodsCount)
-			Form lowered_hood = LoweredHoods.GetAt(i)
-			if PlayerRef.IsEquipped(lowered_hood)
-				PlayerRef.UnequipItem(lowered_hood, false, true)
-				PlayerRef.RemoveItem(lowered_hood, 1, true)
-			endif
-			i += 1
-		endwhile
+		; Remove lowered hood
+		PlayerRef.UnequipItem(LastLoweredHood, false, true)
+		PlayerRef.RemoveItem(LastLoweredHood, 1, true)
 	endif
 	RTR_PrintDebug(" ")
 EndEvent
@@ -452,17 +427,9 @@ Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
 		RemoveFromHip()
 		RemoveFromHand()
 
-		; remove any lowered hoods from actor
-		int i = 0
-		int LoweredHoodsCount = LoweredHoods.GetSize()
-		while i < LoweredHoodsCount
-			Form lowered_hood = LoweredHoods.GetAt(i)
-			if PlayerRef.IsEquipped(lowered_hood)
-				PlayerRef.UnequipItem(lowered_hood, false, true)
-				PlayerRef.RemoveItem(lowered_hood, 1, true)
-			endif
-			i += 1
-		endwhile
+		; Remove lowered hood from player
+		PlayerRef.UnequipItem(LastLoweredHood, false, true)
+		PlayerRef.RemoveItem(LastLoweredHood, 1, true)
 	endif
 
 	; Check if it was a helmet, circlet, or hood that was removed
@@ -473,16 +440,8 @@ Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
 		RemoveFromHand()
 		
 		; remove any lowered hoods from actor
-		int i = 0
-		int LoweredHoodsCount = LoweredHoods.GetSize()
-		while i < LoweredHoodsCount
-			Form lowered_hood = LoweredHoods.GetAt(i)
-			if PlayerRef.IsEquipped(lowered_hood)
-				PlayerRef.UnequipItem(lowered_hood, false, true)
-				PlayerRef.RemoveItem(lowered_hood, 1, true)
-			endif
-			i += 1
-		endwhile
+		PlayerRef.UnequipItem(LastLoweredHood, false, true)
+		PlayerRef.RemoveItem(LastLoweredHood, 1, true)
 	endif
 	RTR_PrintDebug(" ")
 EndEvent
@@ -529,7 +488,7 @@ Function EquipActorHeadgear()
 	RTR_PrintDebug("[RTR] EquipActorHeadgear --------------------------------------------------------------------")
 
 	; Update the IED Node with the last_equipped item
-	UseHelmet(PlayerRef, LastEquipped)
+	UseHelmet()
 
 	; Exit early if the actor is already wearing the item
 	if PlayerRef.IsEquipped(LastEquipped)
@@ -574,7 +533,7 @@ Function EquipActorHeadgear()
 	String animation = "RTREquip"
 
 	; Switch animation if equipping a lowerable hood
-	if LowerableHoods.hasForm(LastEquipped)
+	if LastEquippedType == "Hood"
 		animation = "RTREquipHood"
 		RTR_PrintDebug("- Lowerable Hood Detected. Switching animation to " + animation)
 	endif
@@ -596,11 +555,10 @@ EndFunction
 ; Equips an item to an actor without playing an animation
 Function EquipWithNoAnimation()
 	; Update the IED Node with the last_equipped item
-	UseHelmet(PlayerRef, LastEquipped)
+	UseHelmet()
 
 	if LastEquippedType == "Hood"
-		Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(LastEquipped))
-		PlayerRef.UnequipItem(lowered_hood, false, true)
+		PlayerRef.UnequipItem(LastLoweredHood, false, true)
 		PlayerRef.EquipItem(LastEquipped, false, true)
 	else
 		PlayerRef.EquipItem(LastEquipped, false, true)
@@ -618,7 +576,7 @@ Function UnequipActorHeadgear()
 	RTR_PrintDebug("[RTR] UnequipActorHeadgear --------------------------------------------------------------------")
 
 	; Update the IED Node with the equipped item
-	UseHelmet(PlayerRef, LastEquipped)
+	UseHelmet()
 
 	; Exit early if the actor is not wearing the item
 	if !PlayerRef.IsEquipped(LastEquipped)
@@ -662,7 +620,7 @@ Function UnequipActorHeadgear()
 	String animation = "RTRUnequip"
 
 	; Switch animation if equipping a lowerable hood
-	if LowerableHoods.hasForm(LastEquipped)
+	if LastEquippedType == "Hood"
 		animation = "RTRUnequipHood"
 		RTR_PrintDebug("- Lowerable Hood Detected. Switching animation to " + animation)
 	endif
@@ -684,15 +642,13 @@ EndFunction
 ; Unequips an item from an actor without playing an animation
 Function UnequipWithNoAnimation()
 	; Update the IED Node with the equipped item
-	UseHelmet(PlayerRef, LastEquipped)
+	UseHelmet()
 
 	if LastEquippedType == "Hood"
-		Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(LastEquipped))
 		PlayerRef.UnequipItem(LastEquipped, false, true)
-		PlayerRef.EquipItem(lowered_hood, false, true)
+		PlayerRef.EquipItem(LastLoweredHood, false, true)
 	else
-		String LastEquippedType = RTR_InferItemType(LastEquipped, LowerableHoods)
-		
+		LastEquippedType = RTR_InferItemType(LastEquipped, LowerableHoods)
 		PlayerRef.UnequipItem(LastEquipped, false, true)
 		RemoveFromHand()
 		AttachToHip()
@@ -815,17 +771,8 @@ endFunction
 
 function RemoveFromHip()
 	SetItemEnabledActor(PlayerRef, PluginName, HelmetOnHip, IsFemale, false)
-
-	; @TODO - Optimize this with local script variables to track the last lowered hood
-	Int i = 0
-	Int loweredHoodsCount = LoweredHoods.GetSize()
-	while (i < loweredHoodsCount)
-		Form loweredHood = LoweredHoods.GetAt(i)
-		if PlayerRef.IsEquipped(loweredHood) 
-			PlayerRef.UnequipItem(loweredHood, false, true)
-		endif
-		i += 1
-	endwhile
+	PlayerRef.UnequipItem(LastLoweredHood, false, true)
+	PlayerRef.RemoveItem(LastLoweredHood, 1, true)
 endFunction
 
 function AttachToHand()
@@ -839,11 +786,17 @@ endFunction
 ; UseHelmet
 ; Sets an Armor Form as the IED placement display forms
 function UseHelmet()
+	; Update IED Placements to use LastEquipped Helmet Form
 	SetItemFormActor(PlayerRef, PluginName, HelmetOnHip, IsFemale, LastEquipped)
 	SetItemFormActor(PlayerRef, PluginName, HelmetOnHand, IsFemale, LastEquipped)
-	if LastEquippedType == "Helmet"
+
+	; Conditional Placement Scaling / Lowered Hood Update
+	LastEquippedType = RTR_InferItemType(LastEquipped, LowerableHoods)
+	if LastEquippedType == "Hood"
+		LastLoweredHood = LoweredHoods.GetAt(LowerableHoods.Find(LastEquipped))
+	elseif LastEquippedType == "Helmet"
 		SetItemScaleActor(PlayerRef, PluginName, HelmetOnHand, IsFemale, HandScale)
-	else
+	else 
 		SetItemScaleActor(PlayerRef, PluginName, HelmetOnHand, IsFemale, 1)
 	endif
 endFunction
