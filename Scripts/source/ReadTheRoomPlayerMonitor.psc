@@ -62,18 +62,24 @@ String LastEquippedType = "None"
 Float AnimTimeoutBuffer = 0.05
 String MostRecentLocationAction = "None"
 
+;;;; Event Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 Event OnInit()
 	RegisterForMenu("InventoryMenu")
 	RegisterForKey(ToggleKey.GetValueInt())
 	RegisterForKey(DeleteKey.GetValueInt())
 	RegisterForKey(EnableKey.GetValueInt())
+
+	SetupRTR()
 EndEvent
 
-;;;; Event Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+Event OnPlayerLoadGame()
+	SetupRTR()
+endEvent
 
 ; @TODO - Move duplicated code for IED node placements to a helper function
 ;         test if it will work properly if called from ReadTheRoomUtil
-Event OnPlayerLoadGame()
+function SetupRTR()
 	RTR_PrintDebug(" ")
     RTR_PrintDebug("[RTR] OnPlayerLoadGame --------------------------------------------------------------------")
 	RTR_PrintDebug("[RTR] Refreshing IED Attachments for PlayerRef")
@@ -138,7 +144,10 @@ Event OnPlayerLoadGame()
 
 	RTR_PrintDebug("-------------------------------------------------------------------- [RTR] OnPlayerLoadGame Completed for PlayerRef")
 	RTR_PrintDebug(" ")
- endEvent
+
+	PlayerRef.SetAnimationVariableInt("RTR_Action", 0)
+	GoToState("")
+endfunction
 
 ; OnKeyDown Event Handler
 ; Processes Key Events for configured keybindings
@@ -524,10 +533,12 @@ Function EquipActorHeadgear()
 
 	; Animated Equip
 	String animation = "RTREquip"
+	Float animation_time = 3.33
 
 	; Switch animation if equipping a lowerable hood
 	if LastEquippedType == "Hood"
 		animation = "RTREquipHood"
+		animation_time = 1.2
 		RTR_PrintDebug("- Lowerable Hood Detected. Switching animation to " + animation)
 	endif
 
@@ -542,6 +553,13 @@ Function EquipActorHeadgear()
 	RTR_PrintDebug("- Triggering " + animation + " animation")
 	GoToState("busy")
 	Debug.sendAnimationEvent(PlayerRef, animation)
+	
+	; Add a typical timeout to ensure the post-animation is called
+	Utility.wait(animation_time)
+	Game.EnablePlayerControls()
+	PlayerRef.SetAnimationVariableInt("RTR_Action", 0)
+	Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
+	GoToState("")
 EndFunction
 
 ; EquipWithNoAnimation
@@ -611,10 +629,12 @@ Function UnequipActorHeadgear()
 
 	; Animated Unequip
 	String animation = "RTRUnequip"
+	Float animation_time = 3.33
 
 	; Switch animation if equipping a lowerable hood
 	if LastEquippedType == "Hood"
 		animation = "RTRUnequipHood"
+		animation_time = 1.2
 		RTR_PrintDebug("- Lowerable Hood Detected. Switching animation to " + animation)
 	endif
 
@@ -629,6 +649,13 @@ Function UnequipActorHeadgear()
 	RTR_PrintDebug("- Triggering " + animation + " animation")
 	GoToState("busy")
 	Debug.sendAnimationEvent(PlayerRef, animation)
+
+	; Add a typical timeout to ensure the post-animation is called
+	Utility.wait(animation_time)
+	Game.EnablePlayerControls()
+	PlayerRef.SetAnimationVariableInt("RTR_Action", 0)
+	Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
+	GoToState("")
 EndFunction
 
 ; UnequipWithNoAnimation
