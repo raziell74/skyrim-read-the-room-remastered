@@ -46,11 +46,13 @@ ReadTheRoom Animation Events
     RTR_RemoveLoweredHood
     RTR_OffsetStop
 
-## Lowerable Hoods - IED Attachment 
+## Lowerable Hoods - Overhaul 
 
-Lowerable hoods is a half baked feature with very limited functionality. The current implementation doesn't even follow the same processes as the rest of the helmet management. Lowered Hood models were custom made for the vanilla hoods and they are equipped instead of attached via IED. This is because no valid ground meshes were ever made for these items. 
+~~IED Attachment~~ *scrapped the IED plans because some lowered hoods will likely have Havoc, specially if they have been modded by Modernize or added from a mod like  H2135's Fantasy Series 6
 
-In addition to being physically equipped on Actors there is also no real way to manage the hoods or add new compatibility for mod added hoods. Hoods that can be "lowered" are identified through a FormList called `LowerableHoods`. These share a 1 to 1 relation to another FormList that holds a list of `LoweredHoods`. So if a hood is in the Lowerable list it will look at the same array index to get the armor item to swap to that represents the Lowered version of the hood.
+~~Lowerable hoods is a half baked feature with very limited functionality. The current implementation doesn't even follow the same processes as the rest of the helmet management. Lowered Hood models were custom made for the vanilla hoods and they are equipped instead of attached via IED. This is because no valid ground meshes were ever made for these items. ~~
+
+There is also no real way to manage the hoods or add new compatibility for mod added hoods. Hoods that can be "lowered" are identified through a FormList called `LowerableHoods`. These share a 1 to 1 relation to another FormList that holds a list of `LoweredHoods`. So if a hood is in the Lowerable list it will look at the same array index to get the armor item to swap to that represents the Lowered version of the hood.
 
 Lowerable Hoods Update Tasks
 

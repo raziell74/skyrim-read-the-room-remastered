@@ -31,6 +31,7 @@ GlobalVariable property RemoveHelmetWithoutArmor auto
 GlobalVariable property ManageCirclets auto
 GlobalVariable property ManageFollowers auto
 FormList property ManagedActors auto
+FormList property LastEquippedMonitor auto
 
 ; Location Identification Settings
 FormList property SafeKeywords auto
@@ -50,22 +51,108 @@ FormList property FemaleHandAnchor auto
 FormList property FemaleHipAnchor auto
 
 ; Local Script Variables
+String PluginName = "ReadTheRoom.esp"
 String MostRecentLocationAction = "None"
 String HelmetOnHip = "HelmetOnHip"
 String HelmetOnHand = "HelmetOnHand"
 String HipNode = "NPC Pelvis [Pelv]"
 String HandNode = "NPC R Hand [RHnd]"
+Bool InventoryRequired = true
 Float HipScale = 0.9150
 Float HandScale = 1.05
-Float AnimTimeoutBuffer = 0.5
+Float AnimTimeoutBuffer = 0.25
 
 Event OnInit()
+	RegisterForMenu("InventoryMenu")
 	RegisterForKey(ToggleKey.GetValueInt())
 	RegisterForKey(DeleteKey.GetValueInt())
 	RegisterForKey(EnableKey.GetValueInt())
 EndEvent
 
 ;;;; Event Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Event OnPlayerLoadGame()
+	RTR_PrintDebug(" ")
+    RTR_PrintDebug("[RTR] OnPlayerLoadGame --------------------------------------------------------------------")
+    
+	; Check/Update IED Attachments for each managed actor
+	int actorIndex = 0
+	int managedActorCount = ManagedActors.GetSize()
+	while actorIndex < managedActorCount
+		Actor target_actor = ManagedActors.GetAt(actorIndex) as Actor
+		if target_actor != None
+			RTR_PrintDebug("[RTR] DEBUG: Updating Initial IED Attachments for " + target_actor.GetActorBase().GetName())
+			Form LastEquipped = RTR_GetLastEquipped(target_actor)
+			String type = RTR_InferItemType(LastEquipped, LowerableHoods)
+			Bool IsFemale = target_actor.GetActorBase().GetSex() == 1
+
+			; Attach helm to the hip
+			Bool HipEnabled = (!target_actor.IsEquipped(LastEquipped) && type != "Hood")
+			Float[] hip_position = RTR_GetPosition(type, HipAnchor(IsFemale))
+			Float[] hip_rotation = RTR_GetRotation(type, HipAnchor(IsFemale))
+			RTR_PrintDebug("[RTR] DEBUG: Hip Position from FemaleHipAnchor FormList. posX = " + (hip_position[0] as String) + " posY = " + (hip_position[1] as String) + " posZ = " + (hip_position[2] as String))
+			RTR_PrintDebug("[RTR] DEBUG: Hip Rotation from FemaleHipAnchor FormList. Pitch = " + (hip_position[0] as String) + " Roll = " + (hip_position[1] as String) + " Yaw = " + (hip_position[2] as String))
+
+			; Create the item, should show the item on the hip
+			RTR_PrintDebug("[RTR] DEBUG: Creating Hip item with the following parameters:")
+			RTR_PrintDebug("[RTR] DEBUG: " + (target_actor as Form).GetName())
+			RTR_PrintDebug("[RTR] DEBUG: Plugin " + PluginName)
+			RTR_PrintDebug("[RTR] DEBUG: Name " + HelmetOnHip)
+			RTR_PrintDebug("[RTR] DEBUG: InventoryRequired " + (InventoryRequired as String))
+			RTR_PrintDebug("[RTR] DEBUG: IsFemale " + (IsFemale as String))
+			RTR_PrintDebug("[RTR] DEBUG: Node " + HipNode)
+			RTR_PrintDebug("[RTR] DEBUG: Enabled " + (HipEnabled as String))
+			
+			; Create the Hip Placement
+			CreateItemActor(target_actor, PluginName, HelmetOnHip, InventoryRequired, LastEquipped, IsFemale, HipNode)
+			SetItemPositionActor(target_actor, PluginName, HelmetOnHip, IsFemale, hip_position)
+			SetItemRotationActor(target_actor, PluginName, HelmetOnHip, IsFemale, hip_rotation)
+			SetItemFormActor(target_actor, PluginName, HelmetOnHip, IsFemale, LastEquipped)
+			SetItemNodeActor(target_actor, PluginName, HelmetOnHip, IsFemale, HipNode)
+			SetItemEnabledActor(target_actor, PluginName, HelmetOnHip, IsFemale, HipEnabled)
+			SetItemScaleActor(target_actor, PluginName, HelmetOnHip, IsFemale, HipScale)
+
+			RTR_PrintDebug("[RTR] DEBUG: Attached Hip Item to " + (target_actor as Form).GetName())
+
+			;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+			; Attach Helm to hand - setup as disabled since the enabled flag is switched during animation
+			Float[] hand_position = RTR_GetPosition(type, HandAnchor(IsFemale))
+			Float[] hand_rotation = RTR_GetRotation(type, HandAnchor(IsFemale))
+			RTR_PrintDebug("[RTR] DEBUG: Hip Position from FemaleHipAnchor FormList. posX = " + (hand_position[0] as String) + " posY = " + (hand_position[1] as String) + " posZ = " + (hand_position[2] as String))
+			RTR_PrintDebug("[RTR] DEBUG: Hip Rotation from FemaleHipAnchor FormList. Pitch = " + (hand_rotation[0] as String) + " Roll = " + (hand_rotation[1] as String) + " Yaw = " + (hand_rotation[2] as String))
+
+			; Create the item, should show the item on the Hand
+			RTR_PrintDebug("[RTR] DEBUG: Creating Hand item with the following parameters:")
+			RTR_PrintDebug("[RTR] DEBUG: " + (target_actor as Form).GetName())
+			RTR_PrintDebug("[RTR] DEBUG: Plugin " + PluginName)
+			RTR_PrintDebug("[RTR] DEBUG: Name " + HelmetOnHand)
+			RTR_PrintDebug("[RTR] DEBUG: InventoryRequired " + (InventoryRequired as String))
+			RTR_PrintDebug("[RTR] DEBUG: IsFemale " + (IsFemale as String))
+			RTR_PrintDebug("[RTR] DEBUG: Node " + HandNode)
+			RTR_PrintDebug("[RTR] DEBUG: Enabled FALSE")
+
+			; Create the Hand Placement
+			CreateItemActor(target_actor, PluginName, HelmetOnHand, InventoryRequired, LastEquipped, IsFemale, HandNode)
+			SetItemPositionActor(target_actor, PluginName, HelmetOnHand, IsFemale, hand_position)
+			SetItemRotationActor(target_actor, PluginName, HelmetOnHand, IsFemale, hand_rotation)
+			SetItemFormActor(target_actor, PluginName, HelmetOnHand, IsFemale, LastEquipped)
+			SetItemNodeActor(target_actor, PluginName, HelmetOnHand, IsFemale, HandNode)
+			SetItemEnabledActor(target_actor, PluginName, HelmetOnHand, IsFemale, false)
+			if type == "Helmet"
+				SetItemScaleActor(target_actor, PluginName, HelmetOnHand, IsFemale, HandScale)
+			endif
+
+			RTR_PrintDebug("[RTR] DEBUG: Attached Hand Item to " + (target_actor as Form).GetName())
+
+			RegisterForAnnotationEvents(target_actor)
+		endIf
+		actorIndex += 1
+	endWhile
+
+	RTR_PrintDebug("-------------------------------------------------------------------- [RTR] OnPlayerLoadGame COMPLETE")
+	RTR_PrintDebug(" ")
+ endEvent
 
 ; OnKeyDown Event Handler
 ; Processes Key Events for configured keybindings
@@ -90,36 +177,36 @@ Event OnKeyDown(Int KeyCode)
 
 	; Manually Toggle Head Gear
 	if KeyCode == ToggleKey.GetValueInt()
-		MiscUtil.PrintConsole("[RTR] DEBUG --------------------------------------------------------------------")
-		Form male_hand_anchor_posX = MaleHandAnchor.GetAt(0)
-		GlobalVariable male_hand_anchor_posXGV = male_hand_anchor_posX as GlobalVariable
-		Float male_hand_anchor_posX_Value = male_hand_anchor_posXGV.GetValue()
-		MiscUtil.PrintConsole("[RTR] DEBUG: MaleHandAnchor.GetAt(0) returned Form As String " + (male_hand_anchor_posX as String))
-		MiscUtil.PrintConsole("[RTR] DEBUG: GV MaleHandAnchorPosX value" + male_hand_anchor_posX_Value)
-		MiscUtil.PrintConsole("[RTR] DEBUG: GV MaleHandAnchorPosX value as string" + male_hand_anchor_posX_Value)
-
-		MiscUtil.PrintConsole(" ")
-		MiscUtil.PrintConsole(" ")
-		MiscUtil.PrintConsole("[RTR] Toggle --------------------------------------------------------------------")
+		RTR_PrintDebug(" ")
+		RTR_PrintDebug(" ")
+		RTR_PrintDebug("[RTR] Toggle --------------------------------------------------------------------")
+		if PlayerRef.GetAnimationVariableInt("RTR_Action") != 0
+			return
+		endif
 		Form equipped = RTR_GetEquipped(PlayerRef, ManageCirclets.getValueInt() == 1)
 		Bool is_valid = RTR_IsValidHeadWear(PlayerRef, equipped, LoweredHoods)
-
-		UpdateManagedFollowersList()
 		
 		if is_valid
-			UnequipActorHeadgear(PlayerRef, equipped)
+			if ManageFollowers.GetValueInt() == 0
+				UnequipActorHeadgear(PlayerRef, equipped)
+			else
+				UnequipFollowerHeadgear()
+			endif
 		else
-			Form last_equipped = RTR_GetLastEquipped(PlayerRef)
-			EquipActorHeadgear(PlayerRef, last_equipped)
+			if ManageFollowers.GetValueInt() == 0
+				Form last_equipped = RTR_GetLastEquipped(PlayerRef)
+				EquipActorHeadgear(PlayerRef, last_equipped)
+			else
+				EquipFollowerHeadgear()
+			endif
 		endif
-
-		; Make Absolutely sure we've cleared our hand node
-		RTR_Detatch(PlayerRef, HelmetOnHand)
 	endif
 
 	; Force clear attachment nodes
 	if KeyCode == DeleteKey.GetValueInt()
-		RTR_DetatchAll()
+		RemoveFromHip(PlayerRef)
+		RemoveFromHand(PlayerRef)
+		UpdateManagedFollowersList()
 	endif
 EndEvent
 
@@ -130,6 +217,11 @@ EndEvent
 ; Equips/Unequips based off of Config Settings
 ; @todo Test to see if we need "debounce" logic for when rapidly changing Locations
 Event OnLocationChange(Location akOldLoc, Location akNewLoc)
+	RTR_PrintDebug(" ")
+	RTR_PrintDebug("[RTR] OnLocationChange --------------------------------------------------------------------")
+	if PlayerRef.GetAnimationVariableInt("RTR_Action") != 0
+		return
+	endif
 	Form equipped = RTR_GetEquipped(PlayerRef, ManageCirclets.getValueInt() == 1)
 	Bool is_valid = RTR_IsValidHeadWear(PlayerRef, equipped, LoweredHoods)
 	Bool equip_when_safe = EquipWhenSafe.getValueInt() == 1
@@ -140,26 +232,49 @@ Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 	UpdateManagedFollowersList()
 
 	if MostRecentLocationAction == "Equip"
-		Form last_equipped = RTR_GetLastEquipped(PlayerRef)
-		EquipActorHeadgear(PlayerRef, last_equipped)
+		if ManageFollowers.GetValueInt() == 0
+			Form last_equipped = RTR_GetLastEquipped(PlayerRef)
+			EquipActorHeadgear(PlayerRef, last_equipped)
+		else
+			EquipFollowerHeadgear()
+		endif
 	elseif MostRecentLocationAction == "Unequip"
-		UnequipActorHeadgear(PlayerRef, equipped)
+		if ManageFollowers.GetValueInt() == 0
+			UnequipActorHeadgear(PlayerRef, equipped)
+		else
+			UnequipFollowerHeadgear()
+		endif
+		
 	endif
+	RTR_PrintDebug(" ")
 EndEvent
 
 ; OnCombatStateChanged Event Handler
 ; Toggles Headgear based off Players Combat State
 Event OnCombatStateChanged(Actor akTarget, int aeCombatState)
+	RTR_PrintDebug(" ")
+	RTR_PrintDebug("[RTR] OnCombatStateChanged: " + aeCombatState + " --------------------------------------------------------------------")
+	if PlayerRef.GetAnimationVariableInt("RTR_Action") != 0
+		return
+	endif
 	if akTarget == PlayerRef && CombatEquip.GetValueInt() == 1
 		if aeCombatState == 1
 			; Player entered combat
-			Form last_equipped = RTR_GetLastEquipped(PlayerRef)
-			EquipActorHeadgear(PlayerRef, last_equipped)
+			if ManageFollowers.GetValueInt() == 0
+				Form last_equipped = RTR_GetLastEquipped(PlayerRef)
+				EquipActorHeadgear(PlayerRef, last_equipped)
+			else
+				EquipFollowerHeadgear()
+			endif
 		elseif aeCombatState == 0
 			; Player left combat
 			if MostRecentLocationAction == "Unequip"
-				Form equipped = RTR_GetEquipped(PlayerRef, ManageCirclets.getValueInt() == 1)
-				UnequipActorHeadgear(PlayerRef, equipped)
+				if ManageFollowers.GetValueInt() == 0
+					Form equipped = RTR_GetEquipped(PlayerRef, ManageCirclets.getValueInt() == 1)
+					UnequipActorHeadgear(PlayerRef, equipped)
+				else
+					UnequipFollowerHeadgear()
+				endif
 			endif
 		endIf
 	endIf
@@ -168,96 +283,75 @@ Event OnCombatStateChanged(Actor akTarget, int aeCombatState)
 		; Someone is looking for the player
 		; @todo Implement
 	endif
+	RTR_PrintDebug(" ")
 endEvent
 
 ; OnAnimationEvent Event Handler
 ; Applys IED node attachments and head gear equipping for RTR annotated animations
 Event OnAnimationEvent(ObjectReference akSource, String asEventName)
-	MiscUtil.PrintConsole(" ")
-	MiscUtil.PrintConsole("[RTR] Animation Event: " + asEventName + " --------------------------------------------------------------------")
+	RTR_PrintDebug(" ")
+	RTR_PrintDebug("[RTR] Animation Event: " + asEventName + " --------------------------------------------------------------------")
 
 	Actor target_actor = akSource as Actor
 	bool is_player = target_actor == PlayerRef
 	Bool prevent_equip = !is_player
-	Bool is_female = target_actor.GetActorBase().GetSex() == 1
-
-	; FormList should be in esp so that it can be stored in save
-	Form last_equipped = RTR_GetLastEquipped(target_actor)
-	if !RTR_IsValidHeadWear(target_actor, last_equipped, LoweredHoods)
-		return ; Exit early if last_equipped isn't a valid Helmet, Hood, or Circlet
-	endif
-
-	String last_equipped_type = RTR_InferItemType(last_equipped, LowerableHoods)
-	if last_equipped_type == "None"
-		return ; Exit early if we can't infer the item type
-	endif
-
-	FormList hip_anchor = HipAnchor(is_female)
-	FormList hand_anchor = HandAnchor(is_female)
+	String anim_action = getAction(target_actor.GetAnimationVariableInt("RTR_Action"))
 
 	; RTR Event Handlers
 	; @todo Pass to an RTR Action Delegate?
 
 	if asEventName == "RTR_Equip"
+		Form last_equipped = RTR_GetLastEquipped(target_actor)
 		; Equip Headgear
+		RemoveFromHand(target_actor)
 		target_actor.EquipItem(last_equipped, false, true)
-		MiscUtil.PrintConsole("- " + (last_equipped as Armor).GetName() + " Equipped")
+		RTR_PrintDebug("- " + (last_equipped as Armor).GetName() + " Equipped")
 		return
 	endif
 
 	if asEventName == "RTR_Unequip"
+		Form last_equipped = RTR_GetLastEquipped(target_actor)
 		; Unequip Headgear
+		if (anim_action != "EquipHood" && anim_action != "UnequipHood")  
+			AttachToHand(target_actor)
+		endif
 		target_actor.UnequipItem(last_equipped, prevent_equip, true)
-		MiscUtil.PrintConsole("- " + (last_equipped as Armor).GetName() + " Unequipped")
-		return
-	endif
-
-	; @todo move IED attachments to IED.SetItemAnimationEventEnabledActor
-	if asEventName == "RTR_AttachToHand"
-		; Attach to Hand
-		RTR_Attach(target_actor, HelmetOnHand, last_equipped, last_equipped_type, HandScale, HandNode, is_female, hand_anchor)
-		MiscUtil.PrintConsole("- " + (last_equipped as Armor).GetName() + " Attached to hand ")
-		return
-	endif
-
-	if asEventName == "RTR_RemoveFromHand"
-		; Remove from Hand
-		RTR_Detatch(target_actor, HelmetOnHand)
-		MiscUtil.PrintConsole("- " + (last_equipped as Armor).GetName() + " Removed from hand")
+		RTR_PrintDebug("- " + (last_equipped as Armor).GetName() + " Unequipped")
 		return
 	endif
 
 	if asEventName == "RTR_AttachToHip"
 		; Attach to Hip
-		RTR_Attach(target_actor, HelmetOnHip, last_equipped, last_equipped_type, HipScale, HipNode, is_female, hip_anchor)
-		MiscUtil.PrintConsole("- " + (last_equipped as Armor).GetName() + " Attached to Hip")
+		RemoveFromHand(target_actor)
+		AttachToHip(target_actor)
 		return
 	endif
 
 	if asEventName == "RTR_RemoveFromHip"
 		; Remove from Hip
-		RTR_Detatch(target_actor, HelmetOnHip)
-		MiscUtil.PrintConsole("- " + (last_equipped as Armor).GetName() + " Removed from Hip")
+		RemoveFromHip(target_actor)
+		AttachToHand(target_actor)
 		return
 	endif
 
 	if asEventName == "RTR_AttachLoweredHood"
+		Form last_equipped = RTR_GetLastEquipped(target_actor)
 		; Attach Lowered Hood
 		if LowerableHoods.HasForm(last_equipped)
 			Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(last_equipped))
-			target_actor.EquipItem(lowered_hood, prevent_equip, true)
-			MiscUtil.PrintConsole("- " + (lowered_hood as Armor).GetName() + " (Lowered Hood) Equipped")
+			target_actor.EquipItem(lowered_hood, false, true)
 		endif
 		return
 	endif
 
 	if asEventName == "RTR_RemoveLoweredHood"
+		Form last_equipped = RTR_GetLastEquipped(target_actor)
 		; Remove Lowered Hood
 		if LowerableHoods.HasForm(last_equipped) 
 			Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(last_equipped))
 			target_actor.UnequipItem(lowered_hood, false, true)
 			target_actor.RemoveItem(lowered_hood, 1, true)
-			MiscUtil.PrintConsole("- " + (lowered_hood as Armor).GetName() + " (Lowered Hood) Unequipped")
+			RTR_PrintDebug("- " + (lowered_hood as Armor).GetName() + " (Lowered Hood) Unequipped")
 		endif
 		return
 	endif
@@ -265,14 +359,15 @@ Event OnAnimationEvent(ObjectReference akSource, String asEventName)
 	if asEventName == "RTR_OffsetStop"
 		; Stop Offset
 		Debug.sendAnimationEvent(target_actor, "OffsetStop")
-		MiscUtil.PrintConsole("- Animation Finished. OffsetStop Animation Event Sent")
+		RTR_PrintDebug("- Animation Finished. OffsetStop Animation Event Sent")
 		return
 	endif
 
 	; RTR_SetTimeout waits for animation to completely finish and then does post animation actions
 	if asEventName == "RTR_SetTimeout"
+		Form last_equipped = RTR_GetLastEquipped(target_actor)
 		Float timeout = target_actor.GetAnimationVariableFloat("RTR_Timeout")
-		MiscUtil.PrintConsole("- Animation Ends in " + timeout + " seconds")
+		RTR_PrintDebug("- Animation Ends in " + (timeout + AnimTimeoutBuffer) + " seconds")
 
 		; Disable certain controls for the player
 		if is_player
@@ -280,29 +375,28 @@ Event OnAnimationEvent(ObjectReference akSource, String asEventName)
 		endif
 
 		Utility.wait(timeout + AnimTimeoutBuffer)
-		MiscUtil.PrintConsole(" ")
-		MiscUtil.PrintConsole("[RTR] OnAnimationEvent: Timeout Finished --------------------------------------------------------------------")
-		String anim_action = getAction(target_actor.GetAnimationVariableInt("RTR_Action"))
+		RTR_PrintDebug(" ")
+		RTR_PrintDebug("[RTR] OnAnimationEvent: Timeout Finished --------------------------------------------------------------------")
 
 		; Check if the animation completed successfully or if it was interuppted
 		if anim_action == "None"
-			MiscUtil.PrintConsole("- RTR Action completed successfully")
+			RTR_PrintDebug("- RTR Action completed successfully")
 		elseif anim_action == "Equip"
-			MiscUtil.PrintConsole("- Timed Out on Equip")
+			RTR_PrintDebug("- Timed Out on Equip")
 			; Finalize Equip
 			target_actor.EquipItem(last_equipped, false, true)
-			RTR_Detatch(target_actor, HelmetOnHand)
-			RTR_Detatch(target_actor, HelmetOnHip)
+			RemoveFromHand(target_actor)
+			RemoveFromHip(target_actor)
 			Debug.sendAnimationEvent(target_actor, "OffsetStop")
 		elseif anim_action == "Unequip"
-			MiscUtil.PrintConsole("- Timed Out on Unequip")
+			RTR_PrintDebug("- Timed Out on Unequip")
 			; Finalize Unequip
 			target_actor.UnequipItem(last_equipped, prevent_equip, true)
-			RTR_Detatch(target_actor, HelmetOnHand)
-			RTR_Attach(target_actor, HelmetOnHip, last_equipped, last_equipped_type, HipScale, HipNode, is_female, hip_anchor)
+			RemoveFromHand(target_actor)
+			AttachToHip(target_actor)
 			Debug.sendAnimationEvent(target_actor, "OffsetStop")
 		elseif anim_action == "EquipHood"
-			MiscUtil.PrintConsole("- Timed Out on EquipHood")
+			RTR_PrintDebug("- Timed Out on EquipHood")
 			; Finalize EquipHood
 			if LowerableHoods.HasForm(last_equipped) 
 				Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(last_equipped))
@@ -312,7 +406,7 @@ Event OnAnimationEvent(ObjectReference akSource, String asEventName)
 			target_actor.EquipItem(last_equipped, false, true)
 			Debug.sendAnimationEvent(target_actor, "OffsetStop")
 		elseif anim_action == "UnequipHood"
-			MiscUtil.PrintConsole("- Timed Out on UnequipHood")
+			RTR_PrintDebug("- Timed Out on UnequipHood")
 			; Finalize UnequipHood
 			if LowerableHoods.HasForm(last_equipped)
 				Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(last_equipped))
@@ -329,24 +423,30 @@ Event OnAnimationEvent(ObjectReference akSource, String asEventName)
 			Bool draw_weapon = target_actor.GetAnimationVariableBool("RTR_RedrawWeapons")
 			Bool return_to_first_person = target_actor.GetAnimationVariableBool("RTR_ReturnToFirstPerson")
 			
-			MiscUtil.PrintConsole("- CLEANUP - Enabling Player Controls")
+			RTR_PrintDebug("- CLEANUP - Enabling Player Controls")
 			Game.EnablePlayerControls()
 
 			if draw_weapon
-				MiscUtil.PrintConsole("- CLEANUP - Drawing Weapon")
+				RTR_PrintDebug("- CLEANUP - Drawing Weapon")
 				target_actor.DrawWeapon()
 				target_actor.SetAnimationVariableBool("RTR_RedrawWeapons", false)
 			endif
 
 			if return_to_first_person
-				MiscUtil.PrintConsole("- CLEANUP - Returning to First Person")
+				RTR_PrintDebug("- CLEANUP - Returning to First Person")
 				Game.ForceFirstPerson()
 				target_actor.SetAnimationVariableBool("RTR_ReturnToFirstPerson", false)
 			endif
 		endif
 
+		Bool finishedEquipUnequip = target_actor.GetAnimationVariableInt("IsEquipping") == 0 && target_actor.GetAnimationVariableInt("IsUnequipping") == 0
+		while !finishedEquipUnequip
+			RTR_PrintDebug("- Waiting for Equip or Unequip to finish")
+			Utility.wait(0.1)
+			finishedEquipUnequip = target_actor.GetAnimationVariableInt("IsEquipping") == 0 && target_actor.GetAnimationVariableInt("IsUnequipping") == 0
+		endwhile
 		; Clear RTR_Action
-		MiscUtil.PrintConsole("- CLEANUP - Clearing RTR_Action")
+		RTR_PrintDebug("- CLEANUP - Clearing RTR_Action")
 		target_actor.SetAnimationVariableInt("RTR_Action", 0)
 	endif
 EndEvent
@@ -354,49 +454,106 @@ EndEvent
 ; OnObjectEquipped Event Handler
 ; Detatching last equipped head gear from hip and hand
 Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
-	Actor target_actor = akReference as Actor
-	if RTR_IsValidHeadWear(target_actor, akBaseObject, LoweredHoods)
-		RTR_Detatch(target_actor, HelmetOnHip)
+	RTR_PrintDebug(" ")
+	RTR_PrintDebug("[RTR] OnObjectEquipped --------------------------------------------------------------------")
+
+	Actor target_actor = PlayerRef
+	
+	; Check if a head wear item was equipped
+	String type = RTR_InferItemType(akBaseObject, LowerableHoods)
+	RTR_PrintDebug("- ItemType = " + type)
+	Int active = PlayerRef.GetAnimationVariableInt("RTR_Action")
+	if type != "None" && active == 0
+		RTR_PrintDebug("- Actor equipped head gear outside of RTR, Clearing IED Nodes and removing any lowered hood")
+		RemoveFromHip(PlayerRef)
+		RemoveFromHand(PlayerRef)
 		
 		; remove any lowered hoods from actor
 		int i = 0
 		int loweredHoodsCount = LoweredHoods.GetSize()
 		while (i < loweredHoodsCount)
 			Form lowered_hood = LoweredHoods.GetAt(i)
-			if target_actor.IsEquipped(lowered_hood)
-				target_actor.UnequipItem(lowered_hood, false, true)
-				target_actor.RemoveItem(lowered_hood, 1, true)
+			if PlayerRef.IsEquipped(lowered_hood)
+				PlayerRef.UnequipItem(lowered_hood, false, true)
+				PlayerRef.RemoveItem(lowered_hood, 1, true)
 			endif
 			i += 1
 		endwhile
 	endif
-	RTR_Detatch(target_actor, HelmetOnHand)
+	RTR_PrintDebug(" ")
 EndEvent
 
 ; OnObjectUnequipped Event Handler
 Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
-	Actor target_actor = akReference as Actor
-	if (RemoveHelmetWithoutArmor.GetValueInt() == 1 && !RTR_IsTorsoEquipped(target_actor))
-		RTR_DetatchAllActor(target_actor)
-
+	RTR_PrintDebug(" ")
+	RTR_PrintDebug("[RTR] OnObjectUnequipped --------------------------------------------------------------------")
+	
+	; Check if it was armor that was removed
+	if (RemoveHelmetWithoutArmor.GetValueInt() == 1 && !RTR_IsTorsoEquipped(PlayerRef))
+		RTR_PrintDebug("- Actor is not wearing anything on their torso and RemoveHelmetWithoutArmor is enabled. Clearing IED Nodes and removing any lowered hood")
+		RemoveFromHip(PlayerRef)
+		RemoveFromHand(PlayerRef)
+		
 		; remove any lowered hoods from actor
 		int i = 0
 		int LoweredHoodsCount = LoweredHoods.GetSize()
 		while i < LoweredHoodsCount
 			Form lowered_hood = LoweredHoods.GetAt(i)
-			if target_actor.IsEquipped(lowered_hood)
-				target_actor.UnequipItem(lowered_hood, false, true)
-				target_actor.RemoveItem(lowered_hood, 1, true)
+			if PlayerRef.IsEquipped(lowered_hood)
+				PlayerRef.UnequipItem(lowered_hood, false, true)
+				PlayerRef.RemoveItem(lowered_hood, 1, true)
 			endif
 			i += 1
 		endwhile
 	endif
-	RTR_Detatch(target_actor, HelmetOnHand)
-EndEvent 
+
+	; Check if it was a helmet, circlet, or hood that was removed
+	String type = RTR_InferItemType(akBaseObject, LowerableHoods)
+	Int active = PlayerRef.GetAnimationVariableInt("RTR_Action")
+	if type != "None" && active == 0
+		RTR_PrintDebug("- Actor intentionally unequipped a helmet or hood outside of RTR, Clearing IED Nodes and removing any lowered hood")
+		RemoveFromHip(PlayerRef)
+		RemoveFromHand(PlayerRef)
+		
+		; remove any lowered hoods from actor
+		int i = 0
+		int LoweredHoodsCount = LoweredHoods.GetSize()
+		while i < LoweredHoodsCount
+			Form lowered_hood = LoweredHoods.GetAt(i)
+			if PlayerRef.IsEquipped(lowered_hood)
+				PlayerRef.UnequipItem(lowered_hood, false, true)
+				PlayerRef.RemoveItem(lowered_hood, 1, true)
+			endif
+			i += 1
+		endwhile
+	endif
+	RTR_PrintDebug(" ")
+EndEvent
+
+
+Event OnMenuClose(String MenuName)
+	if MenuName == "InventoryMenu"
+		Form last_equipped = RTR_GetLastEquipped(PlayerRef)
+		if PlayerRef.IsEquipped(last_equipped)
+			RemoveFromHip(PlayerRef)
+		else
+			; purposefully unequipped a helmet
+			; @todo implement an MCM setting to change what happens when items are unequipped from the inventory
+			; 		- default: 0
+			;       - 0: Do Nothing
+			;	    - 1: Attach to Belt / Lower Hood
+			; UnequipWithNoAnimation(PlayerRef, last_equipped)
+		endif
+	endif
+
+	; Regardless, the item should be removed from the hand
+	RemoveFromHand(PlayerRef)
+EndEvent
 
 ; OnRaceSwitchComplete Event Handler
 Event OnRaceSwitchComplete()
-	RTR_DetatchAllActor(PlayerRef)
+	RemoveFromHip(PlayerRef)
+	RemoveFromHand(PlayerRef)
 EndEvent
 
 ;;;; Action functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -407,34 +564,38 @@ EndEvent
 ; @param Actor target_actor
 ; @param Form last_equipped
 Function EquipActorHeadgear(Actor target_actor, Form last_equipped)
-	MiscUtil.PrintConsole(" ")
-	MiscUtil.PrintConsole("[RTR] EquipActorHeadgear --------------------------------------------------------------------")
+	RTR_PrintDebug(" ")
+	RTR_PrintDebug("[RTR] EquipActorHeadgear --------------------------------------------------------------------")
 	Int RTR_InAction = target_actor.GetAnimationVariableInt("RTR_Active")
 	if RTR_InAction > 0
-		MiscUtil.PrintConsole("- RTR_Active " + getAction(RTR_InAction))
+		RTR_PrintDebug("- RTR_Active " + getAction(RTR_InAction))
 		return
 	endif
 
+	; Update the IED Node with the last_equipped item
+	UseHelmet(target_actor, last_equipped)
+
 	; Exit early if the actor is already wearing the item
 	if target_actor.IsEquipped(last_equipped)
-		MiscUtil.PrintConsole("- Exiting because item " + (last_equipped as Armor).GetName() + " is already equipped")
-		RTR_DetatchAllActor(target_actor)
+		RTR_PrintDebug("- Exiting because item " + (last_equipped as Armor).GetName() + " is already equipped")
+		RemoveFromHip(target_actor)
+		RemoveFromHand(target_actor)
 		return
 	endif
 
 	; Combat State Unequip
 	if target_actor.GetCombatState() == 1
-		MiscUtil.PrintConsole("- Actor is in combat")
+		RTR_PrintDebug("- Actor is in combat")
 		if CombatEquip.GetValueInt() == 0
-			MiscUtil.PrintConsole("- CombatEquip is disabled")
+			RTR_PrintDebug("- CombatEquip is disabled")
 			return
 		endif
 
-		MiscUtil.PrintConsole("- CombatEquip is enabled")
+		RTR_PrintDebug("- CombatEquip is enabled")
 
 		; Equip with no animation
 		if CombatEquipAnimation.getValueInt() == 0
-			MiscUtil.PrintConsole("- CombatEquipAnimation is disabled. Equipping with no animation")
+			RTR_PrintDebug("- CombatEquipAnimation is disabled. Equipping with no animation")
 			EquipWithNoAnimation(target_actor, last_equipped)
 			return
 		endif
@@ -447,45 +608,33 @@ Function EquipActorHeadgear(Actor target_actor, Form last_equipped)
 		target_actor.GetAnimationVariableInt("IsEquipping") == 1 || \
 		target_actor.GetAnimationVariableInt("IsUnequipping") == 1
 		
-		MiscUtil.PrintConsole("- Actor can't be animated. Unequipping with no animation")
+		RTR_PrintDebug("- Actor can't be animated. Unequipping with no animation")
 		; Force equip with no animation
 		EquipWithNoAnimation(target_actor, last_equipped)
 		return
 	endif
 
 	; Animated Equip
-	RegisterForAnnotationEvents(target_actor)
 	String animation = "RTREquip"
 
 	; Switch animation if equipping a lowerable hood
 	if LowerableHoods.hasForm(last_equipped)
 		animation = "RTREquipHood"
-		MiscUtil.PrintConsole("- Lowerable Hood Detected. Switching animation to " + animation)
+		RTR_PrintDebug("- Lowerable Hood Detected. Switching animation to " + animation)
 	endif
 
 	Bool was_drawn = RTR_SheathWeapon(target_actor)
 	Bool was_first_person = RTR_ForceThirdPerson(target_actor)
 
 	if target_actor == PlayerRef
-		MiscUtil.PrintConsole("- Setting player RTR_RedrawWeapons to " + was_drawn)
+		RTR_PrintDebug("- Setting player RTR_RedrawWeapons to " + was_drawn)
 		target_actor.SetAnimationVariableBool("RTR_RedrawWeapons", was_drawn)
-		MiscUtil.PrintConsole("- Setting player RTR_ReturnToFirstPerson to " + was_first_person)
+		RTR_PrintDebug("- Setting player RTR_ReturnToFirstPerson to " + was_first_person)
 		target_actor.SetAnimationVariableBool("RTR_ReturnToFirstPerson", was_first_person)
 	endif
 
-	MiscUtil.PrintConsole("- Triggering " + animation + " animation")
+	RTR_PrintDebug("- Triggering " + animation + " animation")
 	Debug.sendAnimationEvent(target_actor, animation)
-
-	; Check attachment node accuracy...
-	; Just in case the animation was interrupted
-	; RTR_Detatch(target_actor, HelmetOnHand)
-	; if RTR_IsAttached(target_actor, HelmetOnHip, target_actor.GetActorBase().getSex())
-	; 	EquipWithNoAnimation(target_actor, last_equipped)
-	; endif
-	; Commetting out for now. Should work with out it
-
-	; [Experimental] Will not do anything unless follower support is enabled
-	EquipFollowerHeadgear()
 EndFunction
 
 ; EquipWithNoAnimation
@@ -496,13 +645,17 @@ EndFunction
 Function EquipWithNoAnimation(Actor target_actor, Form last_equipped)
 	String last_equipped_type = RTR_InferItemType(last_equipped, LowerableHoods)
 
+	; Update the IED Node with the last_equipped item
+	UseHelmet(target_actor, last_equipped)
+
 	if last_equipped_type == "Hood"
 		Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(last_equipped))
 		target_actor.UnequipItem(lowered_hood, false, true)
 		target_actor.EquipItem(last_equipped, false, true)
 	else
 		target_actor.EquipItem(last_equipped, false, true)
-		RTR_DetatchAllActor(target_actor)
+		RemoveFromHip(target_actor)
+		RemoveFromHand(target_actor)
 	endif
 endFunction
 
@@ -512,34 +665,38 @@ endFunction
 ; @param Actor target_actor
 ; @param Form equipped
 Function UnequipActorHeadgear(Actor target_actor, Form equipped)
-	MiscUtil.PrintConsole(" ")
-	MiscUtil.PrintConsole("[RTR] UnequipActorHeadgear --------------------------------------------------------------------")
+	RTR_PrintDebug(" ")
+	RTR_PrintDebug("[RTR] UnequipActorHeadgear --------------------------------------------------------------------")
+	
 	Int RTR_InAction = target_actor.GetAnimationVariableInt("RTR_Active")
 	if RTR_InAction > 0
-		MiscUtil.PrintConsole("- RTR_Active " + getAction(RTR_InAction))
+		RTR_PrintDebug("- RTR_Active " + getAction(RTR_InAction))
 		return
 	endif
 
+	; Update the IED Node with the equipped item
+	UseHelmet(target_actor, equipped)
+
 	; Exit early if the actor is not wearing the item
 	if !target_actor.IsEquipped(equipped)
-		MiscUtil.PrintConsole("- Exiting because item " + (equipped as Armor).GetName() + " is not equipped")
-		RTR_Detatch(target_actor, HelmetOnHand)
+		RTR_PrintDebug("- Exiting because item " + (equipped as Armor).GetName() + " is not equipped")
+		RemoveFromHand(target_actor)
 		return
 	endif
 
 	; Combat State Unequip
 	if target_actor.GetCombatState() == 1
-		MiscUtil.PrintConsole("- Actor is in combat")
+		RTR_PrintDebug("- Actor is in combat")
 		if CombatEquip.GetValueInt() == 0
-			MiscUtil.PrintConsole("- CombatEquip is disabled")
+			RTR_PrintDebug("- CombatEquip is disabled")
 			return
 		endif
 
-		MiscUtil.PrintConsole("- CombatEquip is enabled")
+		RTR_PrintDebug("- CombatEquip is enabled")
 
 		; Unequip with no animation
 		if CombatEquipAnimation.getValueInt() == 0
-			MiscUtil.PrintConsole("- CombatEquipAnimation is disabled. Unequipping with no animation")
+			RTR_PrintDebug("- CombatEquipAnimation is disabled. Unequipping with no animation")
 			UnequipWithNoAnimation(target_actor, equipped)
 			return
 		endif
@@ -552,45 +709,33 @@ Function UnequipActorHeadgear(Actor target_actor, Form equipped)
 		target_actor.GetAnimationVariableInt("IsEquipping") == 1 || \
 		target_actor.GetAnimationVariableInt("IsUnequipping") == 1
 		
-		MiscUtil.PrintConsole("- Actor can't be animated. Unequipping with no animation")
+		RTR_PrintDebug("- Actor can't be animated. Unequipping with no animation")
 		; Force unequip with no animation
 		UnequipWithNoAnimation(target_actor, equipped)
 		return
 	endif
 
 	; Animated Unequip
-	RegisterForAnnotationEvents(target_actor)
 	String animation = "RTRUnequip"
 
 	; Switch animation if equipping a lowerable hood
 	if LowerableHoods.hasForm(equipped)
 		animation = "RTRUnequipHood"
-		MiscUtil.PrintConsole("- Lowerable Hood Detected. Switching animation to " + animation)
+		RTR_PrintDebug("- Lowerable Hood Detected. Switching animation to " + animation)
 	endif
 
 	Bool was_drawn = RTR_SheathWeapon(target_actor)
 	Bool was_first_person = RTR_ForceThirdPerson(target_actor)
 
 	if target_actor == PlayerRef
-		MiscUtil.PrintConsole("- Setting player RTR_RedrawWeapons to " + was_drawn)
+		RTR_PrintDebug("- Setting player RTR_RedrawWeapons to " + was_drawn)
 		target_actor.SetAnimationVariableBool("RTR_RedrawWeapons", was_drawn)
-		MiscUtil.PrintConsole("- Setting player RTR_ReturnToFirstPerson to " + was_first_person)
+		RTR_PrintDebug("- Setting player RTR_ReturnToFirstPerson to " + was_first_person)
 		target_actor.SetAnimationVariableBool("RTR_ReturnToFirstPerson", was_first_person)
 	endif
 
-	MiscUtil.PrintConsole("- Triggering " + animation + " animation")
+	RTR_PrintDebug("- Triggering " + animation + " animation")
 	Debug.sendAnimationEvent(target_actor, animation)
-
-	; Check attachment node accuracy...
-	; Just in case the animation was interrupted
-	; RTR_Detatch(target_actor, HelmetOnHand)
-	; if !RTR_IsAttached(target_actor, HelmetOnHip, target_actor.GetActorBase().getSex())
-	; 	UnequipWithNoAnimation(target_actor, equipped)
-	; endif
-	; Commetting out for now. Should work with out it
-
-	; [Experimental] Will not do anything unless follower support is enabled
-	UnequipFollowerHeadgear()
 EndFunction
 
 ; UnequipWithNoAnimation
@@ -603,18 +748,19 @@ Function UnequipWithNoAnimation(Actor target_actor, Form equipped)
 	Bool prevent_equip = target_actor != PlayerRef
 	String equipped_type = RTR_InferItemType(equipped, LowerableHoods)
 
+	; Update the IED Node with the equipped item
+	UseHelmet(target_actor, equipped)
+
 	if equipped_type == "Hood"
 		Form lowered_hood = LoweredHoods.GetAt(LowerableHoods.Find(equipped))
 		target_actor.UnequipItem(equipped, false, true)
 		target_actor.EquipItem(lowered_hood, prevent_equip, true)
 	else
 		String last_equipped_type = RTR_InferItemType(equipped, LowerableHoods)
-		Bool is_female = target_actor.GetActorBase().getSex() == 1
-		FormList hip_anchor = HipAnchor(is_female)
 		
 		target_actor.UnequipItem(equipped, prevent_equip, true)
-		RTR_Detatch(target_actor, HelmetOnHand)
-		RTR_Attach(target_actor, HelmetOnHip, equipped, last_equipped_type, HipScale, HipNode, is_female, hip_anchor)
+		RemoveFromHand(target_actor)
+		AttachToHip(target_actor)
 	endif
 endFunction
 
@@ -631,8 +777,8 @@ function RegisterForAnnotationEvents(Actor target_actor)
 	RegisterForAnimationEvent(target_actor, "RTR_Equip")
 	RegisterForAnimationEvent(target_actor, "RTR_Unequip")
 
-	RegisterForAnimationEvent(target_actor, "RTR_AttachToHand")
-	RegisterForAnimationEvent(target_actor, "RTR_RemoveFromHand")
+	; RegisterForAnimationEvent(target_actor, "RTR_AttachToHand")
+	; RegisterForAnimationEvent(target_actor, "RTR_RemoveFromHand")
 
 	RegisterForAnimationEvent(target_actor, "RTR_AttachToHip")
 	RegisterForAnimationEvent(target_actor, "RTR_RemoveFromHip")
@@ -651,19 +797,24 @@ function UpdateManagedFollowersList()
 		return
 	endif
 
-	; ManagedFollowers
-	; Actor[] found_followers = ScanCellNPCs(PlayerRef, 500.0, RTR_Follower)
+	RTR_PrintDebug(" ")
+	RTR_PrintDebug("[RTR] UpdateManagedFollowersList --------------------------------------------------------------------")
 	
-	; int i = 0
-	; int managedFollowerCount = ManagedFollowers.GetSize()
-	; while (i < managedFollowerCount)
-	; 	Actor followerActor = ManagedFollowers.GetAt(i) as Actor
-	; 	ManagedFollowers.AddForm(followerActor)
-	; 	; @DEBUG Output Current Managed Followers
-	; 	string followerActorName = followerActor.GetActorBase().GetName()
-	; 	Debug.Notification("RTR Detected Follower: " + followerActorName)
-	; 	i += 1
-	; endwhile
+	; ManagedFollowers
+	Actor[] found_followers = ScanCellNPCs(PlayerRef, 500.0, RTR_Follower)
+	
+	int i = 0
+	int foundCount = found_followers.Length
+	while (i < foundCount)
+	 	Actor followerActor = found_followers[i]
+	 	if !ManagedActors.HasForm(followerActor)
+			ManagedActors.AddForm(followerActor)
+			RegisterForAnnotationEvents(followerActor)
+			string followerActorName = followerActor.GetActorBase().GetName()
+			RTR_PrintDebug("- Detected Follower: " + followerActorName)
+		endIf
+	 	i += 1
+	endwhile
 endFunction
 
 function UnequipFollowerHeadgear()
@@ -671,43 +822,95 @@ function UnequipFollowerHeadgear()
 		return
 	endif
 
-	; int i = 0
-	; int managedFollowerCount = ManagedFollowers.GetSize()
-	; while (i < managedFollowerCount)
-	; 	Actor follower = ManagedFollowers.GetAt(i) as Actor
-	; 	Form equipped = RTR_GetEquipped(follower, ManageCirclets.getValueInt() == 1)
-	; 	Bool is_valid = RTR_IsValidHeadWear(follower, equipped, LoweredHoods)
-		
-	; 	if is_valid
-	; 		UnequipActorHeadgear(follower, equipped)
-	; 	endif
+	RTR_PrintDebug(" ")
+	RTR_PrintDebug("[RTR] UnequipFollowerHeadgear --------------------------------------------------------------------")
 
-	; 	; Make Absolutely sure their hand nodes are clear
-	; 	RTR_Detatch(follower, HelmetOnHand)
-	; 	i += 1 ; NEXT
-	; endwhile
+	int i = 0 ; Includes PlayerRef at index 0
+	int managedFollowerCount = ManagedActors.GetSize()
+	while (i < managedFollowerCount)
+		Actor followerActor = ManagedActors.GetAt(i) as Actor
+		
+		Form equipped = RTR_GetEquipped(followerActor, ManageCirclets.getValueInt() == 1)
+		string followerActorName = followerActor.GetActorBase().GetName()
+		if equipped
+			RTR_PrintDebug("- Unequipping Follower Head Gear for: " + followerActorName)
+			UnequipActorHeadgear(followerActor, equipped)
+		else
+			RTR_PrintDebug("- No Head Gear to Unequip for: " + followerActorName)
+		endif
+		
+		i += 1 ; NEXT
+	endwhile
+	RTR_PrintDebug(" ")
 endFunction
 
 function EquipFollowerHeadgear()
 	if ManageFollowers.GetValueInt() == 0
 		return
 	endif
-	
-	; int i = 0
-	; int managedFollowerCount = ManagedFollowers.GetSize()
-	; while (i < managedFollowerCount)
-	; 	Actor follower = ManagedFollowers.GetAt(i) as Actor
-	; 	Form last_equipped = RTR_GetLastEquipped(follower)
-	; 	Bool is_valid = RTR_IsValidHeadWear(follower, last_equipped, LoweredHoods)
-		
-	; 	if is_valid
-	; 		EquipActorHeadgear(follower, last_equipped)
-	; 	endif
 
-	; 	; Make Absolutely sure their hand nodes are clear
-	; 	RTR_Detatch(follower, HelmetOnHand)
-	; 	i += 1 ; NEXT
-	; endwhile
+	RTR_PrintDebug(" ")
+	RTR_PrintDebug("[RTR] EquipFollowerHeadgear --------------------------------------------------------------------")
+
+	int i = 0 ; Includes PlayerRef at index 0
+	int managedFollowerCount = ManagedActors.GetSize()
+	while (i < managedFollowerCount)
+		Actor followerActor = ManagedActors.GetAt(i) as Actor
+		
+		Form last_equipped = RTR_GetLastEquipped(followerActor)
+		string followerActorName = followerActor.GetActorBase().GetName()
+		if last_equipped
+			RTR_PrintDebug("- Unequipping Follower Head Gear for: " + followerActorName)
+			EquipActorHeadgear(followerActor, last_equipped)
+		else 
+			RTR_PrintDebug("- No Head Gear to Equip for: " + followerActorName)
+		endif
+		
+		i += 1 ; NEXT
+	endwhile
+	RTR_PrintDebug(" ")
+endFunction
+
+function setIEDNodeEnabled(Actor target_actor, String attachName, Bool enabled)
+	Bool is_female = target_actor.GetActorBase().GetSex() == 1
+	SetItemEnabledActor(target_actor, PluginName, attachName, is_female, enabled)
+endFunction
+
+function AttachToHip(Actor target_actor)
+	setIEDNodeEnabled(target_actor, HelmetOnHip, true)
+endFunction
+
+function RemoveFromHip(Actor target_actor)
+	setIEDNodeEnabled(target_actor, HelmetOnHip, false)
+	Int i = 0
+	Int loweredHoodsCount = LoweredHoods.GetSize()
+	while (i < loweredHoodsCount)
+		Form loweredHood = LoweredHoods.GetAt(i)
+		if target_actor.IsEquipped(loweredHood) 
+			target_actor.UnequipItem(loweredHood, false, true)
+		endif
+		i += 1
+	endwhile
+endFunction
+
+function AttachToHand(Actor target_actor)
+	setIEDNodeEnabled(target_actor, HelmetOnHand, true)
+endFunction
+
+function RemoveFromHand(Actor target_actor)
+	setIEDNodeEnabled(target_actor, HelmetOnHand, false)
+endFunction
+
+function UseHelmet(Actor target_actor, Form helmet)
+	String type = RTR_InferItemType(helmet, LowerableHoods)
+	Bool is_female = target_actor.GetActorBase().GetSex() == 1
+	SetItemFormActor(target_actor, PluginName, HelmetOnHip, is_female, helmet)
+	SetItemFormActor(target_actor, PluginName, HelmetOnHand, is_female, helmet)
+	if type == "Helmet"
+		SetItemScaleActor(target_actor, PluginName, HelmetOnHand, is_female, HandScale)
+	else
+		SetItemScaleActor(target_actor, PluginName, HelmetOnHand, is_female, 1)
+	endif
 endFunction
 
 ; HipAnchor
@@ -715,23 +918,23 @@ endFunction
 ;
 ; @param Bool is_female
 ; @return FormList
-FormList function HipAnchor(Bool is_female)
+Form[] function HipAnchor(Bool is_female)
 	if is_female 
-		return FemaleHipAnchor
+		return FemaleHipAnchor.ToArray()
 	endif
-	return MaleHipAnchor
+	return MaleHipAnchor.ToArray()
 endFunction
 
 ; HandAnchor
 ; Returns the correct hand anchor for the actor's gender
 ;
 ; @param Bool is_female
-; @return FormList
-FormList function HandAnchor(Bool is_female)
+; @return FormList;;
+Form[] function HandAnchor(Bool is_female)
 	if is_female 
-		return FemaleHandAnchor
+		return FemaleHandAnchor.ToArray()
 	endif
-	return MaleHandAnchor
+	return MaleHandAnchor.ToArray()
 endFunction
 
 ; getAction

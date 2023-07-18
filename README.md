@@ -74,6 +74,11 @@ I absolutely love the idea but it has a lot of buggy behavior, half finished fea
 - [ ] Add new "RTRNoAnimation" keyword to the `ReadTheRoom_Exclusions_KID.ini` so people can set modded head gear with bad gnd meshes to still equip/unequip but skip the animations/hand and hip attachment.
 - [ ] Plugin clean up. Unused forms are abound in the plugin. Clean these out to make the plugin smaller so formIds can be opened up to be used by some new features.
 - [ ] Updated hood animations to using the great animations from chikuwan's [Serana's Hood Fix with Animation](https://www.nexusmods.com/skyrimspecialedition/mods/80336) mod.
+- [ ] Better "Last Equipped" tracking. 
+  - Currently it is only tracked through IED and requires the mod to make a call to get the item from IED and then run logic to "categorize" it. This is an issue when exiting your inventory because there is an event trigger for when you close the inventory to refresh the helmet placements based on this last equipped item regardless if you intentionally removed it or switched to another item that's on the exclusion list. 
+  - This changes the logic so if you intentionally "unequip" an object it will track that and not show the item on your belt or as a lowerable hood. 
+  - New MCM option to control if unequipping an item in the inventory attaches the item to your belt just like if you changed locations or hit the keybinding
+  - Defaults to "Clear on unequip" so items removed in the inventory don't attach through RTR
 
 ## Possible New Features
 

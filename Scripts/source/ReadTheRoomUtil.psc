@@ -63,19 +63,21 @@ endFunction
 String function RTR_InferItemType(Form item, FormList LowerableHoods) global
     MiscUtil.PrintConsole(">>>>>>>> [RTRUtil] RTR_InferItemType")
 
+    Armor thisArmor = item as Armor
+
     ; Check if a hood has been set up to be lowered
-    if item.HasKeywordString("RTR_HoodKW") && LowerableHoods.HasForm(item)
-        MiscUtil.PrintConsole(">> item " + (item as Armor).GetName() + " type: Hood")
+    if thisArmor.HasKeywordString("RTR_HoodKW") && LowerableHoods.HasForm(thisArmor)
+        MiscUtil.PrintConsole(">> item " + thisArmor.GetName() + " type: Hood")
         return "Hood"
-    elseif (item as Armor).IsClothingHead()
-        MiscUtil.PrintConsole(">> item " + (item as Armor).GetName() + " type: Circlet")
+    elseif thisArmor.IsClothingHead()
+        MiscUtil.PrintConsole(">> item " + thisArmor.GetName() + " type: Circlet")
         return "Circlet"
-    elseif (item as Armor).IsHelmet()
-        MiscUtil.PrintConsole(">> item " + (item as Armor).GetName() + " type: Helmet")
+    elseif thisArmor.IsHelmet()
+        MiscUtil.PrintConsole(">> item " + thisArmor.GetName() + " type: Helmet")
         return "Helmet"
     endif
 
-    MiscUtil.PrintConsole(">> Type could not be inferred for item " + (item as Armor).GetName())
+    MiscUtil.PrintConsole(">> Type could not be inferred for item " + thisArmor.GetName())
     return "None"
 endFunction
 
@@ -141,6 +143,10 @@ endFunction
 Bool Function RTR_IsTorsoEquipped(Actor target_actor) global
     ReadTheRoomUtil s
 	Armor TorsoArmor = target_actor.GetEquippedArmorInSlot(32) as Armor
+    if TorsoArmor == None
+        ; SOS moves armor to slot 52 so check there too
+        TorsoArmor = target_actor.GetEquippedArmorInSlot(52) as Armor
+    endif
 	return TorsoArmor != None
 EndFunction
 
@@ -226,6 +232,18 @@ Bool function RTR_ForceThirdPerson(Actor target_actor) global
     return false
 endFunction
 
+; RTR_Log
+; Prints a message to the console if logging is enabled
+;
+; @param String msg
+function RTR_PrintDebug(String msg) global
+    ; if !logging_enabled
+    ;     return
+    ; endif
+
+    MiscUtil.PrintConsole(msg)
+endFunction
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;; Positioning Helpers ;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -240,7 +258,7 @@ endFunction
 ; @param String HelmType
 ; @param FormList Anchor
 ; Returns Float[3] = {x, y, z}
-Float[] function RTR_GetPosition(String helm_type, FormList anchor)
+Float[] function RTR_GetPosition(String helm_type, Form[] anchor) global
     MiscUtil.PrintConsole(">>>>>>>> [RTRUtil] RTR_GetPosition")
     Int PosXIndex = 0
     Int PosYIndex = 1
@@ -251,18 +269,18 @@ Float[] function RTR_GetPosition(String helm_type, FormList anchor)
     if helm_type == "Circlet"
         MiscUtil.PrintConsole(">> Applying CircletIndexOffset: " + CircletIndexOffset)
         MiscUtil.PrintConsole(">>  PosX Index" + (PosXIndex + CircletIndexOffset))
-        position[0] = (anchor.GetAt(PosXIndex + CircletIndexOffset) as GlobalVariable).GetValue()
+        position[0] = (anchor[PosXIndex + CircletIndexOffset] as GlobalVariable).GetValue()
         MiscUtil.PrintConsole(">>  PosY Index" + (PosYIndex + CircletIndexOffset))
-        position[1] = (anchor.GetAt(PosYIndex + CircletIndexOffset) as GlobalVariable).GetValue()
+        position[1] = (anchor[PosYIndex + CircletIndexOffset] as GlobalVariable).GetValue()
         MiscUtil.PrintConsole(">>  PosZ Index" + (PosZIndex + CircletIndexOffset))
-        position[2] = (anchor.GetAt(PosZIndex + CircletIndexOffset) as GlobalVariable).GetValue()
+        position[2] = (anchor[PosZIndex + CircletIndexOffset] as GlobalVariable).GetValue()
     else
         MiscUtil.PrintConsole(">>  PosX Index" + PosXIndex)
-        position[0] = (anchor.GetAt(PosXIndex) as GlobalVariable).GetValue()
+        position[0] = (anchor[PosXIndex] as GlobalVariable).GetValue()
         MiscUtil.PrintConsole(">>  PosY Index" + PosYIndex)
-        position[1] = (anchor.GetAt(PosYIndex) as GlobalVariable).GetValue()
+        position[1] = (anchor[PosYIndex] as GlobalVariable).GetValue()
         MiscUtil.PrintConsole(">>  PosZ Index" + PosZIndex)
-        position[2] = (anchor.GetAt(PosZIndex) as GlobalVariable).GetValue()
+        position[2] = (anchor[PosZIndex] as GlobalVariable).GetValue()
     endif
 
     return position
@@ -274,7 +292,7 @@ endFunction
 ; @param String helm_type
 ; @param GlobalVariable[] anchor
 ; @return Float[3] = {pitch, roll, yaw}
-Float[] function RTR_GetRotation(String helm_type, FormList anchor)
+Float[] function RTR_GetRotation(String helm_type, Form[] anchor) global
     Int RotPitchIndex = 3 
     Int RotRollIndex = 4 
     Int RotYawIndex = 5
@@ -282,13 +300,13 @@ Float[] function RTR_GetRotation(String helm_type, FormList anchor)
     Float[] rotation = new Float[3]
     
     if helm_type == "Circlet"
-        rotation[0] = (anchor.GetAt(RotPitchIndex + CircletIndexOffset) as GlobalVariable).GetValue()
-        rotation[1] = (anchor.GetAt(RotRollIndex + CircletIndexOffset) as GlobalVariable).GetValue()
-        rotation[2] = (anchor.GetAt(RotYawIndex + CircletIndexOffset) as GlobalVariable).GetValue()
+        rotation[0] = (anchor[RotPitchIndex + CircletIndexOffset] as GlobalVariable).GetValue()
+        rotation[1] = (anchor[RotRollIndex + CircletIndexOffset] as GlobalVariable).GetValue()
+        rotation[2] = (anchor[RotYawIndex + CircletIndexOffset] as GlobalVariable).GetValue()
     else
-        rotation[0] = (anchor.GetAt(RotPitchIndex) as GlobalVariable).GetValue()
-        rotation[1] = (anchor.GetAt(RotRollIndex) as GlobalVariable).GetValue()
-        rotation[2] = (anchor.GetAt(RotYawIndex) as GlobalVariable).GetValue()
+        rotation[0] = (anchor[RotPitchIndex] as GlobalVariable).GetValue()
+        rotation[1] = (anchor[RotRollIndex] as GlobalVariable).GetValue()
+        rotation[2] = (anchor[RotYawIndex] as GlobalVariable).GetValue()
     endif
 
     return rotation
@@ -323,110 +341,4 @@ Form function RTR_GetLastEquipped(Actor target_actor) global
     endif
 
     return last_equipped
-endFunction
-
-; RTR_Attach
-; Attaches an IED Object to an Actor
-;
-; @todo Refactor to reduce the number of parameters
-; @param Actor target_actor
-; @param String attachment_name
-; @param Form item
-; @param String item_type
-; @param Float item_scale
-; @param String node_name
-; @param bool is_female
-; @param FormList anchor
-; @return void
-; 
-; @todo Create hip and hand attachments on init
-;       Refactor this function to update the item Form and Scale
-;       Implement `SetItemAnimationEventEnabledActor` to show/hide based on RTR animation event
-;       Create new RTR function to enable and disable attachments with `SetItemEnabledActor`
-function RTR_Attach(Actor target_actor, String attachment_name, Form item, String item_type, Float item_scale, String node_name, bool is_female, FormList anchor) global
-    MiscUtil.PrintConsole(">>>>>>>> [RTRUtil] RTR_Attach")
-    ReadTheRoomUtil s
-    Bool inventory_required = true
-
-    MiscUtil.PrintConsole(">> Resolving position data for item_type  " + item_type + "  where is_female " + (is_female as String))
-    Float[] pos = s.RTR_GetPosition(item_type, anchor)
-    Float[] rot = s.RTR_GetRotation(item_type, anchor)
-
-    MiscUtil.PrintConsole(">> posX: " + pos[0] + " posY: " + pos[1] + " posZ: " + pos[2])
-    MiscUtil.PrintConsole(">> rotPitch: " + rot[0] + " rotRoll: " + rot[1] + " rotYaw: " + rot[2])
-
-    ; Create IED Attachment
-    MiscUtil.PrintConsole(">> Creating IED Attachment")
-    MiscUtil.PrintConsole(">>>> On Actor " + target_actor.GetName())
-    MiscUtil.PrintConsole(">>>> PluginName " + s.PluginName)
-    MiscUtil.PrintConsole(">>>> With Form " + (item as Armor).GetName())
-    MiscUtil.PrintConsole(">>>> With Attachment Name " + attachment_name)
-    MiscUtil.PrintConsole(">>>> With Node Name " + node_name)
-    IED.CreateItemActor(target_actor, s.PluginName, attachment_name, is_female, item, inventory_required, node_name)
-
-    ; Set the form to show
-    MiscUtil.PrintConsole(">> Setting IED Form on Actor")
-    IED.SetItemFormActor(target_actor, s.PluginName, attachment_name, is_female, item)
-
-    ; Set the node to attach to
-    MiscUtil.PrintConsole(">> Setting IED Item Node on Actor")
-    IED.SetItemNodeActor(target_actor, s.PluginName, attachment_name, is_female, node_name)
-
-    ; Position the attachment
-    MiscUtil.PrintConsole(">> Setting IED Item Position on Actor")
-    IED.SetItemPositionActor(target_actor, s.PluginName, attachment_name, is_female, pos)
-    MiscUtil.PrintConsole(">> Setting IED Item Rotation on Actor")
-    IED.SetItemRotationActor(target_actor, s.PluginName, attachment_name, is_female, rot)
-
-    ; Set the item scale if it's a helmet
-    if item_type == "Helmet"
-        MiscUtil.PrintConsole(">> Setting IED Item Scale on Actor")
-        IED.SetItemScaleActor(target_actor, s.PluginName, attachment_name, is_female, item_scale)
-    endif
-
-    ; Enable the attachment
-    MiscUtil.PrintConsole(">> Enabling IED Item on Actor")
-    IED.SetItemEnabledActor(target_actor, s.PluginName, attachment_name, is_female, true)
-endFunction
-
-; RTR_IsAttached
-; Checks if an IED Object is attached to an Actor
-;
-; @param Actor target_actor
-; @param String attachment_name
-; @param Bool is_female
-; @return Bool
-Bool function RTR_IsAttached(Actor target_actor, String attachment_name, Bool is_female = false) global
-    ReadTheRoomUtil s
-    return ItemEnabledActor(target_actor, s.PluginName, attachment_name, is_female)
-endFunction
-
-; RTR_Detatch
-; Detach an IED Object from Actor
-;
-; @param Actor target_actor
-; @param String attachment_name
-; @return void
-function RTR_Detatch(Actor target_actor, String attachment_name) global
-    ReadTheRoomUtil s
-    DeleteItemActor(target_actor, s.PluginName, attachment_name)
-endFunction
-
-; RTR_DetatchAllActor
-; Detach All IED Objects from an Actor
-;
-; @param Actor target_actor
-; @return void
-function RTR_DetatchAllActor(Actor target_actor) global
-    ReadTheRoomUtil s
-    DeleteAllActor(target_actor, s.PluginName)
-endFunction
-
-; RTR_DetatchAll
-; Detach All IED Objects from all Actors
-;
-; @return void
-function RTR_DetatchAll() global
-    ReadTheRoomUtil s
-    DeleteAll(s.PluginName)
 endFunction
