@@ -15,10 +15,10 @@ String Property PluginName = "ReadTheRoom.esp" Auto
 ; @param Form item
 ; @return Bool
 Bool Function RTR_IsValidHeadWear(Actor target_actor, Form item, FormList LoweredHoods) global
-    MiscUtil.PrintConsole(">>> [RTRUtil] RTR_IsValidHeadWear")
+    ;MiscUtil.PrintConsole(">>> [RTRUtil] RTR_IsValidHeadWear")
     ; Make sure there really is an item to check against
     if !item
-        MiscUtil.PrintConsole(">>>>>> Provided form is null")
+        ;MiscUtil.PrintConsole(">>>>>> Provided form is null")
         return false
     endif
 
@@ -27,7 +27,7 @@ Bool Function RTR_IsValidHeadWear(Actor target_actor, Form item, FormList Lowere
     ; Has this item been assigned to the exclusion list?
     Bool isExcluded = thisArmor.HasKeywordString("RTR_ExcludeKW")
     if isExcluded
-        MiscUtil.PrintConsole(">>>>>> " + thisArmor.GetName() + " has exclusion keyword (RTR_ExcludeKW). Invalid")
+        ;MiscUtil.PrintConsole(">>>>>> " + thisArmor.GetName() + " has exclusion keyword (RTR_ExcludeKW). Invalid")
         return false
     endif
 
@@ -38,22 +38,22 @@ Bool Function RTR_IsValidHeadWear(Actor target_actor, Form item, FormList Lowere
     if isHelmet || isCirclet || isHood
         ; Since Lowered Hoods are equipped (dumb) make sure the item isn't one of those
         if isHood && LoweredHoods.HasForm(item)
-            MiscUtil.PrintConsole(">>>>>> Detected Lowered Hood. Invalid")
+            ;MiscUtil.PrintConsole(">>>>>> Detected Lowered Hood. Invalid")
             return false
         endif
 
         ; Does the actor have the item in their inventory?
         if target_actor.GetItemCount(item as Armor) == 0
-            MiscUtil.PrintConsole(">>>>>> Missing from inventory. Invalid")
+            ;MiscUtil.PrintConsole(">>>>>> Missing from inventory. Invalid")
             return false
         endif
 
-        MiscUtil.PrintConsole(">>>>>> Valid")
+        ;MiscUtil.PrintConsole(">>>>>> Valid")
         return true
     endif
 
     ; Item is not head gear
-    MiscUtil.PrintConsole(">>>>>> " + thisArmor.GetName() + " is not head wear")
+    ;MiscUtil.PrintConsole(">>>>>> " + thisArmor.GetName() + " is not head wear")
     return false
 EndFunction
 
@@ -63,23 +63,23 @@ EndFunction
 ; @param Form item
 ; @return String
 String Function RTR_InferItemType(Form item, FormList LowerableHoods) global
-    MiscUtil.PrintConsole(">>> [RTRUtil] RTR_InferItemType")
+    ;MiscUtil.PrintConsole(">>> [RTRUtil] RTR_InferItemType")
 
     Armor thisArmor = item as Armor
 
     ; Check if a hood has been set up to be lowered
     if thisArmor.HasKeywordString("RTR_HoodKW") && LowerableHoods.HasForm(thisArmor)
-        MiscUtil.PrintConsole(">>>>>> item " + thisArmor.GetName() + " type: Hood")
+        ;MiscUtil.PrintConsole(">>>>>> item " + thisArmor.GetName() + " type: Hood")
         return "Hood"
     elseif thisArmor.IsClothingHead() || thisArmor.HasKeywordString("ClothingCirclet")
-        MiscUtil.PrintConsole(">>>>>> item " + thisArmor.GetName() + " type: Circlet")
+        ;MiscUtil.PrintConsole(">>>>>> item " + thisArmor.GetName() + " type: Circlet")
         return "Circlet"
     elseif thisArmor.IsHelmet()
-        MiscUtil.PrintConsole(">>>>>> item " + thisArmor.GetName() + " type: Helmet")
+        ;MiscUtil.PrintConsole(">>>>>> item " + thisArmor.GetName() + " type: Helmet")
         return "Helmet"
     endif
 
-    MiscUtil.PrintConsole(">>>>>> Type could not be inferred for item " + thisArmor.GetName())
+    ;MiscUtil.PrintConsole(">>>>>> Type could not be inferred for item " + thisArmor.GetName())
     return "None"
 EndFunction
 
@@ -90,7 +90,7 @@ EndFunction
 ; @param Bool manage_circlets
 ; @return Armor
 Form Function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
-    MiscUtil.PrintConsole(">>> [RTRUtil] RTR_GetEquipped")
+    ;MiscUtil.PrintConsole(">>> [RTRUtil] RTR_GetEquipped")
 
     ReadTheRoomUtil s
     Form equipped_head_wear
@@ -116,15 +116,15 @@ Form Function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
             if (thisArmor)
                 if (thisArmor.isHelmet()) ; Equipped item is a helmet/hood
                     if (thisArmor.HasKeywordString("RTR_HoodKW"))
-                        MiscUtil.PrintConsole(">>>>>> Found a Worn Hood " + thisArmor.GetName())
+                        ;MiscUtil.PrintConsole(">>>>>> Found a Worn Hood " + thisArmor.GetName())
                         return thisArmor
                     else
-                        MiscUtil.PrintConsole(">>>>>> Found a Worn Helmet " + thisArmor.GetName())
+                        ;MiscUtil.PrintConsole(">>>>>> Found a Worn Helmet " + thisArmor.GetName())
                         return thisArmor
                     endif
                 elseif (manage_circlets && (thisArmor.IsClothingHead() || thisArmor.HasKeywordString("ClothingCirclet"))) ; if this is a circlet or hat
-                    MiscUtil.PrintConsole(">>>>>> Found a Worn Circlet/Hat " + thisArmor.GetName())
-                    MiscUtil.PrintConsole(">>>>>> Circlet/Hat SlotMask " + thisArmor.GetSlotMask())
+                    ;MiscUtil.PrintConsole(">>>>>> Found a Worn Circlet/Hat " + thisArmor.GetName())
+                    ;MiscUtil.PrintConsole(">>>>>> Circlet/Hat SlotMask " + thisArmor.GetSlotMask())
                     return thisArmor
                 endif
                 slotsChecked += thisArmor.GetSlotMask() ; add all slots this item covers to our slotsChecked variable
@@ -261,7 +261,7 @@ EndFunction
 ; @param FormList Anchor
 ; Returns Float[3] = {x, y, z}
 Float[] Function RTR_GetPosition(String helm_type, Form[] anchor) global
-    MiscUtil.PrintConsole(">>> [RTRUtil] RTR_GetPosition")
+    ;MiscUtil.PrintConsole(">>> [RTRUtil] RTR_GetPosition")
     Int PosXIndex = 0
     Int PosYIndex = 1
     Int PosZIndex = 2
@@ -273,18 +273,18 @@ Float[] Function RTR_GetPosition(String helm_type, Form[] anchor) global
         position[1] = (anchor[PosYIndex + CircletIndexOffset] as GlobalVariable).GetValue()
         position[2] = (anchor[PosZIndex + CircletIndexOffset] as GlobalVariable).GetValue()
         
-        MiscUtil.PrintConsole(">>>>>> Applying CircletIndexOffset: " + CircletIndexOffset)
-        MiscUtil.PrintConsole(">>>>>>  Circlet PosX Index " + (PosXIndex + CircletIndexOffset) + " Value: " + position[0])
-        MiscUtil.PrintConsole(">>>>>>  Circlet PosY Index " + (PosYIndex + CircletIndexOffset) + " Value: " + position[1])
-        MiscUtil.PrintConsole(">>>>>>  Circlet PosZ Index " + (PosZIndex + CircletIndexOffset) + " Value: " + position[2])
+        ;MiscUtil.PrintConsole(">>>>>> Applying CircletIndexOffset: " + CircletIndexOffset)
+        ;MiscUtil.PrintConsole(">>>>>>  Circlet PosX Index " + (PosXIndex + CircletIndexOffset) + " Value: " + position[0])
+        ;MiscUtil.PrintConsole(">>>>>>  Circlet PosY Index " + (PosYIndex + CircletIndexOffset) + " Value: " + position[1])
+        ;MiscUtil.PrintConsole(">>>>>>  Circlet PosZ Index " + (PosZIndex + CircletIndexOffset) + " Value: " + position[2])
     else
         position[0] = (anchor[PosXIndex] as GlobalVariable).GetValue()
         position[1] = (anchor[PosYIndex] as GlobalVariable).GetValue()
         position[2] = (anchor[PosZIndex] as GlobalVariable).GetValue()
 
-        MiscUtil.PrintConsole(">>>>>>  PosX Index " + PosXIndex + " Value: " + position[0])
-        MiscUtil.PrintConsole(">>>>>>  PosY Index " + PosYIndex + " Value: " + position[1])
-        MiscUtil.PrintConsole(">>>>>>  PosZ Index " + PosZIndex + " Value: " + position[2])
+        ;MiscUtil.PrintConsole(">>>>>>  PosX Index " + PosXIndex + " Value: " + position[0])
+        ;MiscUtil.PrintConsole(">>>>>>  PosY Index " + PosYIndex + " Value: " + position[1])
+        ;MiscUtil.PrintConsole(">>>>>>  PosZ Index " + PosZIndex + " Value: " + position[2])
     endif
 
     return position
@@ -308,18 +308,18 @@ Float[] Function RTR_GetRotation(String helm_type, Form[] anchor) global
         rotation[1] = (anchor[RotRollIndex + CircletIndexOffset] as GlobalVariable).GetValue()
         rotation[2] = (anchor[RotYawIndex + CircletIndexOffset] as GlobalVariable).GetValue()
 
-        MiscUtil.PrintConsole(">>>>>> Applying CircletIndexOffset: " + CircletIndexOffset)
-        MiscUtil.PrintConsole(">>>>>>  Circlet Pitch Index " + (RotPitchIndex + CircletIndexOffset) + " Value: " + rotation[0])
-        MiscUtil.PrintConsole(">>>>>>  Circlet Roll Index " + (RotRollIndex + CircletIndexOffset) + " Value: " + rotation[1])
-        MiscUtil.PrintConsole(">>>>>>  Circlet Yaw Index " + (RotYawIndex + CircletIndexOffset) + " Value: " + rotation[2])
+        ;MiscUtil.PrintConsole(">>>>>> Applying CircletIndexOffset: " + CircletIndexOffset)
+        ;MiscUtil.PrintConsole(">>>>>>  Circlet Pitch Index " + (RotPitchIndex + CircletIndexOffset) + " Value: " + rotation[0])
+        ;MiscUtil.PrintConsole(">>>>>>  Circlet Roll Index " + (RotRollIndex + CircletIndexOffset) + " Value: " + rotation[1])
+        ;MiscUtil.PrintConsole(">>>>>>  Circlet Yaw Index " + (RotYawIndex + CircletIndexOffset) + " Value: " + rotation[2])
     else
         rotation[0] = (anchor[RotPitchIndex] as GlobalVariable).GetValue()
         rotation[1] = (anchor[RotRollIndex] as GlobalVariable).GetValue()
         rotation[2] = (anchor[RotYawIndex] as GlobalVariable).GetValue()
 
-        MiscUtil.PrintConsole(">>>>>>  Pitch Index " + RotPitchIndex + " Value: " + rotation[0])
-        MiscUtil.PrintConsole(">>>>>>  Roll Index " + RotRollIndex + " Value: " + rotation[1])
-        MiscUtil.PrintConsole(">>>>>>  Yaw Index " + RotYawIndex + " Value: " + rotation[2])
+        ;MiscUtil.PrintConsole(">>>>>>  Pitch Index " + RotPitchIndex + " Value: " + rotation[0])
+        ;MiscUtil.PrintConsole(">>>>>>  Roll Index " + RotRollIndex + " Value: " + rotation[1])
+        ;MiscUtil.PrintConsole(">>>>>>  Yaw Index " + RotYawIndex + " Value: " + rotation[2])
     endif
 
     return rotation
@@ -337,7 +337,7 @@ EndFunction
 ; @param String prev_equip_type
 ; @return Form
 Form Function RTR_GetLastEquipped(Actor target_actor, String LastEquippedType) global
-    MiscUtil.PrintConsole(">>> [RTRUtil] RTR_GetLastEquipped")
+    ;MiscUtil.PrintConsole(">>> [RTRUtil] RTR_GetLastEquipped")
 
     Form last_equipped
     Int helmet_aiBipedSlot = 1
@@ -347,7 +347,7 @@ Form Function RTR_GetLastEquipped(Actor target_actor, String LastEquippedType) g
     if LastEquippedType == "Circlet"
         last_equipped = GetLastEquippedForm(target_actor, circlet_aiBipedSlot, true, false)
         if last_equipped
-            MiscUtil.PrintConsole(">>>>>> found Circlet/Hat  " + (last_equipped as Armor).GetName() + "  in IED.aiBipedSlot 12")
+            ;MiscUtil.PrintConsole(">>>>>> found Circlet/Hat  " + (last_equipped as Armor).GetName() + "  in IED.aiBipedSlot 12")
             return last_equipped
         endif
     endif
@@ -355,15 +355,31 @@ Form Function RTR_GetLastEquipped(Actor target_actor, String LastEquippedType) g
     ; Attempt to Get From helmet_aiBipedSlot
     last_equipped = GetLastEquippedForm(target_actor, helmet_aiBipedSlot, true, false)
     if last_equipped
-        MiscUtil.PrintConsole(">>>>>> found helmet " + (last_equipped as Armor).GetName() + " in IED.aiBipedSlot 1")
+        ;MiscUtil.PrintConsole(">>>>>> found helmet " + (last_equipped as Armor).GetName() + " in IED.aiBipedSlot 1")
         return last_equipped
     endif
 
     ; Attempt to Get From circlet_aiBipedSlot
     last_equipped = GetLastEquippedForm(target_actor, circlet_aiBipedSlot, true, false)
     if last_equipped
-        MiscUtil.PrintConsole(">>>>>> found Circlet/Hat  " + (last_equipped as Armor).GetName() + "  in IED.aiBipedSlot 12")
+        ;MiscUtil.PrintConsole(">>>>>> found Circlet/Hat  " + (last_equipped as Armor).GetName() + "  in IED.aiBipedSlot 12")
     endif
 
     return last_equipped
+EndFunction
+
+; RTR_GetActionString
+; Returns the correct action string for the animation event based on the RTR_Action
+;
+; @TODO - Move to ReadTheRoomUtil
+; @param int RTRAction
+; @return String
+String Function RTR_GetActionString(int RTR_Action) global
+	String[] AnimationActionMap = new String[4]
+	AnimationActionMap[0] = "None" ; None
+	AnimationActionMap[1] = "Equip" ; Equip
+	AnimationActionMap[2] = "Unequip" ; Unequip
+	AnimationActionMap[3] = "EquipHood" ; Equip Lowerable Hood
+	AnimationActionMap[4] = "UnequipHood" ; Unequip Lowerable Hood
+	return AnimationActionMap[RTR_Action]
 EndFunction
