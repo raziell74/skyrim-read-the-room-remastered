@@ -60,6 +60,7 @@ Form LastLoweredHood = None
 String LastEquippedType = "None"
 Float AnimTimeoutBuffer = 0.05
 String MostRecentLocationAction = "None"
+String PreviousLocationAction = "None"
 
 ;;;; Event Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -205,23 +206,36 @@ EndEvent
 ; Records Most Recent Location Action
 ; Equips/Unequips based off of Config Settings
 Event OnLocationChange(Location akOldLoc, Location akNewLoc)
-	;RTR_PrintDebug(" ")
-	;RTR_PrintDebug("[RTR] OnLocationChange --------------------------------------------------------------------")
+	RTR_PrintDebug(" ")
+	RTR_PrintDebug("[RTR] OnLocationChange --------------------------------------------------------------------")
+	
 	LastEquipped = RTR_GetEquipped(PlayerRef, ManageCirclets.getValueInt() == 1)
 	Bool is_valid = RTR_IsValidHeadWear(PlayerRef, LastEquipped, LoweredHoods)
 	Bool equip_when_safe = EquipWhenSafe.getValueInt() == 1
 	Bool unequip_when_unsafe = UnequipWhenUnsafe.getValueInt() == 1
-	
+
+	RTR_PrintDebug("-- RTR EquipWhenSafe global var value: " + EquipWhenSafe.getValueInt())
+	RTR_PrintDebug("-- RTR UnequipWhenUnsafe global var value: " + EquipWhenSafe.getValueInt())
+
 	; Update the MostRecentLocationAction reference for other processes
 	MostRecentLocationAction = RTR_GetLocationAction(akNewLoc, is_valid, equip_when_safe, unequip_when_unsafe, SafeKeywords, HostileKeywords)
-	
-	if MostRecentLocationAction == "Equip"
-		LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
-		EquipActorHeadgear()
-	elseif MostRecentLocationAction == "Unequip"
-		UnequipActorHeadgear()		
+
+	RTR_PrintDebug("-- RTR MostRecentLocationAction set to: " + MostRecentLocationAction)
+
+	; Only apply the action if we didn't already do it, prevents ToggleKey from being overwritten unless changing location action
+	if MostRecentLocationAction != PreviousLocationAction 
+		if MostRecentLocationAction == "Equip"
+			LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
+			EquipActorHeadgear()
+		elseif MostRecentLocationAction == "Unequip"
+			UnequipActorHeadgear()		
+		endif
 	endif
-	;RTR_PrintDebug(" ")
+
+	; Record the previous location action so we don't fire the same action over and over again
+	PreviousLocationAction = MostRecentLocationAction
+
+	RTR_PrintDebug(" ")
 EndEvent
 
 ; OnCombatStateChanged Event Handler
