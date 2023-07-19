@@ -1,6 +1,5 @@
 ScriptName ReadTheRoomFollowerMonitor extends ActiveMagicEffect
 
-; Strippped current folloewr functionality to avoid bugs while testing scripting for the player
-; My Plan for overhauling the follower monitor is to have it triggered from an SKSE ModEvent triggered by the PlayerMonitor
-; The events will simply be "RTR_ModEquip" an "RTR_ModUnequip". These will trigger the follower with this perk added
-; to equip or unequip the item. Followers should "Read The Room" exactly the same as the player
+; Script functionality and relocated logic to the remastered ReadTheRoomFollower script. 
+; Original mod script has been stripped so it does nothing. 
+; Hopefully doing it this way will provide a smooth upgrade experience on existing saves.

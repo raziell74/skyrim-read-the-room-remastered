@@ -14,72 +14,74 @@ String Property PluginName = "ReadTheRoom.esp" Auto
 ;
 ; @param Form item
 ; @return Bool
-Bool function RTR_IsValidHeadWear(Actor target_actor, Form item, FormList LoweredHoods) global
-    MiscUtil.PrintConsole(">>>>>>>> [RTRUtil] RTR_IsValidHeadWear")
+Bool Function RTR_IsValidHeadWear(Actor target_actor, Form item, FormList LoweredHoods) global
+    MiscUtil.PrintConsole(">>> [RTRUtil] RTR_IsValidHeadWear")
     ; Make sure there really is an item to check against
     if !item
-        MiscUtil.PrintConsole(">> Provided form is null")
+        MiscUtil.PrintConsole(">>>>>> Provided form is null")
         return false
     endif
 
+    Armor thisArmor = item as Armor
+
     ; Has this item been assigned to the exclusion list?
-    Bool isExcluded = item.HasKeywordString("RTR_ExcludeKW")
+    Bool isExcluded = thisArmor.HasKeywordString("RTR_ExcludeKW")
     if isExcluded
-        MiscUtil.PrintConsole(">> " + (item as Armor).GetName() + " has exclusion keyword (RTR_ExcludeKW). Invalid")
+        MiscUtil.PrintConsole(">>>>>> " + thisArmor.GetName() + " has exclusion keyword (RTR_ExcludeKW). Invalid")
         return false
     endif
 
     ; Is the item a helmet, circlet, or hood?
-    Bool isHelmet = (item as Armor).IsHelmet()
-    Bool isCirclet = item.HasKeywordString("ClothingCirclet")
-    Bool isHood = item.HasKeywordString("RTR_HoodKW")
+    Bool isHelmet = thisArmor.IsHelmet()
+    Bool isCirclet = thisArmor.IsClothingHead() || thisArmor.HasKeywordString("ClothingCirclet")
+    Bool isHood = thisArmor.HasKeywordString("RTR_HoodKW")
     if isHelmet || isCirclet || isHood
         ; Since Lowered Hoods are equipped (dumb) make sure the item isn't one of those
         if isHood && LoweredHoods.HasForm(item)
-            MiscUtil.PrintConsole(">> Detected Lowered Hood. Invalid")
+            MiscUtil.PrintConsole(">>>>>> Detected Lowered Hood. Invalid")
             return false
         endif
 
         ; Does the actor have the item in their inventory?
         if target_actor.GetItemCount(item as Armor) == 0
-            MiscUtil.PrintConsole(">> Missing from inventory. Invalid")
+            MiscUtil.PrintConsole(">>>>>> Missing from inventory. Invalid")
             return false
         endif
 
-        MiscUtil.PrintConsole(">> Valid")
+        MiscUtil.PrintConsole(">>>>>> Valid")
         return true
     endif
 
     ; Item is not head gear
-    MiscUtil.PrintConsole(">> " + (item as Armor).GetName() + " is not head wear")
+    MiscUtil.PrintConsole(">>>>>> " + thisArmor.GetName() + " is not head wear")
     return false
-endFunction
+EndFunction
 
 ; RTR_InferItemType
 ; Infers the type of headwear an item Form is
 ;
 ; @param Form item
 ; @return String
-String function RTR_InferItemType(Form item, FormList LowerableHoods) global
-    MiscUtil.PrintConsole(">>>>>>>> [RTRUtil] RTR_InferItemType")
+String Function RTR_InferItemType(Form item, FormList LowerableHoods) global
+    MiscUtil.PrintConsole(">>> [RTRUtil] RTR_InferItemType")
 
     Armor thisArmor = item as Armor
 
     ; Check if a hood has been set up to be lowered
     if thisArmor.HasKeywordString("RTR_HoodKW") && LowerableHoods.HasForm(thisArmor)
-        MiscUtil.PrintConsole(">> item " + thisArmor.GetName() + " type: Hood")
+        MiscUtil.PrintConsole(">>>>>> item " + thisArmor.GetName() + " type: Hood")
         return "Hood"
-    elseif thisArmor.IsClothingHead()
-        MiscUtil.PrintConsole(">> item " + thisArmor.GetName() + " type: Circlet")
+    elseif thisArmor.IsClothingHead() || thisArmor.HasKeywordString("ClothingCirclet")
+        MiscUtil.PrintConsole(">>>>>> item " + thisArmor.GetName() + " type: Circlet")
         return "Circlet"
     elseif thisArmor.IsHelmet()
-        MiscUtil.PrintConsole(">> item " + thisArmor.GetName() + " type: Helmet")
+        MiscUtil.PrintConsole(">>>>>> item " + thisArmor.GetName() + " type: Helmet")
         return "Helmet"
     endif
 
-    MiscUtil.PrintConsole(">> Type could not be inferred for item " + thisArmor.GetName())
+    MiscUtil.PrintConsole(">>>>>> Type could not be inferred for item " + thisArmor.GetName())
     return "None"
-endFunction
+EndFunction
 
 ; RTR_GetEquipped
 ; Gets the Form for the item equipped in the HEAD biped slot
@@ -87,8 +89,8 @@ endFunction
 ; @param Actor target_actor
 ; @param Bool manage_circlets
 ; @return Armor
-Form function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
-    MiscUtil.PrintConsole(">>>>>>>> [RTRUtil] RTR_GetEquipped")
+Form Function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
+    MiscUtil.PrintConsole(">>> [RTRUtil] RTR_GetEquipped")
 
     ReadTheRoomUtil s
     Form equipped_head_wear
@@ -114,15 +116,15 @@ Form function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
             if (thisArmor)
                 if (thisArmor.isHelmet()) ; Equipped item is a helmet/hood
                     if (thisArmor.HasKeywordString("RTR_HoodKW"))
-                        MiscUtil.PrintConsole(">> Found a Worn Hood " + thisArmor.GetName())
-                        equipped_head_wear = thisArmor
+                        MiscUtil.PrintConsole(">>>>>> Found a Worn Hood " + thisArmor.GetName())
+                        return thisArmor
                     else
-                        MiscUtil.PrintConsole(">> Found a Worn Helmet " + thisArmor.GetName())
-                        equipped_head_wear = thisArmor
+                        MiscUtil.PrintConsole(">>>>>> Found a Worn Helmet " + thisArmor.GetName())
+                        return thisArmor
                     endif
-                elseif (manage_circlets && thisArmor.IsClothingHead()) ; if this is a circlet or hat
-                    MiscUtil.PrintConsole(">> Found a Worn Circlet/Hat " + thisArmor.GetName())
-                    MiscUtil.PrintConsole(">> Circlet/Hat SlotMask " + thisArmor.GetSlotMask())
+                elseif (manage_circlets && (thisArmor.IsClothingHead() || thisArmor.HasKeywordString("ClothingCirclet"))) ; if this is a circlet or hat
+                    MiscUtil.PrintConsole(">>>>>> Found a Worn Circlet/Hat " + thisArmor.GetName())
+                    MiscUtil.PrintConsole(">>>>>> Circlet/Hat SlotMask " + thisArmor.GetSlotMask())
                     return thisArmor
                 endif
                 slotsChecked += thisArmor.GetSlotMask() ; add all slots this item covers to our slotsChecked variable
@@ -134,7 +136,7 @@ Form function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
     endWhile
     
     return equipped_head_wear
-endFunction
+EndFunction
 
 ; RTR_IsTorsoEquipped
 ; Checks if the player has any torso armor equipped
@@ -156,7 +158,7 @@ EndFunction
 ; @param Location current_loc
 ; @param FormList keywords_to_check
 ; @return Bool
-Bool function RTR_LocationHasKeyword(Location current_loc, FormList keywords_to_check) global
+Bool Function RTR_LocationHasKeyword(Location current_loc, FormList keywords_to_check) global
 	int i = 0
 	while i < keywords_to_check.GetSize()
 		if current_loc.HasKeyword(keywords_to_check.GetAt(i) as Keyword)
@@ -177,7 +179,7 @@ EndFunction
 ; @param FormList safe_keywords
 ; @param FormList hostile_keywords
 ; @return String "Equip", "Unequip", or "None"
-String function RTR_GetLocationAction(Location loc, Bool has_valid_helmet, Bool equip_when_safe, Bool unequip_when_unsafe, FormList safe_keywords, FormList hostile_keywords) global
+String Function RTR_GetLocationAction(Location loc, Bool has_valid_helmet, Bool equip_when_safe, Bool unequip_when_unsafe, FormList safe_keywords, FormList hostile_keywords) global
     Bool IsSafe = RTR_LocationHasKeyword(loc, safe_keywords)
 	Bool IsHostile = RTR_LocationHasKeyword(loc, hostile_keywords)
 
@@ -200,14 +202,14 @@ String function RTR_GetLocationAction(Location loc, Bool has_valid_helmet, Bool 
     endif
 
     return "None"
-endFunction
+EndFunction
 
 ; RTR_SheathWeapon
 ; If actors weapons are drawn, sheath them
 ;
 ; @param Actor target_actor
 ; @return Bool true if weapons were sheathed
-Bool function RTR_SheathWeapon(Actor target_actor) global
+Bool Function RTR_SheathWeapon(Actor target_actor) global
     if target_actor.IsWeaponDrawn()
 		Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
 		while target_actor.GetAnimationVariableInt("IsUnequipping") == 1
@@ -216,7 +218,7 @@ Bool function RTR_SheathWeapon(Actor target_actor) global
         return true
 	endif
     return false
-endFunction
+EndFunction
 
 ; RTR_ForceThirdPerson
 ; If the player is in first person, force them into third person
@@ -224,25 +226,25 @@ endFunction
 ;
 ; @param Actor target_actor
 ; @return Bool true if player was forced into third person
-Bool function RTR_ForceThirdPerson(Actor target_actor) global
+Bool Function RTR_ForceThirdPerson(Actor target_actor) global
     if target_actor.GetAnimationVariableInt("i1stPerson") == 1 
 		Game.ForceThirdPerson()
 		return true
 	endif
     return false
-endFunction
+EndFunction
 
 ; RTR_Log
 ; Prints a message to the console if logging is enabled
 ;
 ; @param String msg
-function RTR_PrintDebug(String msg) global
+Function RTR_PrintDebug(String msg) global
     ; if !logging_enabled
     ;     return
     ; endif
 
     MiscUtil.PrintConsole(msg)
-endFunction
+EndFunction
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;; Positioning Helpers ;;;;;;;;;;;;;;;;;
@@ -258,8 +260,8 @@ endFunction
 ; @param String HelmType
 ; @param FormList Anchor
 ; Returns Float[3] = {x, y, z}
-Float[] function RTR_GetPosition(String helm_type, Form[] anchor) global
-    MiscUtil.PrintConsole(">>>>>>>> [RTRUtil] RTR_GetPosition")
+Float[] Function RTR_GetPosition(String helm_type, Form[] anchor) global
+    MiscUtil.PrintConsole(">>> [RTRUtil] RTR_GetPosition")
     Int PosXIndex = 0
     Int PosYIndex = 1
     Int PosZIndex = 2
@@ -267,24 +269,26 @@ Float[] function RTR_GetPosition(String helm_type, Form[] anchor) global
     Float[] position = new Float[3]
     
     if helm_type == "Circlet"
-        MiscUtil.PrintConsole(">> Applying CircletIndexOffset: " + CircletIndexOffset)
-        MiscUtil.PrintConsole(">>  PosX Index" + (PosXIndex + CircletIndexOffset))
         position[0] = (anchor[PosXIndex + CircletIndexOffset] as GlobalVariable).GetValue()
-        MiscUtil.PrintConsole(">>  PosY Index" + (PosYIndex + CircletIndexOffset))
         position[1] = (anchor[PosYIndex + CircletIndexOffset] as GlobalVariable).GetValue()
-        MiscUtil.PrintConsole(">>  PosZ Index" + (PosZIndex + CircletIndexOffset))
         position[2] = (anchor[PosZIndex + CircletIndexOffset] as GlobalVariable).GetValue()
+        
+        MiscUtil.PrintConsole(">>>>>> Applying CircletIndexOffset: " + CircletIndexOffset)
+        MiscUtil.PrintConsole(">>>>>>  Circlet PosX Index " + (PosXIndex + CircletIndexOffset) + " Value: " + position[0])
+        MiscUtil.PrintConsole(">>>>>>  Circlet PosY Index " + (PosYIndex + CircletIndexOffset) + " Value: " + position[1])
+        MiscUtil.PrintConsole(">>>>>>  Circlet PosZ Index " + (PosZIndex + CircletIndexOffset) + " Value: " + position[2])
     else
-        MiscUtil.PrintConsole(">>  PosX Index" + PosXIndex)
         position[0] = (anchor[PosXIndex] as GlobalVariable).GetValue()
-        MiscUtil.PrintConsole(">>  PosY Index" + PosYIndex)
         position[1] = (anchor[PosYIndex] as GlobalVariable).GetValue()
-        MiscUtil.PrintConsole(">>  PosZ Index" + PosZIndex)
         position[2] = (anchor[PosZIndex] as GlobalVariable).GetValue()
+
+        MiscUtil.PrintConsole(">>>>>>  PosX Index " + PosXIndex + " Value: " + position[0])
+        MiscUtil.PrintConsole(">>>>>>  PosY Index " + PosYIndex + " Value: " + position[1])
+        MiscUtil.PrintConsole(">>>>>>  PosZ Index " + PosZIndex + " Value: " + position[2])
     endif
 
     return position
-endFunction
+EndFunction
 
 ; RTR_GetRotation
 ; Takes an Anchor Positioning Array and translates it to an IED rotation variable
@@ -292,7 +296,7 @@ endFunction
 ; @param String helm_type
 ; @param GlobalVariable[] anchor
 ; @return Float[3] = {pitch, roll, yaw}
-Float[] function RTR_GetRotation(String helm_type, Form[] anchor) global
+Float[] Function RTR_GetRotation(String helm_type, Form[] anchor) global
     Int RotPitchIndex = 3 
     Int RotRollIndex = 4 
     Int RotYawIndex = 5
@@ -303,14 +307,23 @@ Float[] function RTR_GetRotation(String helm_type, Form[] anchor) global
         rotation[0] = (anchor[RotPitchIndex + CircletIndexOffset] as GlobalVariable).GetValue()
         rotation[1] = (anchor[RotRollIndex + CircletIndexOffset] as GlobalVariable).GetValue()
         rotation[2] = (anchor[RotYawIndex + CircletIndexOffset] as GlobalVariable).GetValue()
+
+        MiscUtil.PrintConsole(">>>>>> Applying CircletIndexOffset: " + CircletIndexOffset)
+        MiscUtil.PrintConsole(">>>>>>  Circlet Pitch Index " + (RotPitchIndex + CircletIndexOffset) + " Value: " + rotation[0])
+        MiscUtil.PrintConsole(">>>>>>  Circlet Roll Index " + (RotRollIndex + CircletIndexOffset) + " Value: " + rotation[1])
+        MiscUtil.PrintConsole(">>>>>>  Circlet Yaw Index " + (RotYawIndex + CircletIndexOffset) + " Value: " + rotation[2])
     else
         rotation[0] = (anchor[RotPitchIndex] as GlobalVariable).GetValue()
         rotation[1] = (anchor[RotRollIndex] as GlobalVariable).GetValue()
         rotation[2] = (anchor[RotYawIndex] as GlobalVariable).GetValue()
+
+        MiscUtil.PrintConsole(">>>>>>  Pitch Index " + RotPitchIndex + " Value: " + rotation[0])
+        MiscUtil.PrintConsole(">>>>>>  Roll Index " + RotRollIndex + " Value: " + rotation[1])
+        MiscUtil.PrintConsole(">>>>>>  Yaw Index " + RotYawIndex + " Value: " + rotation[2])
     endif
 
     return rotation
-endFunction
+EndFunction
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;; Immersive Equipment Display - Utilities ;;;;;;
@@ -323,22 +336,34 @@ endFunction
 ; @param Actor target_actor
 ; @param String prev_equip_type
 ; @return Form
-Form function RTR_GetLastEquipped(Actor target_actor) global
-    MiscUtil.PrintConsole(">>>>>>>> [RTRUtil] RTR_GetLastEquipped")
+Form Function RTR_GetLastEquipped(Actor target_actor, String LastEquippedType) global
+    MiscUtil.PrintConsole(">>> [RTRUtil] RTR_GetLastEquipped")
 
     Form last_equipped
     Int helmet_aiBipedSlot = 1
     Int circlet_aiBipedSlot = 12
+
+    ; If we happen to have a last equipped type, use it
+    if LastEquippedType == "Circlet"
+        last_equipped = GetLastEquippedForm(target_actor, circlet_aiBipedSlot, true, false)
+        if last_equipped
+            MiscUtil.PrintConsole(">>>>>> found Circlet/Hat  " + (last_equipped as Armor).GetName() + "  in IED.aiBipedSlot 12")
+            return last_equipped
+        endif
+    endif
     
     ; Attempt to Get From helmet_aiBipedSlot
     last_equipped = GetLastEquippedForm(target_actor, helmet_aiBipedSlot, true, false)
-    MiscUtil.PrintConsole(">> found helmet " + (last_equipped as Armor).GetName() + " in IED.aiBipedSlot 1")
+    if last_equipped
+        MiscUtil.PrintConsole(">>>>>> found helmet " + (last_equipped as Armor).GetName() + " in IED.aiBipedSlot 1")
+        return last_equipped
+    endif
 
     ; Attempt to Get From circlet_aiBipedSlot
-    if last_equipped as String == "None"
-        last_equipped = GetLastEquippedForm(target_actor, circlet_aiBipedSlot, true, false)
-        MiscUtil.PrintConsole(">> found Circlet/Hat  " + (last_equipped as Armor).GetName() + "  in IED.aiBipedSlot 12")
+    last_equipped = GetLastEquippedForm(target_actor, circlet_aiBipedSlot, true, false)
+    if last_equipped
+        MiscUtil.PrintConsole(">>>>>> found Circlet/Hat  " + (last_equipped as Armor).GetName() + "  in IED.aiBipedSlot 12")
     endif
 
     return last_equipped
-endFunction
+EndFunction
