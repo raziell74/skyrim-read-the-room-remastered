@@ -591,7 +591,9 @@ EndFunction
 ; IsCurrentFollower
 ; Returns true if the actor is the current follower
 Bool Function IsCurrentFollower()
-    return FollowerRef.GetFactionRank(CurrentFollowerFaction) >= 0
+    Bool IsInCurrentFollowerFaction = FollowerRef.GetFactionRank(CurrentFollowerFaction) >= 0
+	Bool IsCustomFollower = FollowerRef.HasKeywordString("RTR_CustomFollowerKW")
+	return IsInCurrentFollowerFaction || IsCustomFollower
 EndFunction
 
 ;;;; Busy State - Blocked Actions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
