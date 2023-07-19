@@ -1,3 +1,7 @@
+PRIORITY
+
+Go through CC content and generate ground meshes for equipment. Start with CC_Fishing
+
 # ReadTheRoom Refactor Planning
 
 This document outlines my plans and strategy for refactoring ReadTheRoom

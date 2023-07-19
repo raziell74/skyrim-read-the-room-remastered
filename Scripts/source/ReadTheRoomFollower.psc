@@ -45,6 +45,7 @@ Form LastEquipped = None
 Form LastLoweredHood = None
 String LastEquippedType = "None"
 Float AnimTimeoutBuffer = 0.05
+String MostRecentEvent = "None"
 
 ;;;; Event Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -143,6 +144,8 @@ Event OnReadTheRoomEquip(String eventName, String strArg, Float numArg, Form sen
     endwhile
 
     EquipActorHeadgear()
+
+	MostRecentEvent = "ReadTheRoomEquip"
 EndEvent
 
 Event OnReadTheRoomEquipNoAnimation(String eventName, String strArg, Float numArg, Form sender)
@@ -159,6 +162,8 @@ Event OnReadTheRoomEquipNoAnimation(String eventName, String strArg, Float numAr
     endwhile
 
     EquipWithNoAnimation()
+
+	MostRecentEvent = "ReadTheRoomEquipNoAnimation"
 EndEvent
 
 Event OnReadTheRoomUnequip(String eventName, String strArg, Float numArg, Form sender)
@@ -175,6 +180,8 @@ Event OnReadTheRoomUnequip(String eventName, String strArg, Float numArg, Form s
     endwhile
 
     UnequipActorHeadgear()
+
+	MostRecentEvent = "ReadTheRoomUnequip"
 EndEvent
 
 Event OnReadTheRoomUnequipNoAnimation(String eventName, String strArg, Float numArg, Form sender)
@@ -191,6 +198,32 @@ Event OnReadTheRoomUnequipNoAnimation(String eventName, String strArg, Float num
     endwhile
 
     UnequipWithNoAnimation()
+
+	MostRecentEvent = "ReadTheRoomUnequipNoAnimation"
+EndEvent
+
+; OnLoad Event Handler
+; When actors load into a cell they attempt always seem to refresh helmets from
+; their inventory. So we have to check the most recent follower event and adjust their
+; head wear accordingly
+Event OnLoad()
+	; Do nothing if this isn't a current follower
+    if !IsCurrentFollower() || ManageFollowers.GetValueInt() != 1
+        return
+    endif
+
+    ; If event received while currently in an animation wait for the current one to finish before starting the next
+    Int rtrAction = FollowerRef.GetAnimationVariableInt("RTR_Action")
+    while rtrAction != 0
+        rtrAction = FollowerRef.GetAnimationVariableInt("RTR_Action")
+        Utility.wait(0.1)
+    endwhile
+
+	if MostRecentEvent == "ReadTheRoomUnequipNoAnimation" || MostRecentEvent == "ReadTheRoomUnequip"
+		UnequipWithNoAnimation()
+	elseif MostRecentEvent == "ReadTheRoomEquipNoAnimation" || MostRecentEvent == "ReadTheRoomEquip"
+		EquipWithNoAnimation()
+	endif
 EndEvent
 
 ;;;; Animation Event Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
