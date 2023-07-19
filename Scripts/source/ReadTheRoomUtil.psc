@@ -193,8 +193,8 @@ String Function RTR_GetLocationAction(Location loc, Bool has_valid_helmet, Bool 
         endif
     else
         ; Equip in hostile/non-safe locations
-        Bool CanEquipInHostileLoc = !has_valid_helmet && IsHostile && !equip_when_safe
-        Bool CanEquipInNonHostileLoc = !has_valid_helmet && !IsHostile && equip_when_safe
+        Bool CanEquipInHostileLoc = IsHostile && !equip_when_safe
+        Bool CanEquipInNonHostileLoc = !IsHostile && equip_when_safe
 
         if CanEquipInHostileLoc || CanEquipInNonHostileLoc
             return "Equip"
