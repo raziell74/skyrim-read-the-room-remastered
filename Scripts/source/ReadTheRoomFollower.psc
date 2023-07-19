@@ -70,7 +70,7 @@ Function SetupRTR()
 	IsFemale = FollowerRef.GetActorBase().GetSex() == 1
 
 	; Attach helm to the hip
-	Bool HipEnabled = (!FollowerRef.IsEquipped(LastEquipped) && LastEquippedType != "Hood" && IsCurrentFollower())
+	Bool HipEnabled = (!FollowerRef.IsEquipped(LastEquipped) && LastEquippedType != "Hood" && IsCurrentFollower() && ManageFollowers.GetValueInt() == 1)
 	Float[] hip_position = RTR_GetPosition(LastEquippedType, HipAnchor())
 	Float[] hip_rotation = RTR_GetRotation(LastEquippedType, HipAnchor())
 
@@ -131,7 +131,7 @@ EndFunction
 
 Event OnReadTheRoomEquip(String eventName, String strArg, Float numArg, Form sender)
     ; Do nothing if this isn't a current follower
-    if !IsCurrentFollower()
+    if !IsCurrentFollower() || ManageFollowers.GetValueInt() != 1
         return
     endif
 
@@ -147,7 +147,7 @@ EndEvent
 
 Event OnReadTheRoomEquipNoAnimation(String eventName, String strArg, Float numArg, Form sender)
     ; Do nothing if this isn't a current follower
-    if !IsCurrentFollower()
+    if !IsCurrentFollower() || ManageFollowers.GetValueInt() != 1
         return
     endif
 
@@ -163,7 +163,7 @@ EndEvent
 
 Event OnReadTheRoomUnequip(String eventName, String strArg, Float numArg, Form sender)
     ; Do nothing if this isn't a current follower
-    if !IsCurrentFollower()
+    if !IsCurrentFollower() || ManageFollowers.GetValueInt() != 1
         return
     endif
 
@@ -179,7 +179,7 @@ EndEvent
 
 Event OnReadTheRoomUnequipNoAnimation(String eventName, String strArg, Float numArg, Form sender)
     ; Do nothing if this isn't a current follower
-    if !IsCurrentFollower()
+    if !IsCurrentFollower() || ManageFollowers.GetValueInt() != 1
         return
     endif
 
