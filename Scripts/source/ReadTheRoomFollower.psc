@@ -202,15 +202,18 @@ Event OnReadTheRoomUnequipNoAnimation(String eventName, String strArg, Float num
 	MostRecentEvent = "ReadTheRoomUnequipNoAnimation"
 EndEvent
 
-; OnLoad Event Handler
+; OnLocationChange Event Handler
 ; When actors load into a cell they attempt always seem to refresh helmets from
 ; their inventory. So we have to check the most recent follower event and adjust their
 ; head wear accordingly
-Event OnLoad()
+Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 	; Do nothing if this isn't a current follower
     if !IsCurrentFollower() || ManageFollowers.GetValueInt() != 1
         return
     endif
+
+	; Wait for 3 seconds after location change to ensure the actor has loaded into the cell
+	Utility.wait(3.0)
 
     ; If event received while currently in an animation wait for the current one to finish before starting the next
     Int rtrAction = FollowerRef.GetAnimationVariableInt("RTR_Action")
