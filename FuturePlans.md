@@ -5,6 +5,10 @@ My brain is a fickle meat lump, riddled with ADHD, and fueled only with a combin
 
 Because of this unfortunate personality trait I've opened the permissions on the [GitHub repository](https://github.com/raziell74/skyrim-read-the-room-tweaks). Feel free to make a branch and submit a PR with your changes. Github will tickle my leg via phone notifications so I should manage to get to reviewing your changes in a reasonable amount of time. To ensure an acceptable level of quality, changes require an approved pull request to be merged into the next release
 
+## Versioning - Better Update Process
+
+Script variables and properties are "baked" into save files so if the properties sent to the scripts change in the esp file they do not work correctly from an existing save. I want to implement a version control system, MCM offers some handy tools for version control, so that when updating the scripts can correctly update their properties and function without the need to start a new save or clean your save with ReSaver.
+
 ## MCM Uninstall Button
 
 Similar to mods like DynDOLod, there should be an uninstall button that allows players to safely remove the mod with as little footprint left in the game save as possible.
@@ -14,10 +18,6 @@ Uninstalling should do the following:
 - Removes the RTR Start up Quest
 - Halts all active scripts
 - Removes RTR perks, spells, and keywords from affected NPCs
-
-## Better Update Process
-
-Script variables and properties are "baked" into save files so if the properties sent to the scripts change in the esp file they do not work correctly from an existing save. I want to implement a version control system, MCM offers some handy tools for version control, so that when updating the scripts can correctly update their properties and function without the need to start a new save or clean your save with ReSaver.
 
 ## Optional Hood Animation Replacement
 
@@ -71,3 +71,7 @@ I use wigs all the time for both my character and followers. I like to have foll
 **Note** I realize this feature is kind of a dumbed down version of the popular [Let Your Hair Down](https://www.nexusmods.com/skyrimspecialedition/mods/81444) mod but it would work better for follower management. I also realize this feature may come with TONS of conflict possibilities with other mods especially those that specialize in outfit management, so this is more for people like me who don't really change outfits that often and just want to "read the room" when it comes to what's on my characters head.  
 
 A shout out to Dint999 for having a KICK ASS selection of hairs that all have corresponding wigs that you can equip. Be sure to check out his [Patreon](https://www.patreon.com/dint999/posts)!
+
+## Equip during inclement weather
+
+Have an option to auto equip if it starts raining or snowing. I feel this would be a great feature for survival mods that add warmth/coverage stats to equipment. Your character will no longer be fine with not having a hood or helmet on during torrential down pours!

@@ -54,7 +54,7 @@
   - I have not managed to reproduce this yet with the remastered version
   - I'll add some additional clean up to the "Clear placed headgear" keybinding so any "pre animation" camera state is cleared and set to the correct value so you can use that button to fix that issue anytime it happens
 - [x] Inigo and Lucifer Not applied
-  - There is a `ReadTheRoom_CustomFollowers_DIST` download available in Misc that contains a SPID file which distributes a new keyword "RTR_CustomFollowerKW" that will force custom followers to use RTR
+  - There is a `ReadTheRoom_CustomFollowers_DIST` download available in Misc that contains a SPID file which distributes a the keyword "RTR_FollowerKW" that is used to decide who to apply the RTR Follower Perk to. 
   - The file is preset to distribute to several popular follower mods: Inigo, Lucifer, Lucien, Kaidan, Auri, and Daegon
 - [x] Elden Rim Conflict?
   - RTR Remastered fixes this by using [Behavior Data Injector](https://www.nexusmods.com/skyrimspecialedition/mods/78146) to add new *unique* animation events that are only used by RTR
@@ -62,6 +62,11 @@
 - [x] RemoveHelmetWithoutArmor does not work with Schlongs of Skyrim
   - SOS moves torso armor from slot 32 to slot 52 so RTR will check both slots now
 - [x] Circlets are not always correctly identified as "Circlets"
+- [x] Fixed an issue with external outfit managers that would "refresh" follower outfits on cell change which would re-equip helmets that were removed using RTR
+  - Discovered as an incompatibility with Nether's Follower Framework, NFFs outfit system re-equips followers entire outfits regardless of if it's enabled or not
+  - Head wear equipped within the first 5 seconds after a cell change will be immediately unequipped if it was previous unequipped through RTR
+- [x] Added a check to see if the Player has the "ActorTypeCreature" keyword which is added when the player is transformed into a werewolf or vampire lord.
+  - RTR will no longer execute helmet management automated or otherwise if the player is a "creature" 
 
 ### Added Dependencies
 
