@@ -1,0 +1,11 @@
+player.setav health 9000
+player.setav magicka 9000
+player.setav stamina 9000
+
+player.advskill lightarmor 150000
+player.advskill heavyarmor 150000
+
+player.additem 00013913 1
+player.additem 0004223B 1
+player.additem FE73C80F 1
+player.additem 000D3AC5 1
