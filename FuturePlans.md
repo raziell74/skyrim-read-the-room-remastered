@@ -23,6 +23,10 @@ Uninstalling should do the following:
 
 I love the look and feel of the animations used in Chikuwan's [Serana's Hood Fix with Animation](https://www.nexusmods.com/skyrimspecialedition/mods/80336) mod. With his permission I want to add it as an optional replacement for the original equip/unequip hood animations.
 
+## MCM Additional Combat Equip Option: Equip When Being Searched for
+
+This option would allow players to apply the Combat Equip when an NPC reports that they are actively searching for the player. The original mod considered "searching" as in combat and would trigger the combat equip. I feel like there should be an option for the "searching" scenario. I personally would prefer not to equip when I'm being searched for because I'm a sneaky boi.
+
 ## MCM Managed Exclusion List
 
 Players should be able to add items to be excluded from RTR via MCM instead of modifying the `ReadTheRoom_Exclusions_KID.ini` file. I'll be keeping the KID file around though so that patches can be distributed easily so the in game exclusion list would be custom for your own game.

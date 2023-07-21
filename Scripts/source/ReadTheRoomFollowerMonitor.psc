@@ -53,7 +53,7 @@ Event OnInit()
 	SetupRTR()
 EndEvent
 
-Event OnPlayerLoadGame()
+Event OnLoad()
 	SetupRTR()
 EndEvent
 
@@ -124,6 +124,10 @@ Function SetupRTR()
 
 	RTR_PrintDebug("-------------------------------------------------------------------- [RTR-Follower] OnPlayerLoadGame Completed for FollowerRef")
 	RTR_PrintDebug(" ")
+
+	if !FollowerRef.IsEquipped(LastEquipped)
+		MostRecentEvent = "ReadTheRoomUnequip"
+	endif
 
 	FollowerRef.SetAnimationVariableInt("RTR_Action", 0)
 	GoToState("")

@@ -60,6 +60,7 @@ String LastEquippedType = "None"
 Float AnimTimeoutBuffer = 0.05
 String MostRecentLocationAction = "None"
 String PreviousLocationAction = "None"
+String RecentAction = "None"
 
 ;;;; Event Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -86,7 +87,7 @@ Function SetupRTR()
 	IsFemale = PlayerRef.GetActorBase().GetSex() == 1
 
 	; Attach helm to the hip
-	Bool HipEnabled = (!PlayerRef.IsEquipped(LastEquipped) && LastEquippedType != "Hood")
+	Bool HipEnabled = (!PlayerRef.IsEquipped(LastEquipped) && LastEquippedType != "Hood") || RecentAction == "Unequip"
 	Float[] hip_position = RTR_GetPosition(LastEquippedType, HipAnchor())
 	Float[] hip_rotation = RTR_GetRotation(LastEquippedType, HipAnchor())
 
@@ -129,11 +130,22 @@ Function SetupRTR()
 	RegisterForAnimationEvent(PlayerRef, "RTR_RemoveLoweredHood")
 	RegisterForAnimationEvent(PlayerRef, "RTR_OffsetStop")
 
+	; Listen for Actor Combat State Changes
+	RegisterForModEvent("ReadTheRoomCombatStateChanged", "OnReadTheRoomCombatStateChanged")
+
 	RTR_PrintDebug("-------------------------------------------------------------------- [RTR-Player] OnPlayerLoadGame Completed for PlayerRef")
 	RTR_PrintDebug(" ")
 
 	PlayerRef.SetAnimationVariableInt("RTR_Action", 0)
 	GoToState("")
+
+	; Send Mod Event to correctly adjust followers when game is loaded
+	Utility.wait(0.1)
+	if RecentAction == "Equip"
+		SendModEvent("ReadTheRoomEquipNoAnimation")
+	elseif RecentAction == "Unequip"
+		SendModEvent("ReadTheRoomUnequipNoAnimation")
+	endif
 EndFunction
 
 ; OnKeyDown Event Handler
@@ -237,33 +249,33 @@ Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 	RTR_PrintDebug(" ")
 EndEvent
 
-; OnCombatStateChanged Event Handler
+; OnReadTheRoomCombatStateChanged Event Handler
 ; Toggles Headgear based off Players Combat State
 ; @todo Test to see if this triggers on any actor, don't think it does but worth checking
-Event OnCombatStateChanged(Actor akTarget, int aeCombatState)
-	MiscUtil.PrintConsole(" ")
-	MiscUtil.PrintConsole("[RTR-Player] OnCombatStateChanged: --------------------------------------------------------------------")
-	MiscUtil.PrintConsole("[RTR-Player] Target: " + akTarget.GetActorBase().GetName())
-	MiscUtil.PrintConsole("[RTR-Player] Combat State: " + aeCombatState)
+Event OnReadTheRoomCombatStateChanged(String eventName, String strArg, Float numArg, Form sender)
+	; Ignore the event if if CombatEquip is disabled
+	if CombatEquip.GetValueInt() == 0
+		return
+	endif
 
-	if aeCombatState == 1
-		; Player entered combat
-		LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
-		EquipActorHeadgear()
-	elseif aeCombatState == 0
+	Int aeCombatState = numArg as Int
+	MiscUtil.PrintConsole("[RTR-Player] " + strArg + " Combat State Changed to " + aeCombatState + " -- PlayerRef.IsInCombat " + PlayerRef.IsInCombat() + " -- PlayerRef.IsEquipped(LastEquipped) " + PlayerRef.IsEquipped(LastEquipped) + " RecentAction " + RecentAction)
+	if aeCombatState == 1 && PlayerRef.IsInCombat() && !PlayerRef.IsEquipped(LastEquipped)
+		; An NPC has reported they are in combat with the player and the player is not wearing the item
+		Debug.Notification("Read The Room: Combat Equip!")
+		EquipActorHeadgear(true)
+	elseif aeCombatState == 0 && !PlayerRef.IsInCombat() && PlayerRef.IsEquipped(LastEquipped)
 		; Player left combat
-		; Make sure to check the location to see if it's safe to unequip
-		if MostRecentLocationAction == "Unequip"
-			LastEquipped = RTR_GetEquipped(PlayerRef, ManageCirclets.getValueInt() == 1)
+		; Return to the most recent action
+		if RecentAction == "Unequip"
 			UnequipActorHeadgear()
 		endif
 	endIf
 
 	if aeCombatState == 2
 		; Someone is looking for the player
-		; @todo Implement
+		; @todo Implement this as a new feature with its own MCM option that will mark "searching" to be the same as entering combat 
 	endif
-	MiscUtil.PrintConsole(" ")
 EndEvent
 
 ; OnAnimationEvent Event Handler
@@ -447,12 +459,12 @@ EndEvent
 
 ; EquipActorHeadgear
 ; Triggers equipping head gear to an actor
-Function EquipActorHeadgear()
+Function EquipActorHeadgear(Bool IsCombatEquip = false)
 	RTR_PrintDebug(" ")
-	RTR_PrintDebug("[RTR-Player] EquipActorHeadgear --------------------------------------------------------------------")
+	MiscUtil.PrintConsole("[RTR-Player] EquipActorHeadgear --------------------------------------------------------------------")
 
 	if PlayerRef.HasKeywordString("ActorTypeCreature")
-		RTR_PrintDebug("- Exiting because actor is a creature")
+		MiscUtil.PrintConsole("- Exiting because actor is a creature")
 		return
 	endif
 
@@ -461,26 +473,26 @@ Function EquipActorHeadgear()
 
 	; Exit early if the actor is already wearing the item
 	if PlayerRef.IsEquipped(LastEquipped)
-		RTR_PrintDebug("- Exiting because item " + (LastEquipped as Armor).GetName() + " is already equipped")
+		MiscUtil.PrintConsole("- Exiting because item " + (LastEquipped as Armor).GetName() + " is already equipped")
 		RemoveFromHip()
 		RemoveFromHand()
 		return
 	endif
 
 	; Combat State Unequip
-	if PlayerRef.GetCombatState() == 1
-		RTR_PrintDebug("- Actor is in combat")
+	if PlayerRef.IsInCombat()
+		MiscUtil.PrintConsole("- Player is in combat")
 		if CombatEquip.GetValueInt() == 0
-			RTR_PrintDebug("- CombatEquip is disabled")
+			MiscUtil.PrintConsole("- Existing because CombatEquip is disabled")
 			return
 		endif
 
-		RTR_PrintDebug("- CombatEquip is enabled")
+		MiscUtil.PrintConsole("- CombatEquip is enabled")
 
 		; Equip with no animation
 		if CombatEquipAnimation.getValueInt() == 0
-			RTR_PrintDebug("- CombatEquipAnimation is disabled. Equipping with no animation")
-			EquipWithNoAnimation()
+			MiscUtil.PrintConsole("- CombatEquipAnimation is disabled. Equipping with no animation")
+			EquipWithNoAnimation(true, IsCombatEquip)
 			return
 		endif
 	endif
@@ -524,23 +536,31 @@ Function EquipActorHeadgear()
 	; Add a typical timeout to ensure the post-animation is called
 	Utility.wait(animation_time)
 	PostAnimCleanUp()
+	if !IsCombatEquip
+		RecentAction = "Equip"
+	endif
 EndFunction
 
 ; EquipWithNoAnimation
 ; Equips an item to an actor without playing an animation
-Function EquipWithNoAnimation(Bool sendFollowerEvent = true)
+Function EquipWithNoAnimation(Bool sendFollowerEvent = true, Bool IsCombatEquip = false)
 	if PlayerRef.HasKeywordString("ActorTypeCreature")
-		RTR_PrintDebug("- Exiting because actor is a creature")
+		MiscUtil.PrintConsole("- Exiting EquipWithNoAnimation because actor is a creature")
 		return
 	endif
+
+	; Make sure our last equipped item is up to date
+	LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
 
 	; Update the IED Node with the last_equipped item
 	UseHelmet()
 
 	if LastEquippedType == "Hood"
+		MiscUtil.PrintConsole("- Equipping Lowered Hood: " + (LastLoweredHood as Armor).GetName())
 		PlayerRef.UnequipItem(LastLoweredHood, false, true)
 		PlayerRef.EquipItem(LastEquipped, false, true)
 	else
+		MiscUtil.PrintConsole("- Equipping: " + (LastEquipped as Armor).GetName())
 		PlayerRef.EquipItem(LastEquipped, false, true)
 		RemoveFromHip()
 		RemoveFromHand()
@@ -548,6 +568,10 @@ Function EquipWithNoAnimation(Bool sendFollowerEvent = true)
 
 	if sendFollowerEvent
 		SendModEvent("ReadTheRoomEquipNoAnimation")
+	endif
+
+	if !IsCombatEquip
+		RecentAction = "Equip"
 	endif
 EndFunction
 
@@ -574,17 +598,17 @@ Function UnequipActorHeadgear()
 
 	; Combat State Unequip
 	if PlayerRef.GetCombatState() == 1
-		RTR_PrintDebug("- Actor is in combat")
+		MiscUtil.PrintConsole("- Actor is in combat")
 		if CombatEquip.GetValueInt() == 0
 			RTR_PrintDebug("- CombatEquip is disabled")
 			return
 		endif
 
-		RTR_PrintDebug("- CombatEquip is enabled")
+		MiscUtil.PrintConsole("- CombatEquip is enabled")
 
 		; Unequip with no animation
 		if CombatEquipAnimation.getValueInt() == 0
-			RTR_PrintDebug("- CombatEquipAnimation is disabled. Unequipping with no animation")
+			MiscUtil.PrintConsole("- CombatEquipAnimation is disabled. Unequipping with no animation")
 			UnequipWithNoAnimation()
 			return
 		endif
@@ -629,6 +653,7 @@ Function UnequipActorHeadgear()
 	; Add a typical timeout to ensure the post-animation is called
 	Utility.wait(animation_time)
 	PostAnimCleanUp()
+	RecentAction = "Unequip"
 EndFunction
 
 ; UnequipWithNoAnimation
@@ -646,15 +671,15 @@ Function UnequipWithNoAnimation(Bool sendFollowerEvent = true)
 		PlayerRef.UnequipItem(LastEquipped, false, true)
 		PlayerRef.EquipItem(LastLoweredHood, false, true)
 	else
-		LastEquippedType = RTR_InferItemType(LastEquipped, LowerableHoods)
-		PlayerRef.UnequipItem(LastEquipped, false, true)
 		RemoveFromHand()
 		AttachToHip()
+		PlayerRef.UnequipItem(LastEquipped, false, true)
 	endif
 
 	if sendFollowerEvent
 		SendModEvent("ReadTheRoomUnequipNoAnimation")
 	endif
+	RecentAction = "Unequip"
 EndFunction
 
 ;;;; Busy State - Blocked Actions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -725,11 +750,11 @@ State busy
 		RTR_PrintDebug("xXx [RTR-Busy] OnMenuClose xXx")
 	EndEvent
 
-	Function EquipActorHeadgear()
+	Function EquipActorHeadgear(Bool IsCombatEquip = false)
 		RTR_PrintDebug("xXx [RTR-Busy] EquipActorHeadgear xXx")
 	EndFunction
 
-	Function EquipWithNoAnimation(Bool sendFollowerEvent = true)
+	Function EquipWithNoAnimation(Bool sendFollowerEvent = true, Bool IsCombatEquip = false)
 		RTR_PrintDebug("xXx [RTR-Busy] EquipWithNoAnimation xXx")
 	EndFunction
 
