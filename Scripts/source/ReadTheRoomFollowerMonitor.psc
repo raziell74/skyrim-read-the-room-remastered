@@ -71,7 +71,7 @@ Function SetupRTR()
 	DeleteItemActor(FollowerRef, PluginName, HelmetOnHand)
 
 	; Attach helm to the hip
-	Bool HipEnabled = (!FollowerRef.IsEquipped(LastEquipped) && LastEquippedType != "Hood" && IsCurrentFollower() && ManageFollowers.GetValueInt() == 1)
+	Bool HipEnabled = ManageFollowers.GetValueInt() == 1 && !FollowerRef.IsEquipped(LastEquipped) && LastEquippedType != "Hood"
 	Float[] hip_position = RTR_GetPosition(LastEquippedType, HipAnchor())
 	Float[] hip_rotation = RTR_GetRotation(LastEquippedType, HipAnchor())
 

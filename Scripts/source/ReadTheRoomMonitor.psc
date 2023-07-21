@@ -87,7 +87,7 @@ Function SetupRTR()
 	IsFemale = PlayerRef.GetActorBase().GetSex() == 1
 
 	; Attach helm to the hip
-	Bool HipEnabled = (!PlayerRef.IsEquipped(LastEquipped) && LastEquippedType != "Hood") || RecentAction == "Unequip"
+	Bool HipEnabled = LastEquippedType != "Hood" && !PlayerRef.IsEquipped(LastEquipped)
 	Float[] hip_position = RTR_GetPosition(LastEquippedType, HipAnchor())
 	Float[] hip_rotation = RTR_GetRotation(LastEquippedType, HipAnchor())
 
