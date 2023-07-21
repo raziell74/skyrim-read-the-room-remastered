@@ -243,7 +243,7 @@ Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 	
 	; Only apply the action if we didn't already do it, prevents ToggleKey from being overwritten unless changing location action
 	if MostRecentLocationAction != PreviousLocationAction 
-		Debug.Notification("ReadTheRoom: " + locationAction)
+		Debug.Notification(locationAction)
 
 		if MostRecentLocationAction == "Equip"
 			LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
@@ -272,11 +272,12 @@ Event OnReadTheRoomCombatStateChanged(String eventName, String strArg, Float num
 	MiscUtil.PrintConsole("[RTR-Player] " + strArg + " Combat State Changed to " + aeCombatState + " -- PlayerRef.IsInCombat " + PlayerRef.IsInCombat() + " -- PlayerRef.IsEquipped(LastEquipped) " + PlayerRef.IsEquipped(LastEquipped) + " RecentAction " + RecentAction)
 	if aeCombatState == 1 && PlayerRef.IsInCombat() && !PlayerRef.IsEquipped(LastEquipped)
 		; An NPC has reported they are in combat with the player and the player is not wearing the item
-		Debug.Notification("ReadTheRoom: Combat Equip!")
+		Debug.Notification("Entering Combat!")
 		EquipActorHeadgear(true)
 	elseif aeCombatState == 0 && !PlayerRef.IsInCombat() && PlayerRef.IsEquipped(LastEquipped)
 		; Player left combat
 		; Return to the most recent action
+		Debug.Notification("Leaving Combat")
 		if RecentAction == "Unequip"
 			UnequipActorHeadgear()
 		endif
