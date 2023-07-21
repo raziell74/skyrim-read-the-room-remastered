@@ -229,12 +229,22 @@ Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 	RTR_PrintDebug("-- RTR UnequipWhenUnsafe global var value: " + EquipWhenSafe.getValueInt())
 
 	; Update the MostRecentLocationAction reference for other processes
-	MostRecentLocationAction = RTR_GetLocationAction(akNewLoc, is_valid, equip_when_safe, unequip_when_unsafe, SafeKeywords, HostileKeywords)
+	String locationAction = RTR_GetLocationAction(akNewLoc, is_valid, equip_when_safe, unequip_when_unsafe, SafeKeywords, HostileKeywords)
+
+	if locationAction == "Entering Safety" || locationAction == "Leaving Danger" 	
+		MostRecentLocationAction = "Unequip"
+	elseif locationAction == "Entering Danger" || locationAction == "Leaving Safety"
+		MostRecentLocationAction = "Equip"
+	else
+		MostRecentLocationAction = "None"
+	endif
 
 	RTR_PrintDebug("-- RTR MostRecentLocationAction set to: " + MostRecentLocationAction)
 	
 	; Only apply the action if we didn't already do it, prevents ToggleKey from being overwritten unless changing location action
 	if MostRecentLocationAction != PreviousLocationAction 
+		Debug.Notification("ReadTheRoom: " + locationAction)
+
 		if MostRecentLocationAction == "Equip"
 			LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
 			EquipActorHeadgear()
@@ -262,7 +272,7 @@ Event OnReadTheRoomCombatStateChanged(String eventName, String strArg, Float num
 	MiscUtil.PrintConsole("[RTR-Player] " + strArg + " Combat State Changed to " + aeCombatState + " -- PlayerRef.IsInCombat " + PlayerRef.IsInCombat() + " -- PlayerRef.IsEquipped(LastEquipped) " + PlayerRef.IsEquipped(LastEquipped) + " RecentAction " + RecentAction)
 	if aeCombatState == 1 && PlayerRef.IsInCombat() && !PlayerRef.IsEquipped(LastEquipped)
 		; An NPC has reported they are in combat with the player and the player is not wearing the item
-		Debug.Notification("Read The Room: Combat Equip!")
+		Debug.Notification("ReadTheRoom: Combat Equip!")
 		EquipActorHeadgear(true)
 	elseif aeCombatState == 0 && !PlayerRef.IsInCombat() && PlayerRef.IsEquipped(LastEquipped)
 		; Player left combat
@@ -731,7 +741,14 @@ State busy
 		Bool is_valid = RTR_IsValidHeadWear(PlayerRef, LastEquipped, LoweredHoods)
 		Bool equip_when_safe = EquipWhenSafe.getValueInt() == 1
 		Bool unequip_when_unsafe = UnequipWhenUnsafe.getValueInt() == 1
-		MostRecentLocationAction = RTR_GetLocationAction(akNewLoc, is_valid, equip_when_safe, unequip_when_unsafe, SafeKeywords, HostileKeywords)
+		String locationAction = RTR_GetLocationAction(akNewLoc, is_valid, equip_when_safe, unequip_when_unsafe, SafeKeywords, HostileKeywords)
+		if locationAction == "Entering Safety" || locationAction == "Leaving Danger" 	
+			MostRecentLocationAction = "Unequip"
+		elseif locationAction == "Entering Danger" || locationAction == "Leaving Safety"
+			MostRecentLocationAction = "Equip"
+		else
+			MostRecentLocationAction = "None"
+		endif
 	EndEvent
 
 	Event OnCombatStateChanged(Actor akTarget, int aeCombatState)

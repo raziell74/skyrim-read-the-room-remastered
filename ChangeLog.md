@@ -22,6 +22,9 @@
   - RTR will now enter a "Busy" state which blocks all RTR actions while it works preventing things like Key spamming or rapidly changing locations
 - Follower queued actions
   - If the player continuously equips and unequips their head gear back to back, followers will queue their actions so their animations won't overlap and "break" their brains
+- Complete overhaul of the CombatEquip system. Head wear will now only be equipped if the player is in combat and will return to what ever previous head wear state they were in when they started combat. So if you start combat with no helmet, you will remove your helmet once you've left combat. Also fixed an issue with the original where certain actors like animals or dragons wouldn't report leaving combat on death. I also added a future plan to extend the system to include options for when an NPC is searching for the player. Default behavior of the original was to treat searching the same as "in combat" but I personally would prefer to only equip when actually fighting. 
+- Added notifications for automated RTR actions: Entering Safety, Leaving Safety, Nearing Danger, Leaving Danger, Combat Equip
+  - MCM Setting to enable/disable is on my list, for now it defaults to enabled.
 
 ### Bugs Squashed
 
