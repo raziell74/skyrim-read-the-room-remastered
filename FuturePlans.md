@@ -5,6 +5,12 @@ My brain is a fickle meat lump, riddled with ADHD, and fueled only with a combin
 
 Because of this unfortunate personality trait I've opened the permissions on the [GitHub repository](https://github.com/raziell74/skyrim-read-the-room-tweaks). Feel free to make a branch and submit a PR with your changes. Github will tickle my leg via phone notifications so I should manage to get to reviewing your changes in a reasonable amount of time. To ensure an acceptable level of quality, changes require an approved pull request to be merged into the next release
 
+## Lowered Hood Animation for all Hoods and Cowls
+
+I'm changing the functionality here so that if a hood has the `RTR_HoodKW` keyword it will use the "lower hood" animation, even if it doesn't have a "lowered" version. This is because the "remove helmet" animation looks really bad with a hood. It's a better experience in my opinion to just unequip the hood then to have a folded world model of the hood hooked to your belt.
+
+I am limited to what ever lowered hood meshes are available. I'm not 3D artist and I have zero experience making meshes so if I can't find a good lowered version in the available mods out there then we're stuck with just not showing the hood lowered on the character.
+
 ## Versioning - Better Update Process
 
 Script variables and properties are "baked" into save files so if the properties sent to the scripts change in the esp file they do not work correctly from an existing save. I want to implement a version control system, MCM offers some handy tools for version control, so that when updating the scripts can correctly update their properties and function without the need to start a new save or clean your save with ReSaver.
