@@ -61,6 +61,8 @@ Float AnimTimeoutBuffer = 0.05
 String MostRecentLocationAction = "None"
 String PreviousLocationAction = "None"
 String RecentAction = "None"
+Bool IsPlayerSetup = false
+Bool WasInCombat = false
 
 ;;;; Event Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -269,16 +271,21 @@ Event OnReadTheRoomCombatStateChanged(String eventName, String strArg, Float num
 	endif
 
 	Int aeCombatState = numArg as Int
-	MiscUtil.PrintConsole("[RTR-Player] " + strArg + " Combat State Changed to " + aeCombatState + " -- PlayerRef.IsInCombat " + PlayerRef.IsInCombat() + " -- PlayerRef.IsEquipped(LastEquipped) " + PlayerRef.IsEquipped(LastEquipped) + " RecentAction " + RecentAction)
+	MiscUtil.PrintConsole("[RTR-Player] " + strArg + " Combat State Changed to " + aeCombatState + " -- Player WasInCombat " + WasInCombat + " -- PlayerRef.IsInCombat " + PlayerRef.IsInCombat() + " -- PlayerRef.IsEquipped(LastEquipped) " + PlayerRef.IsEquipped(LastEquipped) + " RecentAction " + RecentAction)
 	if aeCombatState == 1 && PlayerRef.IsInCombat() && !PlayerRef.IsEquipped(LastEquipped)
 		; An NPC has reported they are in combat with the player and the player is not wearing the item
-		Debug.Notification("Entering Combat!")
+		if CombatEquip.GetValueInt() == 1
+			Debug.Notification("Entering Combat!")
+		endIf
+		WasInCombat = true
 		EquipActorHeadgear(true)
-	elseif aeCombatState == 0 && !PlayerRef.IsInCombat() && PlayerRef.IsEquipped(LastEquipped)
+	elseif aeCombatState == 0 && WasInCombat && !PlayerRef.IsInCombat()
 		; Player left combat
 		; Return to the most recent action
-		Debug.Notification("Leaving Combat")
 		if RecentAction == "Unequip"
+			if CombatEquip.GetValueInt() == 1
+				Debug.Notification("Leaving Combat")
+			endIf
 			UnequipActorHeadgear()
 		endif
 	endIf
@@ -863,17 +870,24 @@ EndFunction
 ; UseHelmet
 ; Sets an Armor Form as the IED placement display forms
 Function UseHelmet()
-	; Update IED Placements to use LastEquipped Helmet Form
-	SetItemFormActor(PlayerRef, PluginName, HelmetOnHip, IsFemale, LastEquipped)
-	SetItemFormActor(PlayerRef, PluginName, HelmetOnHand, IsFemale, LastEquipped)
+	if !IsPlayerSetup || !LastEquipped || LastEquippedType == "None"
+		SetupRTR()
+		IsPlayerSetup = true
+	endif
 
 	; Conditional Placement Scaling / Lowered Hood Update
 	LastEquippedType = RTR_InferItemType(LastEquipped, LowerableHoods)
 	if LastEquippedType == "Hood"
 		LastLoweredHood = LoweredHoods.GetAt(LowerableHoods.Find(LastEquipped))
 	elseif LastEquippedType == "Helmet"
+		; Update IED Placements to use LastEquipped Helmet Form
+		SetItemFormActor(PlayerRef, PluginName, HelmetOnHip, IsFemale, LastEquipped)
+		SetItemFormActor(PlayerRef, PluginName, HelmetOnHand, IsFemale, LastEquipped)
 		SetItemScaleActor(PlayerRef, PluginName, HelmetOnHand, IsFemale, HandScale)
 	else 
+		; Update IED Placements to use LastEquipped Helmet Form
+		SetItemFormActor(PlayerRef, PluginName, HelmetOnHip, IsFemale, LastEquipped)
+		SetItemFormActor(PlayerRef, PluginName, HelmetOnHand, IsFemale, LastEquipped)
 		SetItemScaleActor(PlayerRef, PluginName, HelmetOnHand, IsFemale, 1)
 	endif
 EndFunction

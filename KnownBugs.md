@@ -7,8 +7,8 @@ Check the Change Log for a list of bugs that have been squashed so far!
 - [ ] Some Vanilla/DLC Masks and Hoods break RTR
 - [ ] Wooden Mask (Labyrithian) Auto equips when leaving the mask realm
   - Pretty sure the Remaster fixes this but I haven't tested it yet
-- [ ] Undeletable
-  - This issue is being addressed in a future plans feature
+- [ ] Cannot remove ReadTheRoom
+  - This issue is being addressed in the "Uninstall Button" feature outlined in the "future plans" section.
 - [ ] CC Content helmets and hats don't work
 - [ ] Some Vanilla/DLC Hoods aren't lowered and instead are treated like helmets
 - [ ] Function 'Require Armor for Hip Placement' is bugged
@@ -18,6 +18,6 @@ Check the Change Log for a list of bugs that have been squashed so far!
 
 # Remastered Version
 
-- [ ] There's a compatibility bug with Nether's Follower Framework where after loading a save and then changing cells followers will equip their helmets / hoods without clearing the RTR placements. It's especially noticeable with lowered hoods. The next equip/unequip from RTR will correct them for the rest of the session but that first cell change breaks. I have not found a fix yet.
-  - An additional compatibility issue with NFF is that when changing cells the Helmet on Hip seems to disappear.
+- [ ] Compatibility issue with Nether's Follower Framework. 
+  - After loading a save, followers will equip their head wear after the first cell. If the player toggles headwear between the first and the second cell change the issue is corrected for the rest of the play session. I am working on a fix for this but it is a complex issue around NFF's outfit management. ***Note*** the issue happens even if NFFs outfit management is disabled.
 - [ ] Lowerable hoods have a brief fully unequiped state when unequipping after a Combat Equip. The hood is removed without a lowered hood added and then the animation plays a tiny bit of time after that. It's not ... game breaking, but it does break the immersion.
