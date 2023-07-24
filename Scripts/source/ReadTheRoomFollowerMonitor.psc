@@ -71,7 +71,7 @@ Function SetupRTR()
 	DeleteItemActor(FollowerRef, PluginName, HelmetOnHand)
 
 	; Attach helm to the hip
-	Bool HipEnabled = ManageFollowers.GetValueInt() == 1 && !FollowerRef.IsEquipped(LastEquipped) && LastEquippedType != "Hood"
+	Bool HipEnabled = ManageFollowers.GetValueInt() == 1 && IsCurrentFollower() && !FollowerRef.IsEquipped(LastEquipped) && LastEquippedType != "Hood"
 	Float[] hip_position = RTR_GetPosition(LastEquippedType, HipAnchor())
 	Float[] hip_rotation = RTR_GetRotation(LastEquippedType, HipAnchor())
 
@@ -416,6 +416,12 @@ Function EquipActorHeadgear()
 	; Update the IED Node with the last_equipped item
 	UseHelmet()
 
+	if LastEquipped.HasKeywordString("RTR_ExcludeKW")
+		RemoveFromHip()
+		RemoveFromHand()
+		return
+	endif
+
 	; Exit early if the actor is already wearing the item
 	if FollowerRef.IsEquipped(LastEquipped)
 		RTR_PrintDebug("- Exiting because item " + (LastEquipped as Armor).GetName() + " is already equipped")
@@ -468,6 +474,12 @@ Function EquipWithNoAnimation(Bool sendFollowerEvent = true)
 	; Update the IED Node with the last_equipped item
 	UseHelmet()
 
+	if LastEquipped.HasKeywordString("RTR_ExcludeKW")
+		RemoveFromHip()
+		RemoveFromHand()
+		return
+	endif
+
 	if LastEquippedType == "Hood"
 		FollowerRef.UnequipItem(LastLoweredHood, false, true)
 		FollowerRef.EquipItem(LastEquipped, false, true)
@@ -486,6 +498,12 @@ Function UnequipActorHeadgear()
 	
 	; Update the IED Node with the equipped item
 	UseHelmet()
+
+	if LastEquipped.HasKeywordString("RTR_ExcludeKW")
+		RemoveFromHip()
+		RemoveFromHand()
+		return
+	endif
 
 	; Exit early if the actor is not wearing the item
 	if !FollowerRef.IsEquipped(LastEquipped)
@@ -537,6 +555,12 @@ EndFunction
 Function UnequipWithNoAnimation()
 	; Update the IED Node with the equipped item
 	UseHelmet()
+
+	if LastEquipped.HasKeywordString("RTR_ExcludeKW")
+		RemoveFromHip()
+		RemoveFromHand()
+		return
+	endif
 
 	LastEquippedType = RTR_InferItemType(LastEquipped, LowerableHoods)
 	if LastEquippedType == "Hood"
