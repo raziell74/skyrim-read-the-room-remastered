@@ -5,6 +5,15 @@ Import MiscUtil ; PapyrusUtil SE
 
 String Property PluginName = "ReadTheRoom.esp" Auto
 
+; RTR_GetVersion
+; Returns the hard set version of ReadTheRoom
+; Used for detecting if a scripts properties need to be updated or not
+;
+; @return Float
+Float Function RTR_GetVersion() global
+    return 1.0
+EndFunction
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;; ReadTheRoom Helpers ;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -36,7 +45,8 @@ Bool Function RTR_IsValidHeadWear(Actor target_actor, Form item, FormList Lowere
     Bool isCirclet = thisArmor.IsClothingHead() || thisArmor.HasKeywordString("ClothingCirclet")
     Bool isHood = thisArmor.HasKeywordString("RTR_HoodKW")
     if isHelmet || isCirclet || isHood
-        ; Since Lowered Hoods are equipped (dumb) make sure the item isn't one of those
+        ; Since Lowered Hoods are equipped and not placed through IED they can show up here, we need to 
+        ; invalidate them so they character doesn't try to equip/unequip them
         if isHood && LoweredHoods.HasForm(item)
             ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Detected Lowered Hood. Invalid")
             return false
@@ -62,13 +72,13 @@ EndFunction
 ;
 ; @param Form item
 ; @return String
-String Function RTR_InferItemType(Form item, FormList LowerableHoods) global
+String Function RTR_InferItemType(Form item) global
     ReadTheRoomUtil.RTR_PrintDebug(">>> [RTRUtil] RTR_InferItemType")
 
     Armor thisArmor = item as Armor
 
     ; Check if a hood has been set up to be lowered
-    if thisArmor.HasKeywordString("RTR_HoodKW") && LowerableHoods.HasForm(thisArmor)
+    if thisArmor.HasKeywordString("RTR_HoodKW")
         ReadTheRoomUtil.RTR_PrintDebug(">>>>>> item " + thisArmor.GetName() + " type: Hood")
         return "Hood"
     elseif thisArmor.IsClothingHead() || thisArmor.HasKeywordString("ClothingCirclet")
@@ -108,7 +118,7 @@ Form Function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
     int maxSlot = 0x00040000 ; Only check up unreserved named slots (up to 43)
  
     int thisSlot = 0x01 
-    while (thisSlot < 0x00040000) 
+    while (thisSlot < maxSlot) 
         if (Math.LogicalAnd(slotsChecked, thisSlot) != thisSlot) ; only check slots we haven't found anything equipped on already
             Armor thisArmor = target_actor.GetWornForm(thisSlot) as Armor
             if (thisArmor)
