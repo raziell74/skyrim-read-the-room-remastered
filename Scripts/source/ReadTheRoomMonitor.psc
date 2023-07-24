@@ -203,6 +203,7 @@ Event OnKeyDown(Int KeyCode)
 	if KeyCode == DeleteKey.GetValueInt()
 		RTR_PrintDebug(" ")
 		RTR_PrintDebug("[RTR-Player] Clearing ReadTheRoom placements --------------------------------------------------------------------")
+		SendModEvent("ReadTheRoomClearPlacements")
 		RemoveFromHip()
 		RemoveFromHand()
 		LastEquipped = None

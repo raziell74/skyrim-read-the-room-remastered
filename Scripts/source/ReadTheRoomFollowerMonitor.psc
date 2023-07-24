@@ -156,6 +156,20 @@ EndFunction
 
 ;;;; Mod Even Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+Event OnReadTheRoomClearPlacements(String eventName, String strArg, Float numArg, Form sender)
+    MostRecentEvent = "ReadTheRoomEquip"
+	if !CanProcessFollower()
+		return
+	endif
+
+	RemoveFromHip()
+	RemoveFromHand()
+	LastEquipped = None
+	LastLoweredHood = None
+	LastEquippedType = "None"
+	GoToState("")
+EndEvent
+
 Event OnReadTheRoomEquip(String eventName, String strArg, Float numArg, Form sender)
     MostRecentEvent = "ReadTheRoomEquip"
 	if !CanProcessFollower()
