@@ -8,8 +8,8 @@ Import IED ; Immersive Equipment Display
 Import ReadTheRoomUtil ; Our helper functions
 Import MiscUtil ; PapyrusUtil SE
 
-; Versioning
-GlobalVariable property RTR_Version auto
+; This Scripts Version
+Float RTR_Version = 1.2
 
 ; Current Follower Faction
 Faction property CurrentFollowerFaction auto
@@ -53,10 +53,12 @@ Bool IsFollowerSetup = false
 
 Event OnInit()
 	SetupRTR()
+	CheckForUpdates()
 EndEvent
 
 Event OnLoad()
 	SetupRTR()
+	CheckForUpdates()
 EndEvent
 
 Function SetupRTR()
@@ -785,3 +787,27 @@ State CellChange
 		RTR_PrintDebug(" ")
 	EndEvent
 EndState
+
+; CheckForUpdates
+; Checks if the script version has changed and updates the script properties
+; Uses Game.GetFormFromFile to get the latest version of the script properties
+; Which is kinda hacky but will allow script updates in active saves
+Function CheckForUpdates()
+	if RTR_Version != RTR_GetVersion()
+		; Do update - Refresh Properties from Forms
+		ManageFollowers = Game.GetFormFromFile(0xF81, "ReadTheRoom.esp") As GlobalVariable
+		ManageCirclets = Game.GetFormFromFile(0x00000C54, "ReadTheRoom.esp") As GlobalVariable
+		RemoveHelmetWithoutArmor = Game.GetFormFromFile(0x00000E59, "ReadTheRoom.esp") As GlobalVariable
+
+		LowerableHoods = Game.GetFormFromFile(0x00000949, "ReadTheRoom.esp") As FormList
+		LoweredHoods = Game.GetFormFromFile(0x0000094A, "ReadTheRoom.esp") As FormList
+
+		MaleHandAnchor = Game.GetFormFromFile(0x00000803, "ReadTheRoom_Remaster.esp") As FormList
+		MaleHipAnchor = Game.GetFormFromFile(0x00000804, "ReadTheRoom_Remaster.esp") As FormList
+		FemaleHandAnchor = Game.GetFormFromFile(0x00000805, "ReadTheRoom_Remaster.esp") As FormList
+		FemaleHipAnchor = Game.GetFormFromFile(0x00000806, "ReadTheRoom_Remaster.esp") As FormList
+
+		RTR_Version = RTR_GetVersion()
+		Debug.Notification("Read The Room Follower Scripts - Updated to Version " + RTR_Version)
+	endif
+EndFunction

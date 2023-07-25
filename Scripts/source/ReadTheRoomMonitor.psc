@@ -8,8 +8,8 @@ Import IED ; Immersive Equipment Display
 Import ReadTheRoomUtil ; Our helper Functions
 Import MiscUtil ; PapyrusUtil SE
 
-; Versioning
-GlobalVariable property RTR_Version auto
+; This Scripts Version
+Float RTR_Version = 1.2
 
 ; Player reference and script application perk
 Actor property PlayerRef auto
@@ -80,10 +80,12 @@ Event OnInit()
 	RegisterForKey(EnableKey.GetValueInt())
 
 	SetupRTR()
+	CheckForUpdates()
 EndEvent
 
 Event OnPlayerLoadGame()
 	SetupRTR()
+	CheckForUpdates()
 EndEvent
 
 Function SetupRTR()
@@ -971,4 +973,45 @@ Form[] Function HandAnchor()
 		return FemaleHandAnchor.ToArray()
 	endif
 	return MaleHandAnchor.ToArray()
+EndFunction
+
+; CheckForUpdates
+; Checks if the script version has changed and updates the script properties
+; Uses Game.GetFormFromFile to get the latest version of the script properties
+; Which is kinda hacky but will allow script updates in active saves
+Function CheckForUpdates()
+	if RTR_Version != RTR_GetVersion()
+		; Do update - Refresh Properties from Forms
+		ReadTheRoomPerk = Game.GetFormFromFile(0x800, "ReadTheRoom.esp") As Perk
+
+		ToggleKey = Game.GetFormFromFile(0x00000815, "ReadTheRoom.esp") As GlobalVariable
+		DeleteKey = Game.GetFormFromFile(0x00000816, "ReadTheRoom.esp") As GlobalVariable
+		EnableKey = Game.GetFormFromFile(0x00000B51, "ReadTheRoom.esp") As GlobalVariable
+
+		CombatEquip = Game.GetFormFromFile(0x00000C52, "ReadTheRoom.esp") As GlobalVariable
+		CombatEquipAnimation = Game.GetFormFromFile(0x00000C53, "ReadTheRoom.esp") As GlobalVariable
+		EquipWhenSafe = Game.GetFormFromFile(0x0000080C, "ReadTheRoom.esp") As GlobalVariable
+		UnequipWhenUnsafe = Game.GetFormFromFile(0x0000080D, "ReadTheRoom.esp") As GlobalVariable
+		RemoveHelmetWithoutArmor = Game.GetFormFromFile(0x00000E59, "ReadTheRoom.esp") As GlobalVariable
+		SheathWeaponsForAnimation = Game.GetFormFromFile(0x0000080E, "ReadTheRoom_Remaster.esp") As GlobalVariable
+
+		NotifyOnLocation = Game.GetFormFromFile(0x0000082A, "ReadTheRoom_Remaster.esp") As GlobalVariable
+		NotifyOnCombat = Game.GetFormFromFile(0x0000082B, "ReadTheRoom_Remaster.esp") As GlobalVariable
+
+		ManageCirclets = Game.GetFormFromFile(0x00000C54, "ReadTheRoom.esp") As GlobalVariable
+
+		SafeKeywords = Game.GetFormFromFile(0x0000080A, "ReadTheRoom.esp") As FormList
+		HostileKeywords = Game.GetFormFromFile(0x00000804, "ReadTheRoom.esp") As FormList
+
+		LowerableHoods = Game.GetFormFromFile(0x00000949, "ReadTheRoom.esp") As FormList
+		LoweredHoods = Game.GetFormFromFile(0x0000094A, "ReadTheRoom.esp") As FormList
+
+		MaleHandAnchor = Game.GetFormFromFile(0x00000803, "ReadTheRoom_Remaster.esp") As FormList
+		MaleHipAnchor = Game.GetFormFromFile(0x00000804, "ReadTheRoom_Remaster.esp") As FormList
+		FemaleHandAnchor = Game.GetFormFromFile(0x00000805, "ReadTheRoom_Remaster.esp") As FormList
+		FemaleHipAnchor = Game.GetFormFromFile(0x00000806, "ReadTheRoom_Remaster.esp") As FormList
+
+		RTR_Version = RTR_GetVersion()
+		Debug.Notification("Read The Room Player Scripts - Updated to Version " + RTR_Version)
+	endif
 EndFunction
