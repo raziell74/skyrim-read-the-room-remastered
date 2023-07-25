@@ -58,6 +58,14 @@ GlobalVariable property CombatEquipAnimation auto
 GlobalVariable property ManageCirclets auto
 GlobalVariable property ManageFollowers auto
 GlobalVariable property RemoveHelmetWithoutArmor auto
+
+; Remaster only
+
+GlobalVariable property RTR_Version auto
+GlobalVariable property SheathWeaponsForAnimation auto
+GlobalVariable property NotifyOnLocation auto
+GlobalVariable property NotifyOnCombat auto
+
 Perk property ReadTheRoomPerk auto
 
 Import IED
@@ -135,6 +143,14 @@ Bool ManageCircletsVal
 Bool RemoveHelmetWithoutArmorVal
 Bool ManageFollowersVal
 
+; Remaster only
+Int OID_SheathWeaponsForAnimation
+Int OID_Notify
+
+Bool SheathWeaponsForAnimationVal
+Int CurrentNotify = 0
+String[] NotifyOptions
+
 Event OnConfigInit()
 	EquipOptions = new string[3]
 	EquipOptions[0] = "Nearing danger"
@@ -144,6 +160,11 @@ Event OnConfigInit()
 	UnequipOptions[0] = "Entering safety"
 	UnequipOptions[1] = "Leaving danger"
 	UnequipOptions[2] = "Only with toggle key"
+	NotifyOptions = new string[4]
+	NotifyOptions[0] = "Location and Combat"
+	NotifyOptions[1] = "Location Change"
+	NotifyOptions[2] = "Combat Equip"
+	NotifyOptions[3] = "Disable Notifications"
 	
 	Pages = new string[2]
 	Pages[0] = "General"
@@ -174,12 +195,27 @@ Event OnConfigInit()
 	else
 		ManageFollowersVal = false
 	endif
+	if SheathWeaponsForAnimation.GetValue() == 1
+		SheathWeaponsForAnimationVal = true
+	else
+		SheathWeaponsForAnimationVal = false
+	endif
+	if NotifyOnLocation.GetValue() == 1 && NotifyOnCombat.GetValue() == 1
+		CurrentNotify = 0
+	elseif NotifyOnLocation.GetValue() == 1 && NotifyOnCombat.GetValue() == 0
+		CurrentNotify = 1
+	elseif NotifyOnLocation.GetValue() == 0 && NotifyOnCombat.GetValue() == 1
+		CurrentNotify = 2
+	else
+		CurrentNotify = 3
+	endif
 EndEvent
 
 Event OnPageReset(String page)
 	SetCursorFillMode(TOP_TO_BOTTOM)
 	SetCursorPosition(0)
 	if page == "General"
+		AddHeaderOption("Read The Room - Version " + RTR_Version.GetValue())
 		AddHeaderOption("Helmet Equip/Unequip")
 		OID_EquipWhenSafe = AddMenuOption("Equip When:", EquipOptions[CurrentEquipWhenSafe])
 		OID_UnequipWhenUnsafe = AddMenuOption("Unequip When:", UnequipOptions[CurrentUnequipWhenUnsafe])
@@ -188,6 +224,12 @@ Event OnPageReset(String page)
 		OID_CombatEquipAnimation = AddToggleOption("Combat equip uses animation", CombatEquipAnimationVal)
 		OID_ManageCirclets = AddToggleOption("Manage Circlets like Helmets", ManageCircletsVal)
 		OID_RemoveHelmetWithoutArmor = AddToggleOption("Require armor for hip placement", RemoveHelmetWithoutArmorVal)
+		
+		; Remaster options
+		OID_SheathWeaponsForAnimation = AddToggleOption("Sheath Weapons to Equip/Unequip", SheathWeaponsForAnimationVal)
+		OID_Notify = AddMenuOption("Notify On:", NotifyOptions[CurrentNotify])
+		; End Remaster Options
+		
 		AddHeaderOption("Keybinds")
 		OID_ToggleKey = AddKeyMapOption("Toggle equipped:", ToggleKey.GetValueInt(), 0)
 		OID_DeleteKey = AddKeyMapOption("Clear placed headgear:", DeleteKey.GetValueInt(), 0)
@@ -807,6 +849,13 @@ Event OnOptionMenuOpen(int a_option)
 		SetMenuDialogDefaultIndex(0)
 		SetMenuDialogOptions(UnequipOptions)
 	endif
+
+	; Remaster options
+	if a_option == OID_Notify
+		SetMenuDialogStartIndex(CurrentNotify)
+		SetMenuDialogDefaultIndex(0)
+		SetMenuDialogOptions(NotifyOptions)
+	endif
 EndEvent
 
 Event OnOptionMenuAccept(int a_option, int a_index)
@@ -819,6 +868,25 @@ Event OnOptionMenuAccept(int a_option, int a_index)
 		CurrentUnequipWhenUnsafe = a_index
 		SetMenuOptionValue(a_option, UnequipOptions[CurrentUnequipWhenUnsafe])
 		UnequipWhenUnsafe.SetValueInt(CurrentUnequipWhenUnsafe)
+	endif
+
+	; Remaster Options
+	if a_option ==  OID_Notify
+		CurrentNotify = a_index
+		SetMenuOptionValue(a_option, NotifyOptions[CurrentNotify])
+		if CurrentNotify == 0
+			NotifyOnLocation.SetValueInt(1)
+			NotifyOnCombat.SetValueInt(1)
+		elseif CurrentNotify == 1
+			NotifyOnLocation.SetValueInt(1)
+			NotifyOnCombat.SetValueInt(0)
+		elseif CurrentNotify == 2
+			NotifyOnLocation.SetValueInt(0)
+			NotifyOnCombat.SetValueInt(1)
+		elseif CurrentNotify == 3
+			NotifyOnLocation.SetValueInt(0)
+			NotifyOnCombat.SetValueInt(0)
+		endif
 	endif
 EndEvent
 
@@ -882,6 +950,17 @@ Event OnOptionSelect(int a_option)
 			RemoveHelmetWithoutArmor.SetValueInt(1)
 		endif
 	endif
+
+	; Remaster Options
+	if a_option == OID_SheathWeaponsForAnimation
+		SheathWeaponsForAnimationVal = !SheathWeaponsForAnimationVal
+		SetToggleOptionValue(a_option, SheathWeaponsForAnimationVal)
+		if SheathWeaponsForAnimation.GetValue() == 1
+			SheathWeaponsForAnimation.SetValueInt(0)
+		else
+			SheathWeaponsForAnimation.SetValueInt(1)
+		endif
+	endif
 EndEvent
 
 Event OnOptionHighlight(Int Option)
@@ -911,5 +990,13 @@ Event OnOptionHighlight(Int Option)
 	endif
 	if Option == OID_RemoveHelmetWithoutArmor
 		SetInfoText("Helmet will only appear on hip if a torso piece is equipped")
+	endif
+
+	; Remaster Options
+	if Option == OID_SheathWeaponsForAnimation
+		SetInfoText("Toggles weapon sheathing for animations. If disabled helmets will be equipped immediately and not animated while weapons are out")
+	endif
+	if Option == OID_Notify
+		SetInfoText("Toggles RTR notifications for location changes and combat")
 	endif
 EndEvent

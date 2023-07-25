@@ -2,6 +2,8 @@ player.setav health 9999
 player.setav magicka 9999
 player.setav stamina 9999
 
+player.modav carryweight 10000
+
 player.advskill lightarmor 200000
 player.advskill heavyarmor 200000
 
