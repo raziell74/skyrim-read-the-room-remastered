@@ -116,3 +116,10 @@ This would not work with helmets and doesn't make sense because they are complet
 ### Add Compatibility Patch for Modernize which adds physics to monk hoods
 
 Modernize is an awesome mod that adds physics to the monk hood meshes. I want to add a compatibility patch and use their meshes to also add physics to the lowered versions of the monk hoods. After all RTR is all about immersion and Physics = Immersion!
+
+- Hood Paths
+  - Clothes\Monk\MonkHood_1.nif
+  - Clothes\Warlock\WarlockHood_1.nif
+  - Clothes\Monk\MonkHood_Arg_1.nif
+  - Clothes\Monk\MonkVariantHood_Kha_1.nif
+  - Clothes\Necromancer\NecromancerHood_1.nif
