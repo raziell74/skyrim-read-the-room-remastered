@@ -5,9 +5,11 @@ ScriptName ReadTheRoomMonitor extends ActiveMagicEffect
 ; Contains main logic for manaing the players head gear specifically
 
 Import IED ; Immersive Equipment Display
+Import ReadTheRoomUtil ; Our helper Functions
 Import MiscUtil ; PapyrusUtil SE
 
-Import ReadTheRoomUtil ; Our helper Functions
+; Versioning
+GlobalVariable property RTR_Version auto
 
 ; Player reference and script application perk
 Actor property PlayerRef auto
@@ -24,6 +26,7 @@ GlobalVariable property CombatEquipAnimation auto
 GlobalVariable property EquipWhenSafe auto
 GlobalVariable property UnequipWhenUnsafe auto
 GlobalVariable property RemoveHelmetWithoutArmor auto
+GlobalVariable property SheathWeaponsForAnimation auto
 
 ; Management Settings
 GlobalVariable property ManageCirclets auto
@@ -85,7 +88,7 @@ Function SetupRTR()
 
 	; Update the last equipped item
 	LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
-	LastEquippedType = RTR_InferItemType(LastEquipped, LowerableHoods)
+	LastEquippedType = RTR_InferItemType(LastEquipped)
 	IsFemale = PlayerRef.GetActorBase().GetSex() == 1
 
 	; Attach helm to the hip
@@ -203,6 +206,7 @@ Event OnKeyDown(Int KeyCode)
 	if KeyCode == DeleteKey.GetValueInt()
 		RTR_PrintDebug(" ")
 		RTR_PrintDebug("[RTR-Player] Clearing ReadTheRoom placements --------------------------------------------------------------------")
+		SendModEvent("ReadTheRoomClearPlacements")
 		RemoveFromHip()
 		RemoveFromHand()
 		LastEquipped = None
@@ -271,7 +275,7 @@ Event OnReadTheRoomCombatStateChanged(String eventName, String strArg, Float num
 	endif
 
 	Int aeCombatState = numArg as Int
-	MiscUtil.PrintConsole("[RTR-Player] " + strArg + " Combat State Changed to " + aeCombatState + " -- Player WasInCombat " + WasInCombat + " -- PlayerRef.IsInCombat " + PlayerRef.IsInCombat() + " -- PlayerRef.IsEquipped(LastEquipped) " + PlayerRef.IsEquipped(LastEquipped) + " RecentAction " + RecentAction)
+	; MiscUtil.PrintConsole("[RTR-Player] " + strArg + " Combat State Changed to " + aeCombatState + " -- Player WasInCombat " + WasInCombat + " -- PlayerRef.IsInCombat " + PlayerRef.IsInCombat() + " -- PlayerRef.IsEquipped(LastEquipped) " + PlayerRef.IsEquipped(LastEquipped) + " RecentAction " + RecentAction)
 	if aeCombatState == 1 && PlayerRef.IsInCombat() && !PlayerRef.IsEquipped(LastEquipped)
 		; An NPC has reported they are in combat with the player and the player is not wearing the item
 		if CombatEquip.GetValueInt() == 1
@@ -342,14 +346,14 @@ Event OnAnimationEvent(ObjectReference akSource, String asEventName)
 	endif
 
 	; Attach Lowered Hood
-	if asEventName == "RTR_AttachLoweredHood"
+	if asEventName == "RTR_AttachLoweredHood" && LastLoweredHood
 		PlayerRef.EquipItem(LastLoweredHood, false, true)
 		RTR_PrintDebug("- Equipped Lowered Hood: " + (LastLoweredHood as Armor).GetName())
 		return
 	endif
 
 	; Remove Lowered Hood
-	if asEventName == "RTR_RemoveLoweredHood"
+	if asEventName == "RTR_RemoveLoweredHood" && LastLoweredHood
 		PlayerRef.UnequipItem(LastLoweredHood, false, true)
 		PlayerRef.RemoveItem(LastLoweredHood, 1, true)
 		RTR_PrintDebug("- Removed Lowered Hood: " + (LastLoweredHood as Armor).GetName())
@@ -396,16 +400,18 @@ Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
 	RTR_PrintDebug("[RTR-Player] OnObjectEquipped --------------------------------------------------------------------")
 
 	; Check if a head wear item was equipped
-	String type = RTR_InferItemType(akBaseObject, LowerableHoods)
+	String type = RTR_InferItemType(akBaseObject)
 	RTR_PrintDebug("- ItemType = " + type)
 	if type != "None"
 		RTR_PrintDebug("- Actor equipped head gear outside of RTR, Clearing IED Nodes and removing any lowered hood")
 		RemoveFromHip()
 		RemoveFromHand()
 		
-		; Remove lowered hood
-		PlayerRef.UnequipItem(LastLoweredHood, false, true)
-		PlayerRef.RemoveItem(LastLoweredHood, 1, true)
+		if LastLoweredHood
+			; Remove lowered hood
+			PlayerRef.UnequipItem(LastLoweredHood, false, true)
+			PlayerRef.RemoveItem(LastLoweredHood, 1, true)
+		endif
 		SendModEvent("ReadTheRoomEquipNoAnimation")
 	endif
 	RTR_PrintDebug(" ")
@@ -425,21 +431,25 @@ Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
 		RemoveFromHip()
 		RemoveFromHand()
 
-		; Remove lowered hood from player
-		PlayerRef.UnequipItem(LastLoweredHood, false, true)
-		PlayerRef.RemoveItem(LastLoweredHood, 1, true)
+		if LastLoweredHood
+			; Remove lowered hood from player
+			PlayerRef.UnequipItem(LastLoweredHood, false, true)
+			PlayerRef.RemoveItem(LastLoweredHood, 1, true)
+		endif
 	endif
 
 	; Check if it was a helmet, circlet, or hood that was removed
-	String type = RTR_InferItemType(akBaseObject, LowerableHoods)
+	String type = RTR_InferItemType(akBaseObject)
 	if type != "None"
 		RTR_PrintDebug("- Actor intentionally unequipped a helmet or hood outside of RTR, Clearing IED Nodes and removing any lowered hood")
 		RemoveFromHip()
 		RemoveFromHand()
 		
-		; remove any lowered hoods from actor
-		PlayerRef.UnequipItem(LastLoweredHood, false, true)
-		PlayerRef.RemoveItem(LastLoweredHood, 1, true)
+		if LastLoweredHood
+			; remove any lowered hoods from actor
+			PlayerRef.UnequipItem(LastLoweredHood, false, true)
+			PlayerRef.RemoveItem(LastLoweredHood, 1, true)
+		endIf
 		SendModEvent("ReadTheRoomUnequipNoAnimation")
 	endif
 	RTR_PrintDebug(" ")
@@ -479,10 +489,10 @@ EndEvent
 ; Triggers equipping head gear to an actor
 Function EquipActorHeadgear(Bool IsCombatEquip = false)
 	RTR_PrintDebug(" ")
-	MiscUtil.PrintConsole("[RTR-Player] EquipActorHeadgear --------------------------------------------------------------------")
+	; MiscUtil.PrintConsole("[RTR-Player] EquipActorHeadgear --------------------------------------------------------------------")
 
 	if PlayerRef.HasKeywordString("ActorTypeCreature")
-		MiscUtil.PrintConsole("- Exiting because actor is a creature")
+		; MiscUtil.PrintConsole("- Exiting because actor is a creature")
 		return
 	endif
 
@@ -491,7 +501,7 @@ Function EquipActorHeadgear(Bool IsCombatEquip = false)
 
 	; Exit early if the actor is already wearing the item
 	if PlayerRef.IsEquipped(LastEquipped)
-		MiscUtil.PrintConsole("- Exiting because item " + (LastEquipped as Armor).GetName() + " is already equipped")
+		; MiscUtil.PrintConsole("- Exiting because item " + (LastEquipped as Armor).GetName() + " is already equipped")
 		RemoveFromHip()
 		RemoveFromHand()
 		return
@@ -499,17 +509,17 @@ Function EquipActorHeadgear(Bool IsCombatEquip = false)
 
 	; Combat State Unequip
 	if PlayerRef.IsInCombat()
-		MiscUtil.PrintConsole("- Player is in combat")
+		; MiscUtil.PrintConsole("- Player is in combat")
 		if CombatEquip.GetValueInt() == 0
-			MiscUtil.PrintConsole("- Existing because CombatEquip is disabled")
+			; MiscUtil.PrintConsole("- Existing because CombatEquip is disabled")
 			return
 		endif
 
-		MiscUtil.PrintConsole("- CombatEquip is enabled")
+		; MiscUtil.PrintConsole("- CombatEquip is enabled")
 
 		; Equip with no animation
 		if CombatEquipAnimation.getValueInt() == 0
-			MiscUtil.PrintConsole("- CombatEquipAnimation is disabled. Equipping with no animation")
+			; MiscUtil.PrintConsole("- CombatEquipAnimation is disabled. Equipping with no animation")
 			EquipWithNoAnimation(true, IsCombatEquip)
 			return
 		endif
@@ -522,8 +532,14 @@ Function EquipActorHeadgear(Bool IsCombatEquip = false)
 		PlayerRef.GetAnimationVariableInt("IsEquipping") == 1 || \
 		PlayerRef.GetAnimationVariableInt("IsUnequipping") == 1
 		
-		RTR_PrintDebug("- Actor can't be animated. Unequipping with no animation")
+		RTR_PrintDebug("- Actor can't be animated. Equipping with no animation")
 		; Force equip with no animation
+		EquipWithNoAnimation()
+		return
+	endif
+
+	if SheathWeaponsForAnimation.GetValueInt() == 0 && PlayerRef.IsWeaponDrawn()
+		RTR_PrintDebug("- Sheath Weapons for Animations disabled. Equipping with no animation")
 		EquipWithNoAnimation()
 		return
 	endif
@@ -563,7 +579,7 @@ EndFunction
 ; Equips an item to an actor without playing an animation
 Function EquipWithNoAnimation(Bool sendFollowerEvent = true, Bool IsCombatEquip = false)
 	if PlayerRef.HasKeywordString("ActorTypeCreature")
-		MiscUtil.PrintConsole("- Exiting EquipWithNoAnimation because actor is a creature")
+		RTR_PrintDebug("- Exiting EquipWithNoAnimation because actor is a creature")
 		return
 	endif
 
@@ -574,11 +590,14 @@ Function EquipWithNoAnimation(Bool sendFollowerEvent = true, Bool IsCombatEquip 
 	UseHelmet()
 
 	if LastEquippedType == "Hood"
-		MiscUtil.PrintConsole("- Equipping Lowered Hood: " + (LastLoweredHood as Armor).GetName())
-		PlayerRef.UnequipItem(LastLoweredHood, false, true)
+		if LastLoweredHood
+			RTR_PrintDebug("- Equipping Lowered Hood: " + (LastLoweredHood as Armor).GetName())
+			PlayerRef.UnequipItem(LastLoweredHood, false, true)
+			PlayerRef.RemoveItem(LastLoweredHood, 1, true)
+		endif
 		PlayerRef.EquipItem(LastEquipped, false, true)
 	else
-		MiscUtil.PrintConsole("- Equipping: " + (LastEquipped as Armor).GetName())
+		RTR_PrintDebug("- Equipping: " + (LastEquipped as Armor).GetName())
 		PlayerRef.EquipItem(LastEquipped, false, true)
 		RemoveFromHip()
 		RemoveFromHand()
@@ -616,17 +635,17 @@ Function UnequipActorHeadgear()
 
 	; Combat State Unequip
 	if PlayerRef.GetCombatState() == 1
-		MiscUtil.PrintConsole("- Actor is in combat")
+		; MiscUtil.PrintConsole("- Actor is in combat")
 		if CombatEquip.GetValueInt() == 0
 			RTR_PrintDebug("- CombatEquip is disabled")
 			return
 		endif
 
-		MiscUtil.PrintConsole("- CombatEquip is enabled")
+		; MiscUtil.PrintConsole("- CombatEquip is enabled")
 
 		; Unequip with no animation
 		if CombatEquipAnimation.getValueInt() == 0
-			MiscUtil.PrintConsole("- CombatEquipAnimation is disabled. Unequipping with no animation")
+			; MiscUtil.PrintConsole("- CombatEquipAnimation is disabled. Unequipping with no animation")
 			UnequipWithNoAnimation()
 			return
 		endif
@@ -641,6 +660,12 @@ Function UnequipActorHeadgear()
 		
 		RTR_PrintDebug("- Actor can't be animated. Unequipping with no animation")
 		; Force unequip with no animation
+		UnequipWithNoAnimation()
+		return
+	endif
+
+	if SheathWeaponsForAnimation.GetValueInt() == 0 && PlayerRef.IsWeaponDrawn()
+		RTR_PrintDebug("- Sheath Weapons for Animations disabled. Unequipping with no animation")
 		UnequipWithNoAnimation()
 		return
 	endif
@@ -687,7 +712,9 @@ Function UnequipWithNoAnimation(Bool sendFollowerEvent = true)
 
 	if LastEquippedType == "Hood"
 		PlayerRef.UnequipItem(LastEquipped, false, true)
-		PlayerRef.EquipItem(LastLoweredHood, false, true)
+		if LastLoweredHood
+			PlayerRef.EquipItem(LastLoweredHood, false, true)
+		endif
 	else
 		RemoveFromHand()
 		AttachToHip()
@@ -732,6 +759,7 @@ State busy
 		if KeyCode == DeleteKey.GetValueInt()
 			RTR_PrintDebug(" ")
 			RTR_PrintDebug("[RTR-Player] Clearing ReadTheRoom placements --------------------------------------------------------------------")
+			SendModEvent("ReadTheRoomClearPlacements")
 			RemoveFromHip()
 			RemoveFromHand()
 			LastEquipped = None
@@ -853,8 +881,10 @@ EndFunction
 ; Disables IED Hip Placement
 Function RemoveFromHip()
 	SetItemEnabledActor(PlayerRef, PluginName, HelmetOnHip, IsFemale, false)
-	PlayerRef.UnequipItem(LastLoweredHood, false, true)
-	PlayerRef.RemoveItem(LastLoweredHood, 1, true)
+	if LastLoweredHood
+		PlayerRef.UnequipItem(LastLoweredHood, false, true)
+		PlayerRef.RemoveItem(LastLoweredHood, 1, true)
+	endif
 EndFunction
 
 ; Enables IED Hand Placement
@@ -876,9 +906,9 @@ Function UseHelmet()
 	endif
 
 	; Conditional Placement Scaling / Lowered Hood Update
-	LastEquippedType = RTR_InferItemType(LastEquipped, LowerableHoods)
+	LastEquippedType = RTR_InferItemType(LastEquipped)
 	if LastEquippedType == "Hood"
-		LastLoweredHood = LoweredHoods.GetAt(LowerableHoods.Find(LastEquipped))
+		LastLoweredHood = RTR_GetLoweredHood(LastEquipped, LowerableHoods, LoweredHoods)
 	elseif LastEquippedType == "Helmet"
 		; Update IED Placements to use LastEquipped Helmet Form
 		SetItemFormActor(PlayerRef, PluginName, HelmetOnHip, IsFemale, LastEquipped)

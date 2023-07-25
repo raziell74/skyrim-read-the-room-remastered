@@ -4,6 +4,10 @@ ScriptName ReadTheRoomNPC extends ActiveMagicEffect
 ; OnCombatStateChanged will only report combat state changes for NPCs, not the player
 ; So this is a tiny script to rely NPC combat state changes to the player
 
+; Versioning
+GlobalVariable property RTR_Version auto
+
+; Player Reference
 Actor property PlayerRef auto
 
 ; Event OnCombatStateChanged

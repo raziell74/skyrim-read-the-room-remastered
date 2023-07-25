@@ -5,9 +5,11 @@ ScriptName ReadTheRoomFollowerMonitor extends ActiveMagicEffect
 ; To trigger head wear management for followers
 
 Import IED ; Immersive Equipment Display
+Import ReadTheRoomUtil ; Our helper functions
 Import MiscUtil ; PapyrusUtil SE
 
-Import ReadTheRoomUtil ; Our helper functions
+; Versioning
+GlobalVariable property RTR_Version auto
 
 ; Current Follower Faction
 Faction property CurrentFollowerFaction auto
@@ -63,7 +65,7 @@ Function SetupRTR()
 
 	; Update the last equipped item
 	LastEquipped = RTR_GetLastEquipped(FollowerRef, LastEquippedType)
-	LastEquippedType = RTR_InferItemType(LastEquipped, LowerableHoods)
+	LastEquippedType = RTR_InferItemType(LastEquipped)
 	IsFemale = FollowerRef.GetActorBase().GetSex() == 1
 
 	; Delete any existing IED Placements, to ensure a full refresh
@@ -156,6 +158,20 @@ EndFunction
 
 ;;;; Mod Even Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+Event OnReadTheRoomClearPlacements(String eventName, String strArg, Float numArg, Form sender)
+    MostRecentEvent = "ReadTheRoomEquip"
+	if !CanProcessFollower()
+		return
+	endif
+
+	RemoveFromHip()
+	RemoveFromHand()
+	LastEquipped = None
+	LastLoweredHood = None
+	LastEquippedType = "None"
+	GoToState("")
+EndEvent
+
 Event OnReadTheRoomEquip(String eventName, String strArg, Float numArg, Form sender)
     MostRecentEvent = "ReadTheRoomEquip"
 	if !CanProcessFollower()
@@ -164,7 +180,7 @@ Event OnReadTheRoomEquip(String eventName, String strArg, Float numArg, Form sen
 
 	; Update the last equipped item
 	LastEquipped = RTR_GetLastEquipped(FollowerRef, LastEquippedType)
-	LastEquippedType = RTR_InferItemType(LastEquipped, LowerableHoods)
+	LastEquippedType = RTR_InferItemType(LastEquipped)
 	IsFemale = FollowerRef.GetActorBase().GetSex() == 1
 
     EquipActorHeadgear()
@@ -178,7 +194,7 @@ Event OnReadTheRoomEquipNoAnimation(String eventName, String strArg, Float numAr
 
 	; Update the last equipped item
 	LastEquipped = RTR_GetLastEquipped(FollowerRef, LastEquippedType)
-	LastEquippedType = RTR_InferItemType(LastEquipped, LowerableHoods)
+	LastEquippedType = RTR_InferItemType(LastEquipped)
 	IsFemale = FollowerRef.GetActorBase().GetSex() == 1
 
     EquipWithNoAnimation()
@@ -192,7 +208,7 @@ Event OnReadTheRoomUnequip(String eventName, String strArg, Float numArg, Form s
 
 	; Update the last equipped item
 	LastEquipped = RTR_GetLastEquipped(FollowerRef, LastEquippedType)
-	LastEquippedType = RTR_InferItemType(LastEquipped, LowerableHoods)
+	LastEquippedType = RTR_InferItemType(LastEquipped)
 	IsFemale = FollowerRef.GetActorBase().GetSex() == 1
 
     UnequipActorHeadgear()
@@ -206,7 +222,7 @@ Event OnReadTheRoomUnequipNoAnimation(String eventName, String strArg, Float num
 	
 	; Update the last equipped item
 	LastEquipped = RTR_GetLastEquipped(FollowerRef, LastEquippedType)
-	LastEquippedType = RTR_InferItemType(LastEquipped, LowerableHoods)
+	LastEquippedType = RTR_InferItemType(LastEquipped)
 	IsFemale = FollowerRef.GetActorBase().GetSex() == 1
 
     UnequipWithNoAnimation()
@@ -286,14 +302,14 @@ Event OnAnimationEvent(ObjectReference akSource, String asEventName)
 	endif
 
 	; Attach Lowered Hood
-	if asEventName == "RTR_AttachLoweredHood"
+	if asEventName == "RTR_AttachLoweredHood" && LastLoweredHood
 		FollowerRef.EquipItem(LastLoweredHood, true, true)
 		RTR_PrintDebug("- Equipped Lowered Hood: " + (LastLoweredHood as Armor).GetName())
 		return
 	endif
 
 	; Remove Lowered Hood
-	if asEventName == "RTR_RemoveLoweredHood"
+	if asEventName == "RTR_RemoveLoweredHood" && LastLoweredHood
 		FollowerRef.UnequipItem(LastLoweredHood, false, true)
 		FollowerRef.RemoveItem(LastLoweredHood, 1, true)
 		RTR_PrintDebug("- Removed Lowered Hood: " + (LastLoweredHood as Armor).GetName())
@@ -345,7 +361,7 @@ Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
 	RTR_PrintDebug("[RTR-Follower] OnObjectEquipped --------------------------------------------------------------------")
 
 	; Check if a head wear item was equipped
-	String type = RTR_InferItemType(akBaseObject, LowerableHoods)
+	String type = RTR_InferItemType(akBaseObject)
 	RTR_PrintDebug("- ItemType = " + type)
 	if type != "None"
 		RTR_PrintDebug("[RTRFollower] Equipped is a recognized head wear type ------------ " + FollowerRef.GetActorBase().GetName() + " - " + type)
@@ -368,9 +384,11 @@ Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
 			RemoveFromHip()
 			RemoveFromHand()
 			
-			; Remove lowered hood
-			FollowerRef.UnequipItem(LastLoweredHood, false, true)
-			FollowerRef.RemoveItem(LastLoweredHood, 1, true)
+			if LastLoweredHood
+				; Remove lowered hood
+				FollowerRef.UnequipItem(LastLoweredHood, false, true)
+				FollowerRef.RemoveItem(LastLoweredHood, 1, true)
+			endif
 		endIf
 	endif
 	RTR_PrintDebug(" ")
@@ -396,7 +414,7 @@ Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
 	endif
 
 	; Check if it was a helmet, circlet, or hood that was removed
-	String type = RTR_InferItemType(akBaseObject, LowerableHoods)
+	String type = RTR_InferItemType(akBaseObject)
 	if type != "None"
 		RTR_PrintDebug("- Actor intentionally unequipped a helmet or hood outside of RTR, Clearing IED Nodes and removing any lowered hood")
 		RemoveFromHip()
@@ -481,7 +499,10 @@ Function EquipWithNoAnimation(Bool sendFollowerEvent = true)
 	endif
 
 	if LastEquippedType == "Hood"
-		FollowerRef.UnequipItem(LastLoweredHood, false, true)
+		if LastLoweredHood
+			FollowerRef.UnequipItem(LastLoweredHood, false, true)
+			FollowerRef.RemoveItem(LastLoweredHood, 1, true)
+		endif
 		FollowerRef.EquipItem(LastEquipped, false, true)
 	else
 		FollowerRef.EquipItem(LastEquipped, false, true)
@@ -562,11 +583,12 @@ Function UnequipWithNoAnimation()
 		return
 	endif
 
-	LastEquippedType = RTR_InferItemType(LastEquipped, LowerableHoods)
+	LastEquippedType = RTR_InferItemType(LastEquipped)
 	if LastEquippedType == "Hood"
-		LastLoweredHood = LoweredHoods.GetAt(LowerableHoods.Find(LastEquipped))
 		FollowerRef.UnequipItem(LastEquipped, true, true)
-		FollowerRef.EquipItem(LastLoweredHood, true, true)
+		if LastLoweredHood
+			FollowerRef.EquipItem(LastLoweredHood, true, true)
+		endif
 	else
 		FollowerRef.UnequipItem(LastEquipped, true, true)
 		AttachToHip()
@@ -625,8 +647,10 @@ EndFunction
 ; Disables IED Hip Placement
 Function RemoveFromHip()
 	SetItemEnabledActor(FollowerRef, PluginName, HelmetOnHip, IsFemale, false)
-	FollowerRef.UnequipItem(LastLoweredHood, false, true)
-	FollowerRef.RemoveItem(LastLoweredHood, 1, true)
+	if LastLoweredHood
+		FollowerRef.UnequipItem(LastLoweredHood, false, true)
+		FollowerRef.RemoveItem(LastLoweredHood, 1, true)
+	endif
 EndFunction
 
 ; Enables IED Hand Placement
@@ -647,9 +671,9 @@ Function UseHelmet()
 	SetItemFormActor(FollowerRef, PluginName, HelmetOnHand, IsFemale, LastEquipped)
 
 	; Conditional Placement Scaling / Lowered Hood Update
-	LastEquippedType = RTR_InferItemType(LastEquipped, LowerableHoods)
+	LastEquippedType = RTR_InferItemType(LastEquipped)
 	if LastEquippedType == "Hood"
-		LastLoweredHood = LoweredHoods.GetAt(LowerableHoods.Find(LastEquipped))
+		LastLoweredHood = RTR_GetLoweredHood(LastEquipped, LowerableHoods, LoweredHoods)
 	elseif LastEquippedType == "Helmet"
 		SetItemScaleActor(FollowerRef, PluginName, HelmetOnHand, IsFemale, HandScale)
 	else 
@@ -706,7 +730,7 @@ State CellChange
 		endif
 
 		; Check if a head wear item was equipped
-		String type = RTR_InferItemType(akBaseObject, LowerableHoods)
+		String type = RTR_InferItemType(akBaseObject)
 		RTR_PrintDebug("- ItemType = " + type)
 		if type != "None"
 			RTR_PrintDebug("xXx [RTRFollower-CELLCHANGE] MostRecentEvent ------------ " + FollowerRef.GetActorBase().GetName() + " - " + MostRecentEvent + " xXx")

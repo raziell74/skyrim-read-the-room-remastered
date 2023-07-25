@@ -25,6 +25,11 @@
 - Complete overhaul of the CombatEquip system. Head wear will now only be equipped if the player is in combat and will return to what ever previous head wear state they were in when they started combat. So if you start combat with no helmet, you will remove your helmet once you've left combat. Also fixed an issue with the original where certain actors like animals or dragons wouldn't report leaving combat on death. I also added a future plan to extend the system to include options for when an NPC is searching for the player. Default behavior of the original was to treat searching the same as "in combat" but I personally would prefer to only equip when actually fighting. 
 - Added notifications for automated RTR actions: Entering Safety, Leaving Safety, Nearing Danger, Leaving Danger, Combat Equip
   - MCM Setting to enable/disable is on my list, for now it defaults to enabled.
+- All items flagged with the "RTR_HoodKW" keyword will now use the hood equip/unequip animations. This change applies to all dragon priest masks as well. There will be no lowered variant mesh for these though since I am not experienced in 3D modeling at all. But at least they won't look SUPER weird when RTR unequips them.
+- Refactored lowered hoods to be assignable via keyword. The `ReadTheRoom_KID.ini` file has been updated to support all vanilla hoods as well as those added by the [Weapons Armor Clothing and Clutter Fixes](https://www.nexusmods.com/skyrimspecialedition/mods/18994) (WACCF for short) mod. It is HIGHLY recommended to use WACCF, because it separates the hoods from the robes for many items. Without it things like monk robe hoods, arch-mage hood, and Dunmer Hoods cannot be managed through RTR.
+- Added a fall back system for adding direct Hood to Lowered Hood form assignment via the [FormList Manipulator FLM](https://www.nexusmods.com/skyrimspecialedition/mods/74037). A sample file with instructions for how to use it is included (`ReadTheRoom_Hoods_FLM.ini`). 
+- Fixed an issue where some hoods were being flagged as "Circlets" and would not be managed if the Player has the "Manage Circlets" setting disabled. All hoods are their own type now and aren't categorized as a sub-set of helmets / circlets
+- Fixed an issue where follower RTR placements were not being cleared when the player pressed the Delete key to clear RTR placeholders
 
 ### Bugs Squashed
 
@@ -70,10 +75,13 @@
   - Head wear equipped within the first 5 seconds after a cell change will be immediately unequipped if it was previous unequipped through RTR
 - [x] Added a check to see if the Player has the "ActorTypeCreature" keyword which is added when the player is transformed into a werewolf or vampire lord.
   - RTR will no longer execute helmet management automated or otherwise if the player is a "creature" 
+- [x] Some hoods would identify as circlets and wouldn't be correctly managed by RTR if the player had the "Manage Circlets like Helmets" option disabled
 
 ### Added Dependencies
 
 - [Behavior Data Injector](https://www.nexusmods.com/skyrimspecialedition/mods/78146)
 - [Payload Interpreter](https://www.nexusmods.com/skyrimspecialedition/mods/65089)
-- [FormList Manipulator - FLM](https://www.nexusmods.com/skyrimspecialedition/mods/74037)
-- [PapyrusUtil SE - Modders Scripting Utility Functions](https://www.nexusmods.com/skyrimspecialedition/mods/13048)
+- *Optional* [FormList Manipulator - FLM](https://www.nexusmods.com/skyrimspecialedition/mods/74037)
+- [PapyrusUtil SE - Modders Scripting Utility Functions](https://www.nexusmods.com/skyrimspecialedition/mods/13048) 
+  - ***This will be removed as a dependency after debugging and play testing is complete, it is currently only used for outputting debug messages to the console***
+  
