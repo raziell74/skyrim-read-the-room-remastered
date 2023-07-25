@@ -25,6 +25,12 @@
 - Complete overhaul of the CombatEquip system. Head wear will now only be equipped if the player is in combat and will return to what ever previous head wear state they were in when they started combat. So if you start combat with no helmet, you will remove your helmet once you've left combat. Also fixed an issue with the original where certain actors like animals or dragons wouldn't report leaving combat on death. I also added a future plan to extend the system to include options for when an NPC is searching for the player. Default behavior of the original was to treat searching the same as "in combat" but I personally would prefer to only equip when actually fighting. 
 - Added notifications for automated RTR actions: Entering Safety, Leaving Safety, Nearing Danger, Leaving Danger, Combat Equip
   - MCM Setting to enable/disable is on my list, for now it defaults to enabled.
+- Lowered Hood Animation for all Hoods and Cowls, even if there is no lowered version available for a hood/cowl it will still use the lowered animation but there will be no mesh shown on the Actor.
+- Lowered hoods can now be assigned to hoods and cowls through keywords. 
+  - A simple KID file is all that's needed to assign a lowered hood to a hood/cowl. The original mod had a hard coded list of hoods and cowls that it would assign lowered hoods to. This new system is much more flexible and allows for easy patching for mod added hoods and cowls.
+  - ReadTheRoom_HID.ini has been updated to include all vanilla hoods and cowls and supports WACCF out of the box. WACCF is highly recommended since it separates monk hoods from the monk robes, and RTR cannot manage hoods that are attached to the robes.
+  - There is also a way to directly assign a lowered hood armor piece to a hood armor piece using FLM. A sample file is included with instructions in the file for how to have hood use a lowered hood variant.
+- Pressing the Delete Key now also removes RTR placements on followers and potential followers
 
 ### Bugs Squashed
 
@@ -70,10 +76,11 @@
   - Head wear equipped within the first 5 seconds after a cell change will be immediately unequipped if it was previous unequipped through RTR
 - [x] Added a check to see if the Player has the "ActorTypeCreature" keyword which is added when the player is transformed into a werewolf or vampire lord.
   - RTR will no longer execute helmet management automated or otherwise if the player is a "creature" 
+- [x] Some hoods would identify as circlets and wouldn't be correctly managed by RTR if the player had the "Manage Circlets like Helmets" option disabled
 
 ### Added Dependencies
 
 - [Behavior Data Injector](https://www.nexusmods.com/skyrimspecialedition/mods/78146)
 - [Payload Interpreter](https://www.nexusmods.com/skyrimspecialedition/mods/65089)
 - [FormList Manipulator - FLM](https://www.nexusmods.com/skyrimspecialedition/mods/74037)
-- [PapyrusUtil SE - Modders Scripting Utility Functions](https://www.nexusmods.com/skyrimspecialedition/mods/13048)
+- [PapyrusUtil SE - Modders Scripting Utility Functions](https://www.nexusmods.com/skyrimspecialedition/mods/13048) ***This needs to be removed - Used only for debug outputs to the console***

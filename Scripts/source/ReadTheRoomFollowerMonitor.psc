@@ -673,7 +673,7 @@ Function UseHelmet()
 	; Conditional Placement Scaling / Lowered Hood Update
 	LastEquippedType = RTR_InferItemType(LastEquipped)
 	if LastEquippedType == "Hood"
-		LastLoweredHood = LoweredHoods.GetAt(LowerableHoods.Find(LastEquipped))
+		LastLoweredHood = RTR_GetLoweredHood(LastEquipped, LowerableHoods, LoweredHoods)
 	elseif LastEquippedType == "Helmet"
 		SetItemScaleActor(FollowerRef, PluginName, HelmetOnHand, IsFemale, HandScale)
 	else 

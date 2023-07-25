@@ -3,7 +3,7 @@ ScriptName ReadTheRoomUtil
 Import IED ; Immersive Equipment Display
 Import MiscUtil ; PapyrusUtil SE
 
-String Property PluginName = "ReadTheRoom.esp" Auto
+String property PluginName = "ReadTheRoom.esp" auto
 
 ; RTR_GetVersion
 ; Returns the hard set version of ReadTheRoom
@@ -47,7 +47,7 @@ Bool Function RTR_IsValidHeadWear(Actor target_actor, Form item, FormList Lowere
     if isHelmet || isCirclet || isHood
         ; Since Lowered Hoods are equipped and not placed through IED they can show up here, we need to 
         ; invalidate them so they character doesn't try to equip/unequip them
-        if isHood && LoweredHoods.HasForm(item)
+        if LoweredHoods.HasForm(item)
             ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Detected Lowered Hood. Invalid")
             return false
         endif
@@ -122,17 +122,14 @@ Form Function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
         if (Math.LogicalAnd(slotsChecked, thisSlot) != thisSlot) ; only check slots we haven't found anything equipped on already
             Armor thisArmor = target_actor.GetWornForm(thisSlot) as Armor
             if (thisArmor)
-                if (thisArmor.isHelmet()) ; Equipped item is a helmet/hood
-                    if (thisArmor.HasKeywordString("RTR_HoodKW"))
-                        ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Found a Worn Hood " + thisArmor.GetName())
-                        return thisArmor
-                    else
-                        ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Found a Worn Helmet " + thisArmor.GetName())
-                        return thisArmor
-                    endif
+                if (thisArmor.HasKeywordString("RTR_HoodKW")) ; Equipped item is a hood
+                    ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Actor is wearing a Hood " + thisArmor.GetName())
+                    return thisArmor
+                elseif (thisArmor.isHelmet()) ; Equipped item is a helmet
+                    ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Actor is wearing a Helmet " + thisArmor.GetName())
+                    return thisArmor
                 elseif (manage_circlets && (thisArmor.IsClothingHead() || thisArmor.HasKeywordString("ClothingCirclet"))) ; if this is a circlet or hat
-                    ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Found a Worn Circlet/Hat " + thisArmor.GetName())
-                    ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Circlet/Hat SlotMask " + thisArmor.GetSlotMask())
+                    ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Actor is wearing a Hat or Circlet " + thisArmor.GetName())
                     return thisArmor
                 endif
                 slotsChecked += thisArmor.GetSlotMask() ; add all slots this item covers to our slotsChecked variable
@@ -144,6 +141,33 @@ Form Function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
     endWhile
     
     return equipped_head_wear
+EndFunction
+
+; RTR_GetLoweredHood
+; Match a forms keywords to a lowered hood keyword and then get the cooresponding lowered hood form
+;
+; @param Form Hood
+; @param FormList LowerableHoodKeywords
+; @param FormList LoweredHoods
+; @return Form
+Form Function RTR_GetLoweredHood(Form Hood, FormList LowerableHoodKeywords, FormList LoweredHoods) global
+    ReadTheRoomUtil.RTR_PrintDebug(">>> [RTRUtil] RTR_GetLoweredHood")
+    int i = 0
+    int keywordCount = LowerableHoodKeywords.GetSize()
+    while i < keywordCount
+        Form kw = LowerableHoodKeywords.GetAt(i)
+        if kw.GetType() == 4 ; Keyword Type - Generalized Assignment
+            if Hood.HasKeyword(kw as Keyword)
+                return LoweredHoods.GetAt(i)
+            endif
+        elseif kw.GetType() == 26 ; Armor - Direct Assignment
+            if Hood == kw
+                return LoweredHoods.GetAt(i)
+            endif
+        endif
+        i += 1
+    endwhile
+    return None
 EndFunction
 
 ; RTR_IsTorsoEquipped

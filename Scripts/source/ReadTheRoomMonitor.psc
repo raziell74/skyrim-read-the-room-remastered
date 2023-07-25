@@ -275,7 +275,7 @@ Event OnReadTheRoomCombatStateChanged(String eventName, String strArg, Float num
 	endif
 
 	Int aeCombatState = numArg as Int
-	MiscUtil.PrintConsole("[RTR-Player] " + strArg + " Combat State Changed to " + aeCombatState + " -- Player WasInCombat " + WasInCombat + " -- PlayerRef.IsInCombat " + PlayerRef.IsInCombat() + " -- PlayerRef.IsEquipped(LastEquipped) " + PlayerRef.IsEquipped(LastEquipped) + " RecentAction " + RecentAction)
+	; MiscUtil.PrintConsole("[RTR-Player] " + strArg + " Combat State Changed to " + aeCombatState + " -- Player WasInCombat " + WasInCombat + " -- PlayerRef.IsInCombat " + PlayerRef.IsInCombat() + " -- PlayerRef.IsEquipped(LastEquipped) " + PlayerRef.IsEquipped(LastEquipped) + " RecentAction " + RecentAction)
 	if aeCombatState == 1 && PlayerRef.IsInCombat() && !PlayerRef.IsEquipped(LastEquipped)
 		; An NPC has reported they are in combat with the player and the player is not wearing the item
 		if CombatEquip.GetValueInt() == 1
@@ -489,10 +489,10 @@ EndEvent
 ; Triggers equipping head gear to an actor
 Function EquipActorHeadgear(Bool IsCombatEquip = false)
 	RTR_PrintDebug(" ")
-	MiscUtil.PrintConsole("[RTR-Player] EquipActorHeadgear --------------------------------------------------------------------")
+	; MiscUtil.PrintConsole("[RTR-Player] EquipActorHeadgear --------------------------------------------------------------------")
 
 	if PlayerRef.HasKeywordString("ActorTypeCreature")
-		MiscUtil.PrintConsole("- Exiting because actor is a creature")
+		; MiscUtil.PrintConsole("- Exiting because actor is a creature")
 		return
 	endif
 
@@ -501,7 +501,7 @@ Function EquipActorHeadgear(Bool IsCombatEquip = false)
 
 	; Exit early if the actor is already wearing the item
 	if PlayerRef.IsEquipped(LastEquipped)
-		MiscUtil.PrintConsole("- Exiting because item " + (LastEquipped as Armor).GetName() + " is already equipped")
+		; MiscUtil.PrintConsole("- Exiting because item " + (LastEquipped as Armor).GetName() + " is already equipped")
 		RemoveFromHip()
 		RemoveFromHand()
 		return
@@ -509,17 +509,17 @@ Function EquipActorHeadgear(Bool IsCombatEquip = false)
 
 	; Combat State Unequip
 	if PlayerRef.IsInCombat()
-		MiscUtil.PrintConsole("- Player is in combat")
+		; MiscUtil.PrintConsole("- Player is in combat")
 		if CombatEquip.GetValueInt() == 0
-			MiscUtil.PrintConsole("- Existing because CombatEquip is disabled")
+			; MiscUtil.PrintConsole("- Existing because CombatEquip is disabled")
 			return
 		endif
 
-		MiscUtil.PrintConsole("- CombatEquip is enabled")
+		; MiscUtil.PrintConsole("- CombatEquip is enabled")
 
 		; Equip with no animation
 		if CombatEquipAnimation.getValueInt() == 0
-			MiscUtil.PrintConsole("- CombatEquipAnimation is disabled. Equipping with no animation")
+			; MiscUtil.PrintConsole("- CombatEquipAnimation is disabled. Equipping with no animation")
 			EquipWithNoAnimation(true, IsCombatEquip)
 			return
 		endif
@@ -635,17 +635,17 @@ Function UnequipActorHeadgear()
 
 	; Combat State Unequip
 	if PlayerRef.GetCombatState() == 1
-		MiscUtil.PrintConsole("- Actor is in combat")
+		; MiscUtil.PrintConsole("- Actor is in combat")
 		if CombatEquip.GetValueInt() == 0
 			RTR_PrintDebug("- CombatEquip is disabled")
 			return
 		endif
 
-		MiscUtil.PrintConsole("- CombatEquip is enabled")
+		; MiscUtil.PrintConsole("- CombatEquip is enabled")
 
 		; Unequip with no animation
 		if CombatEquipAnimation.getValueInt() == 0
-			MiscUtil.PrintConsole("- CombatEquipAnimation is disabled. Unequipping with no animation")
+			; MiscUtil.PrintConsole("- CombatEquipAnimation is disabled. Unequipping with no animation")
 			UnequipWithNoAnimation()
 			return
 		endif
@@ -759,6 +759,7 @@ State busy
 		if KeyCode == DeleteKey.GetValueInt()
 			RTR_PrintDebug(" ")
 			RTR_PrintDebug("[RTR-Player] Clearing ReadTheRoom placements --------------------------------------------------------------------")
+			SendModEvent("ReadTheRoomClearPlacements")
 			RemoveFromHip()
 			RemoveFromHand()
 			LastEquipped = None
@@ -907,7 +908,7 @@ Function UseHelmet()
 	; Conditional Placement Scaling / Lowered Hood Update
 	LastEquippedType = RTR_InferItemType(LastEquipped)
 	if LastEquippedType == "Hood"
-		LastLoweredHood = LoweredHoods.GetAt(LowerableHoods.Find(LastEquipped))
+		LastLoweredHood = RTR_GetLoweredHood(LastEquipped, LowerableHoods, LoweredHoods)
 	elseif LastEquippedType == "Helmet"
 		; Update IED Placements to use LastEquipped Helmet Form
 		SetItemFormActor(PlayerRef, PluginName, HelmetOnHip, IsFemale, LastEquipped)
