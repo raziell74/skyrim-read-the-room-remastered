@@ -86,7 +86,9 @@
 
 - [Behavior Data Injector](https://www.nexusmods.com/skyrimspecialedition/mods/78146)
 - [Payload Interpreter](https://www.nexusmods.com/skyrimspecialedition/mods/65089)
-- *Optional* [FormList Manipulator - FLM](https://www.nexusmods.com/skyrimspecialedition/mods/74037)
+- [FormList Manipulator - FLM](https://www.nexusmods.com/skyrimspecialedition/mods/74037)
+  - *Optional* if you want to use the `ReadTheRoom_Hoods_FLM.ini` file to add direct lowered hood assignment for your favorite hood mods
 - [PapyrusUtil SE - Modders Scripting Utility Functions](https://www.nexusmods.com/skyrimspecialedition/mods/13048) 
   - ***This will be removed as a dependency after debugging and play testing is complete, it is currently only used for outputting debug messages to the console***
-  
+- [MCM Helper](https://www.nexusmods.com/skyrimspecialedition/mods/53000) 
+  - For the Settings Loader patch
