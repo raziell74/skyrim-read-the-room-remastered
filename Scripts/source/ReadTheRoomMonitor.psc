@@ -28,6 +28,10 @@ GlobalVariable property UnequipWhenUnsafe auto
 GlobalVariable property RemoveHelmetWithoutArmor auto
 GlobalVariable property SheathWeaponsForAnimation auto
 
+; Notification Settings
+GlobalVariable property NotifyOnLocation auto
+GlobalVariable property NotifyOnCombat auto
+
 ; Management Settings
 GlobalVariable property ManageCirclets auto
 
@@ -249,7 +253,9 @@ Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 	
 	; Only apply the action if we didn't already do it, prevents ToggleKey from being overwritten unless changing location action
 	if MostRecentLocationAction != PreviousLocationAction 
-		Debug.Notification(locationAction)
+		if NotifyOnLocation.GetValueInt() == 1
+			Debug.Notification(locationAction)
+		endif
 
 		if MostRecentLocationAction == "Equip"
 			LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
@@ -278,7 +284,7 @@ Event OnReadTheRoomCombatStateChanged(String eventName, String strArg, Float num
 	; MiscUtil.PrintConsole("[RTR-Player] " + strArg + " Combat State Changed to " + aeCombatState + " -- Player WasInCombat " + WasInCombat + " -- PlayerRef.IsInCombat " + PlayerRef.IsInCombat() + " -- PlayerRef.IsEquipped(LastEquipped) " + PlayerRef.IsEquipped(LastEquipped) + " RecentAction " + RecentAction)
 	if aeCombatState == 1 && PlayerRef.IsInCombat() && !PlayerRef.IsEquipped(LastEquipped)
 		; An NPC has reported they are in combat with the player and the player is not wearing the item
-		if CombatEquip.GetValueInt() == 1
+		if CombatEquip.GetValueInt() == 1 && NotifyOnCombat.GetValueInt() == 1
 			Debug.Notification("Entering Combat!")
 		endIf
 		WasInCombat = true
@@ -287,7 +293,7 @@ Event OnReadTheRoomCombatStateChanged(String eventName, String strArg, Float num
 		; Player left combat
 		; Return to the most recent action
 		if RecentAction == "Unequip"
-			if CombatEquip.GetValueInt() == 1
+			if CombatEquip.GetValueInt() == 1 && NotifyOnCombat.GetValueInt() == 1
 				Debug.Notification("Leaving Combat")
 			endIf
 			UnequipActorHeadgear()
