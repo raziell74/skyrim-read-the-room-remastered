@@ -1,7 +1,7 @@
 ScriptName ReadTheRoomUtil 
 
 Import IED ; Immersive Equipment Display
-Import MiscUtil ; PapyrusUtil SE
+; Import MiscUtil ; PapyrusUtil SE
 
 String property PluginName = "ReadTheRoom.esp" auto
 
@@ -24,10 +24,8 @@ EndFunction
 ; @param Form item
 ; @return Bool
 Bool Function RTR_IsValidHeadWear(Actor target_actor, Form item, FormList LoweredHoods) global
-    ReadTheRoomUtil.RTR_PrintDebug(">>> [RTRUtil] RTR_IsValidHeadWear")
     ; Make sure there really is an item to check against
     if !item
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Provided form is null")
         return false
     endif
 
@@ -36,7 +34,6 @@ Bool Function RTR_IsValidHeadWear(Actor target_actor, Form item, FormList Lowere
     ; Has this item been assigned to the exclusion list?
     Bool isExcluded = thisArmor.HasKeywordString("RTR_ExcludeKW")
     if isExcluded
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>> " + thisArmor.GetName() + " has exclusion keyword (RTR_ExcludeKW). Invalid")
         return false
     endif
 
@@ -48,22 +45,18 @@ Bool Function RTR_IsValidHeadWear(Actor target_actor, Form item, FormList Lowere
         ; Since Lowered Hoods are equipped and not placed through IED they can show up here, we need to 
         ; invalidate them so they character doesn't try to equip/unequip them
         if LoweredHoods.HasForm(item)
-            ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Detected Lowered Hood. Invalid")
             return false
         endif
 
         ; Does the actor have the item in their inventory?
         if target_actor.GetItemCount(item as Armor) == 0
-            ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Missing from inventory. Invalid")
             return false
         endif
 
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Valid")
         return true
     endif
 
     ; Item is not head gear
-    ReadTheRoomUtil.RTR_PrintDebug(">>>>>> " + thisArmor.GetName() + " is not head wear")
     return false
 EndFunction
 
@@ -73,23 +66,17 @@ EndFunction
 ; @param Form item
 ; @return String
 String Function RTR_InferItemType(Form item) global
-    ReadTheRoomUtil.RTR_PrintDebug(">>> [RTRUtil] RTR_InferItemType")
-
     Armor thisArmor = item as Armor
 
     ; Check if a hood has been set up to be lowered
     if thisArmor.HasKeywordString("RTR_HoodKW")
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>> item " + thisArmor.GetName() + " type: Hood")
         return "Hood"
     elseif thisArmor.IsClothingHead() || thisArmor.HasKeywordString("ClothingCirclet")
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>> item " + thisArmor.GetName() + " type: Circlet")
         return "Circlet"
     elseif thisArmor.IsHelmet()
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>> item " + thisArmor.GetName() + " type: Helmet")
         return "Helmet"
     endif
 
-    ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Type could not be inferred for item " + thisArmor.GetName())
     return "None"
 EndFunction
 
@@ -100,7 +87,6 @@ EndFunction
 ; @param Bool manage_circlets
 ; @return Armor
 Form Function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
-    ReadTheRoomUtil.RTR_PrintDebug(">>> [RTRUtil] RTR_GetEquipped")
     Form equipped_head_wear
 
     ; Ignore slots that are not possible head wear
@@ -123,13 +109,10 @@ Form Function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
             Armor thisArmor = target_actor.GetWornForm(thisSlot) as Armor
             if (thisArmor)
                 if (thisArmor.HasKeywordString("RTR_HoodKW")) ; Equipped item is a hood
-                    ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Actor is wearing a Hood " + thisArmor.GetName())
                     return thisArmor
                 elseif (thisArmor.isHelmet()) ; Equipped item is a helmet
-                    ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Actor is wearing a Helmet " + thisArmor.GetName())
                     return thisArmor
                 elseif (manage_circlets && (thisArmor.IsClothingHead() || thisArmor.HasKeywordString("ClothingCirclet"))) ; if this is a circlet or hat
-                    ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Actor is wearing a Hat or Circlet " + thisArmor.GetName())
                     return thisArmor
                 endif
                 slotsChecked += thisArmor.GetSlotMask() ; add all slots this item covers to our slotsChecked variable
@@ -151,7 +134,6 @@ EndFunction
 ; @param FormList LoweredHoods
 ; @return Form
 Form Function RTR_GetLoweredHood(Form Hood, FormList LowerableHoodKeywords, FormList LoweredHoods) global
-    ReadTheRoomUtil.RTR_PrintDebug(">>> [RTRUtil] RTR_GetLoweredHood")
     int i = 0
     int keywordCount = LowerableHoodKeywords.GetSize()
     while i < keywordCount
@@ -273,18 +255,6 @@ Bool Function RTR_ForceThirdPerson(Actor target_actor) global
     return false
 EndFunction
 
-; RTR_Log
-; Prints a message to the console if logging is enabled
-;
-; @param String msg
-Function RTR_PrintDebug(String msg) global
-    ; if !logging_enabled
-    ;     return
-    ; endif
-
-    ; MiscUtil.PrintConsole(msg)
-EndFunction
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;; Positioning Helpers ;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -300,7 +270,6 @@ EndFunction
 ; @param FormList Anchor
 ; Returns Float[3] = {x, y, z}
 Float[] Function RTR_GetPosition(String helm_type, Form[] anchor) global
-    ReadTheRoomUtil.RTR_PrintDebug(">>> [RTRUtil] RTR_GetPosition")
     Int PosXIndex = 0
     Int PosYIndex = 1
     Int PosZIndex = 2
@@ -311,19 +280,10 @@ Float[] Function RTR_GetPosition(String helm_type, Form[] anchor) global
         position[0] = (anchor[PosXIndex + CircletIndexOffset] as GlobalVariable).GetValue()
         position[1] = (anchor[PosYIndex + CircletIndexOffset] as GlobalVariable).GetValue()
         position[2] = (anchor[PosZIndex + CircletIndexOffset] as GlobalVariable).GetValue()
-        
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Applying CircletIndexOffset: " + CircletIndexOffset)
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>>  Circlet PosX Index " + (PosXIndex + CircletIndexOffset) + " Value: " + position[0])
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>>  Circlet PosY Index " + (PosYIndex + CircletIndexOffset) + " Value: " + position[1])
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>>  Circlet PosZ Index " + (PosZIndex + CircletIndexOffset) + " Value: " + position[2])
     else
         position[0] = (anchor[PosXIndex] as GlobalVariable).GetValue()
         position[1] = (anchor[PosYIndex] as GlobalVariable).GetValue()
         position[2] = (anchor[PosZIndex] as GlobalVariable).GetValue()
-
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>>  PosX Index " + PosXIndex + " Value: " + position[0])
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>>  PosY Index " + PosYIndex + " Value: " + position[1])
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>>  PosZ Index " + PosZIndex + " Value: " + position[2])
     endif
 
     return position
@@ -346,19 +306,10 @@ Float[] Function RTR_GetRotation(String helm_type, Form[] anchor) global
         rotation[0] = (anchor[RotPitchIndex + CircletIndexOffset] as GlobalVariable).GetValue()
         rotation[1] = (anchor[RotRollIndex + CircletIndexOffset] as GlobalVariable).GetValue()
         rotation[2] = (anchor[RotYawIndex + CircletIndexOffset] as GlobalVariable).GetValue()
-
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>> Applying CircletIndexOffset: " + CircletIndexOffset)
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>>  Circlet Pitch Index " + (RotPitchIndex + CircletIndexOffset) + " Value: " + rotation[0])
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>>  Circlet Roll Index " + (RotRollIndex + CircletIndexOffset) + " Value: " + rotation[1])
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>>  Circlet Yaw Index " + (RotYawIndex + CircletIndexOffset) + " Value: " + rotation[2])
     else
         rotation[0] = (anchor[RotPitchIndex] as GlobalVariable).GetValue()
         rotation[1] = (anchor[RotRollIndex] as GlobalVariable).GetValue()
         rotation[2] = (anchor[RotYawIndex] as GlobalVariable).GetValue()
-
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>>  Pitch Index " + RotPitchIndex + " Value: " + rotation[0])
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>>  Roll Index " + RotRollIndex + " Value: " + rotation[1])
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>>  Yaw Index " + RotYawIndex + " Value: " + rotation[2])
     endif
 
     return rotation
@@ -376,8 +327,6 @@ EndFunction
 ; @param String prev_equip_type
 ; @return Form
 Form Function RTR_GetLastEquipped(Actor target_actor, String LastEquippedType) global
-    ReadTheRoomUtil.RTR_PrintDebug(">>> [RTRUtil] RTR_GetLastEquipped")
-
     Form last_equipped
     Int helmet_aiBipedSlot = 1
     Int circlet_aiBipedSlot = 12
@@ -386,7 +335,6 @@ Form Function RTR_GetLastEquipped(Actor target_actor, String LastEquippedType) g
     if LastEquippedType == "Circlet"
         last_equipped = GetLastEquippedForm(target_actor, circlet_aiBipedSlot, true, false)
         if last_equipped
-            ReadTheRoomUtil.RTR_PrintDebug(">>>>>> found Circlet/Hat  " + (last_equipped as Armor).GetName() + "  in IED.aiBipedSlot 12")
             return last_equipped
         endif
     endif
@@ -394,16 +342,12 @@ Form Function RTR_GetLastEquipped(Actor target_actor, String LastEquippedType) g
     ; Attempt to Get From helmet_aiBipedSlot
     last_equipped = GetLastEquippedForm(target_actor, helmet_aiBipedSlot, true, false)
     if last_equipped
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>> found helmet " + (last_equipped as Armor).GetName() + " in IED.aiBipedSlot 1")
         return last_equipped
     endif
 
     ; Attempt to Get From circlet_aiBipedSlot
     last_equipped = GetLastEquippedForm(target_actor, circlet_aiBipedSlot, true, false)
-    if last_equipped
-        ReadTheRoomUtil.RTR_PrintDebug(">>>>>> found Circlet/Hat  " + (last_equipped as Armor).GetName() + "  in IED.aiBipedSlot 12")
-    endif
-
+    
     return last_equipped
 EndFunction
 

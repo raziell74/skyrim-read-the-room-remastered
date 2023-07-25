@@ -5,11 +5,11 @@ ScriptName ReadTheRoomMonitor extends ActiveMagicEffect
 ; Contains main logic for manaing the players head gear specifically
 
 Import IED ; Immersive Equipment Display
+Import StringUtil ; SKSE String Utility
 Import ReadTheRoomUtil ; Our helper Functions
-Import MiscUtil ; PapyrusUtil SE
 
-; This Scripts Version
-Float RTR_Version = 1.2
+; Uninitialized Script Version
+Float RTR_Version = 0.0
 
 ; Player reference and script application perk
 Actor property PlayerRef auto
@@ -80,7 +80,8 @@ Event OnInit()
 	RegisterForKey(EnableKey.GetValueInt())
 
 	SetupRTR()
-	CheckForUpdates()
+	RTR_Version = RTR_GetVersion()
+	Debug.Notification("Read The Room - Version " + Substring(RTR_Version as String, 0, Find(RTR_Version as String, ".", 0)+3) + " Installed Successfully!")
 EndEvent
 
 Event OnPlayerLoadGame()
@@ -89,9 +90,6 @@ Event OnPlayerLoadGame()
 EndEvent
 
 Function SetupRTR()
-	RTR_PrintDebug(" ")
-    RTR_PrintDebug("[RTR-Player] Refreshing RTR --------------------------------------------------------------------")
-
 	; Update the last equipped item
 	LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
 	LastEquippedType = RTR_InferItemType(LastEquipped)
@@ -111,8 +109,6 @@ Function SetupRTR()
 	SetItemEnabledActor(PlayerRef, PluginName, HelmetOnHip, IsFemale, HipEnabled)
 	SetItemScaleActor(PlayerRef, PluginName, HelmetOnHip, IsFemale, HipScale)
 
-	RTR_PrintDebug("-- Attached Hip Item to " + PlayerRef.GetActorBase().GetName())
-
 	; Attach Helm to hand - setup as disabled since the enabled flag is switched during animation
 	Float[] hand_position = RTR_GetPosition(LastEquippedType, HandAnchor())
 	Float[] hand_rotation = RTR_GetRotation(LastEquippedType, HandAnchor())
@@ -128,8 +124,6 @@ Function SetupRTR()
 		SetItemScaleActor(PlayerRef, PluginName, HelmetOnHand, IsFemale, HandScale)
 	endif
 
-	RTR_PrintDebug("-- Attached Disabled Hand Item to " + PlayerRef.GetActorBase().GetName())
-
 	; Register for animation events
 	; Events are annotations set to trigger at specific times during the hkx animations
 	RegisterForAnimationEvent(PlayerRef, "RTR_SetTimeout")
@@ -143,9 +137,6 @@ Function SetupRTR()
 
 	; Listen for Actor Combat State Changes
 	RegisterForModEvent("ReadTheRoomCombatStateChanged", "OnReadTheRoomCombatStateChanged")
-
-	RTR_PrintDebug("-------------------------------------------------------------------- [RTR-Player] OnPlayerLoadGame Completed for PlayerRef")
-	RTR_PrintDebug(" ")
 
 	PlayerRef.SetAnimationVariableInt("RTR_Action", 0)
 	GoToState("")
@@ -173,9 +164,7 @@ Event OnKeyDown(Int KeyCode)
 
 	; Toggle Read the Room on/off
 	if KeyCode == EnableKey.GetValueInt()
-		RTR_PrintDebug(" ")
 		if PlayerRef.hasperk(ReadTheRoomPerk)
-			RTR_PrintDebug("[RTR-Player] Toggled Off --------------------------------------------------------------------")
 			PlayerRef.removeperk(ReadTheRoomPerk)
 			RemoveFromHip()
 			RemoveFromHand()
@@ -185,19 +174,15 @@ Event OnKeyDown(Int KeyCode)
 			Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
 			GoToState("busy")
 		else
-			RTR_PrintDebug("[RTR-Player] Toggled On --------------------------------------------------------------------")
 			PlayerRef.addperk(ReadTheRoomPerk)
 			SetupRTR()
 			Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
 			GoToState("")
 		endif
-		RTR_PrintDebug(" ")
 	endif
 
 	; Manually Toggle Head Gear
 	if KeyCode == ToggleKey.GetValueInt()
-		RTR_PrintDebug(" ")
-		RTR_PrintDebug("[RTR-Player] Toggle Head Gear --------------------------------------------------------------------")
 		LastEquipped = RTR_GetEquipped(PlayerRef, ManageCirclets.getValueInt() == 1)
 		if RTR_IsValidHeadWear(PlayerRef, LastEquipped, LoweredHoods)
 			UnequipActorHeadgear()
@@ -205,13 +190,10 @@ Event OnKeyDown(Int KeyCode)
 			LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
 			EquipActorHeadgear()
 		endif
-		RTR_PrintDebug(" ")
 	endif
 
 	; Force clear attachment nodes
 	if KeyCode == DeleteKey.GetValueInt()
-		RTR_PrintDebug(" ")
-		RTR_PrintDebug("[RTR-Player] Clearing ReadTheRoom placements --------------------------------------------------------------------")
 		SendModEvent("ReadTheRoomClearPlacements")
 		RemoveFromHip()
 		RemoveFromHand()
@@ -219,7 +201,6 @@ Event OnKeyDown(Int KeyCode)
 		LastLoweredHood = None
 		LastEquippedType = "None"
 		GoToState("")
-		RTR_PrintDebug(" ")
 	endif
 EndEvent
 
@@ -229,16 +210,10 @@ EndEvent
 ; Records Most Recent Location Action
 ; Equips/Unequips based off of Config Settings
 Event OnLocationChange(Location akOldLoc, Location akNewLoc)
-	RTR_PrintDebug(" ")
-	RTR_PrintDebug("[RTR-Player] OnLocationChange --------------------------------------------------------------------")
-
 	LastEquipped = RTR_GetEquipped(PlayerRef, ManageCirclets.getValueInt() == 1)
 	Bool is_valid = RTR_IsValidHeadWear(PlayerRef, LastEquipped, LoweredHoods)
 	Bool equip_when_safe = EquipWhenSafe.getValueInt() == 1
 	Bool unequip_when_unsafe = UnequipWhenUnsafe.getValueInt() == 1
-
-	RTR_PrintDebug("-- RTR EquipWhenSafe global var value: " + EquipWhenSafe.getValueInt())
-	RTR_PrintDebug("-- RTR UnequipWhenUnsafe global var value: " + EquipWhenSafe.getValueInt())
 
 	; Update the MostRecentLocationAction reference for other processes
 	String locationAction = RTR_GetLocationAction(akNewLoc, is_valid, equip_when_safe, unequip_when_unsafe, SafeKeywords, HostileKeywords)
@@ -250,8 +225,6 @@ Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 	else
 		MostRecentLocationAction = "None"
 	endif
-
-	RTR_PrintDebug("-- RTR MostRecentLocationAction set to: " + MostRecentLocationAction)
 	
 	; Only apply the action if we didn't already do it, prevents ToggleKey from being overwritten unless changing location action
 	if MostRecentLocationAction != PreviousLocationAction 
@@ -270,7 +243,6 @@ Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 	; Record the previous location action so we don't fire the same action over and over again
 	PreviousLocationAction = MostRecentLocationAction
 	SendModEvent("ReadTheRoomLocationChange")
-	RTR_PrintDebug(" ")
 EndEvent
 
 ; OnReadTheRoomCombatStateChanged Event Handler
@@ -283,7 +255,6 @@ Event OnReadTheRoomCombatStateChanged(String eventName, String strArg, Float num
 	endif
 
 	Int aeCombatState = numArg as Int
-	; MiscUtil.PrintConsole("[RTR-Player] " + strArg + " Combat State Changed to " + aeCombatState + " -- Player WasInCombat " + WasInCombat + " -- PlayerRef.IsInCombat " + PlayerRef.IsInCombat() + " -- PlayerRef.IsEquipped(LastEquipped) " + PlayerRef.IsEquipped(LastEquipped) + " RecentAction " + RecentAction)
 	if aeCombatState == 1 && PlayerRef.IsInCombat() && !PlayerRef.IsEquipped(LastEquipped)
 		; An NPC has reported they are in combat with the player and the player is not wearing the item
 		if CombatEquip.GetValueInt() == 1 && NotifyOnCombat.GetValueInt() == 1
@@ -312,16 +283,12 @@ EndEvent
 ; Where the MAGIC happens, processes animation events triggered from 
 ; ReadTheRoom Annotations in the hkx animation files
 Event OnAnimationEvent(ObjectReference akSource, String asEventName)
-	RTR_PrintDebug(" ")
-	RTR_PrintDebug("[RTR-Player] Animation Event: " + asEventName + " --------------------------------------------------------------------")
-
 	String anim_action = RTR_GetActionString(PlayerRef.GetAnimationVariableInt("RTR_Action"))
 
 	; Equip Headgear
 	if asEventName == "RTR_Equip"
 		RemoveFromHand()
 		PlayerRef.EquipItem(LastEquipped, false, true)
-		RTR_PrintDebug("- " + (LastEquipped as Armor).GetName() + " Equipped")
 		SendModEvent("ReadTheRoomEquip")
 		return
 	endif
@@ -332,7 +299,6 @@ Event OnAnimationEvent(ObjectReference akSource, String asEventName)
 			AttachToHand()
 		endif
 		PlayerRef.UnequipItem(LastEquipped, false, true)
-		RTR_PrintDebug("- " + (LastEquipped as Armor).GetName() + " Unequipped")
 		SendModEvent("ReadTheRoomUnequip")
 		return
 	endif
@@ -341,7 +307,6 @@ Event OnAnimationEvent(ObjectReference akSource, String asEventName)
 	if asEventName == "RTR_AttachToHip"
 		RemoveFromHand()
 		AttachToHip()
-		RTR_PrintDebug("- " + (LastEquipped as Armor).GetName() + " Attached to Hip node")
 		return
 	endif
 
@@ -349,14 +314,12 @@ Event OnAnimationEvent(ObjectReference akSource, String asEventName)
 	if asEventName == "RTR_RemoveFromHip"
 		RemoveFromHip()
 		AttachToHand()
-		RTR_PrintDebug("- " + (LastEquipped as Armor).GetName() + " Removed from Hip node")
 		return
 	endif
 
 	; Attach Lowered Hood
 	if asEventName == "RTR_AttachLoweredHood" && LastLoweredHood
 		PlayerRef.EquipItem(LastLoweredHood, false, true)
-		RTR_PrintDebug("- Equipped Lowered Hood: " + (LastLoweredHood as Armor).GetName())
 		return
 	endif
 
@@ -364,7 +327,6 @@ Event OnAnimationEvent(ObjectReference akSource, String asEventName)
 	if asEventName == "RTR_RemoveLoweredHood" && LastLoweredHood
 		PlayerRef.UnequipItem(LastLoweredHood, false, true)
 		PlayerRef.RemoveItem(LastLoweredHood, 1, true)
-		RTR_PrintDebug("- Removed Lowered Hood: " + (LastLoweredHood as Armor).GetName())
 		return
 	endif
 
@@ -372,26 +334,21 @@ Event OnAnimationEvent(ObjectReference akSource, String asEventName)
 	if asEventName == "RTR_OffsetStop"
 		RemoveFromHand()
 		Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
-		RTR_PrintDebug("- Animation Finished. OffsetStop Animation Event Sent")
 		return
 	endif
 
 	; RTR_SetTimeout waits for animation to completely finish and then does post animation actions
 	if asEventName == "RTR_SetTimeout"
 		Float timeout = PlayerRef.GetAnimationVariableFloat("RTR_Timeout")
-		RTR_PrintDebug("- Animation Ends in " + (timeout + AnimTimeoutBuffer) + " seconds")
 
 		; Disable certain controls for the player during the animation
 		Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
 
 		Utility.wait(timeout + AnimTimeoutBuffer)
-		RTR_PrintDebug(" ")
-		RTR_PrintDebug("[RTR-Player] OnAnimationEvent: Timeout Finished --------------------------------------------------------------------")
 
 		; Wait for player inventory to complete the equipping / unequipping actions
 		Bool finishedEquipUnequip = PlayerRef.GetAnimationVariableInt("IsEquipping") == 0 && PlayerRef.GetAnimationVariableInt("IsUnequipping") == 0
 		while !finishedEquipUnequip
-			RTR_PrintDebug("- Waiting for Equip / Unequip to finish")
 			Utility.wait(0.1)
 			finishedEquipUnequip = PlayerRef.GetAnimationVariableInt("IsEquipping") == 0 && PlayerRef.GetAnimationVariableInt("IsUnequipping") == 0
 		endwhile
@@ -404,14 +361,9 @@ EndEvent
 ; OnObjectEquipped Event Handler
 ; Cheks if the actor equipped head gear outside of RTR and removes any placements / lowered hoods
 Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
-	RTR_PrintDebug(" ")
-	RTR_PrintDebug("[RTR-Player] OnObjectEquipped --------------------------------------------------------------------")
-
 	; Check if a head wear item was equipped
 	String type = RTR_InferItemType(akBaseObject)
-	RTR_PrintDebug("- ItemType = " + type)
 	if type != "None"
-		RTR_PrintDebug("- Actor equipped head gear outside of RTR, Clearing IED Nodes and removing any lowered hood")
 		RemoveFromHip()
 		RemoveFromHand()
 		
@@ -422,7 +374,6 @@ Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
 		endif
 		SendModEvent("ReadTheRoomEquipNoAnimation")
 	endif
-	RTR_PrintDebug(" ")
 EndEvent
 
 ; OnObjectUnequipped Event Handler
@@ -430,12 +381,8 @@ EndEvent
 ; Also checkes if the actor removed their head gear outside of RTR and removes any placements / lowered hoods
 ; @TODO - Add MCM option to add RTR placements if manually unequipping head gear
 Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
-	RTR_PrintDebug(" ")
-	RTR_PrintDebug("[RTR-Player] OnObjectUnequipped --------------------------------------------------------------------")
-	
 	; Check if it was armor that was removed
 	if (RemoveHelmetWithoutArmor.GetValueInt() == 1 && !RTR_IsTorsoEquipped(PlayerRef))
-		RTR_PrintDebug("- Actor is not wearing anything on their torso and RemoveHelmetWithoutArmor is enabled. Clearing IED Nodes and removing any lowered hood")
 		RemoveFromHip()
 		RemoveFromHand()
 
@@ -449,7 +396,6 @@ Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
 	; Check if it was a helmet, circlet, or hood that was removed
 	String type = RTR_InferItemType(akBaseObject)
 	if type != "None"
-		RTR_PrintDebug("- Actor intentionally unequipped a helmet or hood outside of RTR, Clearing IED Nodes and removing any lowered hood")
 		RemoveFromHip()
 		RemoveFromHand()
 		
@@ -460,7 +406,6 @@ Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
 		endIf
 		SendModEvent("ReadTheRoomUnequipNoAnimation")
 	endif
-	RTR_PrintDebug(" ")
 EndEvent
 
 ; OnMenuClose Event Handler
@@ -488,7 +433,14 @@ EndEvent
 ; OnRaceSwitchComplete Event Handler
 ; Resets RTR
 Event OnRaceSwitchComplete()
-	SetupRTR()
+	IsFemale = PlayerRef.GetActorBase().GetSex() == 1
+	
+	; Removing and Readding the perk should refersh all properties and baked gender variables
+	if PlayerRef.HasPerk(ReadTheRoomPerk)
+		PlayerRef.RemovePerk(ReadTheRoomPerk)
+		Utility.wait(5.0)
+		PlayerRef.AddPerk(ReadTheRoomPerk)
+	endif
 EndEvent
 
 ;;;; Action Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -496,11 +448,8 @@ EndEvent
 ; EquipActorHeadgear
 ; Triggers equipping head gear to an actor
 Function EquipActorHeadgear(Bool IsCombatEquip = false)
-	RTR_PrintDebug(" ")
-	; MiscUtil.PrintConsole("[RTR-Player] EquipActorHeadgear --------------------------------------------------------------------")
-
+	; Player is in a transformation (Werewolf/Vampire Lord)
 	if PlayerRef.HasKeywordString("ActorTypeCreature")
-		; MiscUtil.PrintConsole("- Exiting because actor is a creature")
 		return
 	endif
 
@@ -509,7 +458,6 @@ Function EquipActorHeadgear(Bool IsCombatEquip = false)
 
 	; Exit early if the actor is already wearing the item
 	if PlayerRef.IsEquipped(LastEquipped)
-		; MiscUtil.PrintConsole("- Exiting because item " + (LastEquipped as Armor).GetName() + " is already equipped")
 		RemoveFromHip()
 		RemoveFromHand()
 		return
@@ -517,17 +465,12 @@ Function EquipActorHeadgear(Bool IsCombatEquip = false)
 
 	; Combat State Unequip
 	if PlayerRef.IsInCombat()
-		; MiscUtil.PrintConsole("- Player is in combat")
 		if CombatEquip.GetValueInt() == 0
-			; MiscUtil.PrintConsole("- Existing because CombatEquip is disabled")
 			return
 		endif
 
-		; MiscUtil.PrintConsole("- CombatEquip is enabled")
-
 		; Equip with no animation
 		if CombatEquipAnimation.getValueInt() == 0
-			; MiscUtil.PrintConsole("- CombatEquipAnimation is disabled. Equipping with no animation")
 			EquipWithNoAnimation(true, IsCombatEquip)
 			return
 		endif
@@ -539,15 +482,12 @@ Function EquipActorHeadgear(Bool IsCombatEquip = false)
 		PlayerRef.GetAnimationVariableInt("bInJumpState") == 1 || \
 		PlayerRef.GetAnimationVariableInt("IsEquipping") == 1 || \
 		PlayerRef.GetAnimationVariableInt("IsUnequipping") == 1
-		
-		RTR_PrintDebug("- Actor can't be animated. Equipping with no animation")
 		; Force equip with no animation
 		EquipWithNoAnimation()
 		return
 	endif
 
 	if SheathWeaponsForAnimation.GetValueInt() == 0 && PlayerRef.IsWeaponDrawn()
-		RTR_PrintDebug("- Sheath Weapons for Animations disabled. Equipping with no animation")
 		EquipWithNoAnimation()
 		return
 	endif
@@ -560,18 +500,14 @@ Function EquipActorHeadgear(Bool IsCombatEquip = false)
 	if LastEquippedType == "Hood"
 		animation = "RTREquipHood"
 		animation_time = 1.2
-		RTR_PrintDebug("- Lowerable Hood Detected. Switching animation to " + animation)
 	endif
 
 	Bool was_drawn = RTR_SheathWeapon(PlayerRef)
 	Bool was_first_person = RTR_ForceThirdPerson(PlayerRef)
 
-	RTR_PrintDebug("- Setting player RTR_RedrawWeapons to " + was_drawn)
 	PlayerRef.SetAnimationVariableBool("RTR_RedrawWeapons", was_drawn)
-	RTR_PrintDebug("- Setting player RTR_ReturnToFirstPerson to " + was_first_person)
 	PlayerRef.SetAnimationVariableBool("RTR_ReturnToFirstPerson", was_first_person)
-	
-	RTR_PrintDebug("- Triggering " + animation + " animation")
+
 	GoToState("busy")
 	Debug.sendAnimationEvent(PlayerRef, animation)
 	
@@ -587,7 +523,6 @@ EndFunction
 ; Equips an item to an actor without playing an animation
 Function EquipWithNoAnimation(Bool sendFollowerEvent = true, Bool IsCombatEquip = false)
 	if PlayerRef.HasKeywordString("ActorTypeCreature")
-		RTR_PrintDebug("- Exiting EquipWithNoAnimation because actor is a creature")
 		return
 	endif
 
@@ -606,13 +541,11 @@ Function EquipWithNoAnimation(Bool sendFollowerEvent = true, Bool IsCombatEquip 
 
 	if LastEquippedType == "Hood"
 		if LastLoweredHood
-			RTR_PrintDebug("- Equipping Lowered Hood: " + (LastLoweredHood as Armor).GetName())
 			PlayerRef.UnequipItem(LastLoweredHood, false, true)
 			PlayerRef.RemoveItem(LastLoweredHood, 1, true)
 		endif
 		PlayerRef.EquipItem(LastEquipped, false, true)
 	else
-		RTR_PrintDebug("- Equipping: " + (LastEquipped as Armor).GetName())
 		PlayerRef.EquipItem(LastEquipped, false, true)
 		RemoveFromHip()
 		RemoveFromHand()
@@ -633,11 +566,7 @@ EndFunction
 ; UnequipActorHeadgear
 ; Triggers unequipping head gear from an actor
 Function UnequipActorHeadgear()
-	RTR_PrintDebug(" ")
-	RTR_PrintDebug("[RTR-Player] UnequipActorHeadgear --------------------------------------------------------------------")
-
 	if PlayerRef.HasKeywordString("ActorTypeCreature")
-		RTR_PrintDebug("- Exiting because actor is a creature")
 		return
 	endif
 	
@@ -646,24 +575,18 @@ Function UnequipActorHeadgear()
 
 	; Exit early if the actor is not wearing the item
 	if !PlayerRef.IsEquipped(LastEquipped)
-		RTR_PrintDebug("- Exiting because item " + (LastEquipped as Armor).GetName() + " is not equipped")
 		RemoveFromHand()
 		return
 	endif
 
 	; Combat State Unequip
 	if PlayerRef.GetCombatState() == 1
-		; MiscUtil.PrintConsole("- Actor is in combat")
 		if CombatEquip.GetValueInt() == 0
-			RTR_PrintDebug("- CombatEquip is disabled")
 			return
 		endif
 
-		; MiscUtil.PrintConsole("- CombatEquip is enabled")
-
 		; Unequip with no animation
 		if CombatEquipAnimation.getValueInt() == 0
-			; MiscUtil.PrintConsole("- CombatEquipAnimation is disabled. Unequipping with no animation")
 			UnequipWithNoAnimation()
 			return
 		endif
@@ -675,15 +598,12 @@ Function UnequipActorHeadgear()
 		PlayerRef.GetAnimationVariableInt("bInJumpState") == 1 || \
 		PlayerRef.GetAnimationVariableInt("IsEquipping") == 1 || \
 		PlayerRef.GetAnimationVariableInt("IsUnequipping") == 1
-		
-		RTR_PrintDebug("- Actor can't be animated. Unequipping with no animation")
 		; Force unequip with no animation
 		UnequipWithNoAnimation()
 		return
 	endif
 
 	if SheathWeaponsForAnimation.GetValueInt() == 0 && PlayerRef.IsWeaponDrawn()
-		RTR_PrintDebug("- Sheath Weapons for Animations disabled. Unequipping with no animation")
 		UnequipWithNoAnimation()
 		return
 	endif
@@ -696,18 +616,14 @@ Function UnequipActorHeadgear()
 	if LastEquippedType == "Hood"
 		animation = "RTRUnequipHood"
 		animation_time = 1.2
-		RTR_PrintDebug("- Lowerable Hood Detected. Switching animation to " + animation)
 	endif
 
 	Bool was_drawn = RTR_SheathWeapon(PlayerRef)
 	Bool was_first_person = RTR_ForceThirdPerson(PlayerRef)
 
-	RTR_PrintDebug("- Setting player RTR_RedrawWeapons to " + was_drawn)
 	PlayerRef.SetAnimationVariableBool("RTR_RedrawWeapons", was_drawn)
-	RTR_PrintDebug("- Setting player RTR_ReturnToFirstPerson to " + was_first_person)
 	PlayerRef.SetAnimationVariableBool("RTR_ReturnToFirstPerson", was_first_person)
 
-	RTR_PrintDebug("- Triggering " + animation + " animation")
 	GoToState("busy")
 	Debug.sendAnimationEvent(PlayerRef, animation)
 
@@ -721,7 +637,6 @@ EndFunction
 ; Unequips an item from an actor without playing an animation
 Function UnequipWithNoAnimation(Bool sendFollowerEvent = true)
 	if PlayerRef.HasKeywordString("ActorTypeCreature")
-		RTR_PrintDebug("- Exiting because actor is a creature")
 		return
 	endif
 
@@ -761,13 +676,9 @@ EndFunction
 ;;;; Busy State - Blocked Actions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 State busy
 	Event OnKeyDown(Int KeyCode)
-		RTR_PrintDebug("xXx [RTR-Busy] OnKeyDown xXx")
-
 		; Continue to allow full mod enable/disable, also resets the state
 		if KeyCode == EnableKey.GetValueInt()
-			RTR_PrintDebug(" ")
 			if PlayerRef.hasperk(ReadTheRoomPerk)
-				RTR_PrintDebug("[RTR-Player] Toggled Off --------------------------------------------------------------------")
 				PlayerRef.removeperk(ReadTheRoomPerk)
 				RemoveFromHip()
 				RemoveFromHand()
@@ -777,19 +688,15 @@ State busy
 				Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
 				GoToState("busy")
 			else
-				RTR_PrintDebug("[RTR-Player] Toggled On --------------------------------------------------------------------")
 				PlayerRef.addperk(ReadTheRoomPerk)
 				SetupRTR()
 				Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
 				GoToState("")
 			endif
-			RTR_PrintDebug(" ")
 		endif
 
 		; Continue to allow forced placement clearing, also resets the state
 		if KeyCode == DeleteKey.GetValueInt()
-			RTR_PrintDebug(" ")
-			RTR_PrintDebug("[RTR-Player] Clearing ReadTheRoom placements --------------------------------------------------------------------")
 			SendModEvent("ReadTheRoomClearPlacements")
 			RemoveFromHip()
 			RemoveFromHand()
@@ -797,13 +704,10 @@ State busy
 			LastLoweredHood = None
 			LastEquippedType = "None"
 			GoToState("")
-			RTR_PrintDebug(" ")
 		endif
 	EndEvent
 
 	Event OnLocationChange(Location akOldLoc, Location akNewLoc)
-		RTR_PrintDebug("xXx [RTR-Busy] OnLocationChange xXx")
-		
 		; Update the MostRecentLocationAction reference even in Busy State
 		Bool is_valid = RTR_IsValidHeadWear(PlayerRef, LastEquipped, LoweredHoods)
 		Bool equip_when_safe = EquipWhenSafe.getValueInt() == 1
@@ -819,35 +723,27 @@ State busy
 	EndEvent
 
 	Event OnCombatStateChanged(Actor akTarget, int aeCombatState)
-		RTR_PrintDebug("xXx [RTR-Busy] OnCombatStateChanged xXx")
 	EndEvent
 
 	Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
-		RTR_PrintDebug("xXx [RTR-Busy] OnObjectEquipped xXx")
 	EndEvent
 	
 	Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
-		RTR_PrintDebug("xXx [RTR-Busy] OnObjectUnequipped xXx")
 	EndEvent
 
 	Event OnMenuClose(String MenuName)
-		RTR_PrintDebug("xXx [RTR-Busy] OnMenuClose xXx")
 	EndEvent
 
 	Function EquipActorHeadgear(Bool IsCombatEquip = false)
-		RTR_PrintDebug("xXx [RTR-Busy] EquipActorHeadgear xXx")
 	EndFunction
 
 	Function EquipWithNoAnimation(Bool sendFollowerEvent = true, Bool IsCombatEquip = false)
-		RTR_PrintDebug("xXx [RTR-Busy] EquipWithNoAnimation xXx")
 	EndFunction
 
 	Function UnequipActorHeadgear()
-		RTR_PrintDebug("xXx [RTR-Busy] UnequipActorHeadgear xXx")
 	EndFunction
 
 	Function UnequipWithNoAnimation(Bool sendFollowerEvent = true)
-		RTR_PrintDebug("xXx [RTR-Busy] UnequipWithNoAnimation xXx")
 	EndFunction
 EndState
 
@@ -860,20 +756,14 @@ EndState
 Function PostAnimCleanUp()
 	; Post Animation Actions
 	String animAction = RTR_GetActionString(PlayerRef.GetAnimationVariableInt("RTR_Action"))
-
-	RTR_PrintDebug("- CLEANUP - Enabling Player Controls")
 	Game.EnablePlayerControls()
 
 	; Check if the animation completed successfully or if it was interuppted
-	if animAction == "None"
-		RTR_PrintDebug("- RTR Action completed successfully")
-	elseif animAction == "Equip" || animAction == "EquipHood"
-		RTR_PrintDebug("- Timed Out on Equip")
+	if animAction == "Equip" || animAction == "EquipHood"
 		; Finalize Equip
 		EquipWithNoAnimation(false)
 		Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
 	elseif animAction == "Unequip" || animAction == "UnequipHood"
-		RTR_PrintDebug("- Timed Out on Unequip")
 		; Finalize Unequip
 		UnequipWithNoAnimation(false)
 		Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
@@ -887,19 +777,16 @@ Function PostAnimCleanUp()
 	Bool return_to_first_person = PlayerRef.GetAnimationVariableBool("RTR_ReturnToFirstPerson")
 
 	if draw_weapon && animAction == "None"
-		RTR_PrintDebug("- CLEANUP - Drawing Weapon")
 		PlayerRef.DrawWeapon()
 		PlayerRef.SetAnimationVariableBool("RTR_RedrawWeapons", false)
 	endif
 
 	if return_to_first_person && animAction == "None"
-		RTR_PrintDebug("- CLEANUP - Returning to First Person")
 		Game.ForceFirstPerson()
 		PlayerRef.SetAnimationVariableBool("RTR_ReturnToFirstPerson", false)
 	endif
 
 	; Clear RTR_Action and return from busy state
-	RTR_PrintDebug("- CLEANUP - Clearing RTR_Action and Returning from busy state")
 	PlayerRef.SetAnimationVariableInt("RTR_Action", 0)
 	GoToState("")
 EndFunction
@@ -976,42 +863,23 @@ Form[] Function HandAnchor()
 EndFunction
 
 ; CheckForUpdates
-; Checks if the script version has changed and updates the script properties
-; Uses Game.GetFormFromFile to get the latest version of the script properties
-; Which is kinda hacky but will allow script updates in active saves
+; Checks if the script version has changed 
+; If it has then refreshes the RTR Monitor Perk with the updated version
 Function CheckForUpdates()
 	if RTR_Version != RTR_GetVersion()
-		; Do update - Refresh Properties from Forms
+		Debug.Notification("Read The Room - Detected outdated scripts")
+
+		; Use Game.GetFormFromFile to get a garenteed fresh version of the perk
 		ReadTheRoomPerk = Game.GetFormFromFile(0x800, "ReadTheRoom.esp") As Perk
 
-		ToggleKey = Game.GetFormFromFile(0x00000815, "ReadTheRoom.esp") As GlobalVariable
-		DeleteKey = Game.GetFormFromFile(0x00000816, "ReadTheRoom.esp") As GlobalVariable
-		EnableKey = Game.GetFormFromFile(0x00000B51, "ReadTheRoom.esp") As GlobalVariable
-
-		CombatEquip = Game.GetFormFromFile(0x00000C52, "ReadTheRoom.esp") As GlobalVariable
-		CombatEquipAnimation = Game.GetFormFromFile(0x00000C53, "ReadTheRoom.esp") As GlobalVariable
-		EquipWhenSafe = Game.GetFormFromFile(0x0000080C, "ReadTheRoom.esp") As GlobalVariable
-		UnequipWhenUnsafe = Game.GetFormFromFile(0x0000080D, "ReadTheRoom.esp") As GlobalVariable
-		RemoveHelmetWithoutArmor = Game.GetFormFromFile(0x00000E59, "ReadTheRoom.esp") As GlobalVariable
-		SheathWeaponsForAnimation = Game.GetFormFromFile(0x0000080E, "ReadTheRoom_Remaster.esp") As GlobalVariable
-
-		NotifyOnLocation = Game.GetFormFromFile(0x0000082A, "ReadTheRoom_Remaster.esp") As GlobalVariable
-		NotifyOnCombat = Game.GetFormFromFile(0x0000082B, "ReadTheRoom_Remaster.esp") As GlobalVariable
-
-		ManageCirclets = Game.GetFormFromFile(0x00000C54, "ReadTheRoom.esp") As GlobalVariable
-
-		SafeKeywords = Game.GetFormFromFile(0x0000080A, "ReadTheRoom.esp") As FormList
-		HostileKeywords = Game.GetFormFromFile(0x00000804, "ReadTheRoom.esp") As FormList
-
-		LowerableHoods = Game.GetFormFromFile(0x00000949, "ReadTheRoom.esp") As FormList
-		LoweredHoods = Game.GetFormFromFile(0x0000094A, "ReadTheRoom.esp") As FormList
-
-		MaleHandAnchor = Game.GetFormFromFile(0x00000803, "ReadTheRoom_Remaster.esp") As FormList
-		MaleHipAnchor = Game.GetFormFromFile(0x00000804, "ReadTheRoom_Remaster.esp") As FormList
-		FemaleHandAnchor = Game.GetFormFromFile(0x00000805, "ReadTheRoom_Remaster.esp") As FormList
-		FemaleHipAnchor = Game.GetFormFromFile(0x00000806, "ReadTheRoom_Remaster.esp") As FormList
+		; Removing and Readding the perk should refersh all properties and baked variables
+		if PlayerRef.HasPerk(ReadTheRoomPerk)
+			PlayerRef.RemovePerk(ReadTheRoomPerk)
+			Utility.wait(5.0)
+			PlayerRef.AddPerk(ReadTheRoomPerk)
+		endif
 
 		RTR_Version = RTR_GetVersion()
-		Debug.Notification("Read The Room Player Scripts - Updated to Version " + RTR_Version)
+		Debug.Notification("Read The Room - Updated to Version " + Substring(RTR_Version as String, 0, Find(RTR_Version as String, ".", 0)+2))
 	endif
 EndFunction
