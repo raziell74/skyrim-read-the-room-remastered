@@ -1,9 +1,5 @@
 ## MVP Release Features
 
-### Versioning - Better Update Process
-
-Script variables and properties are "baked" into save files so if the properties sent to the scripts change in the esp file they do not work correctly from an existing save. I want to implement a version control system, MCM offers some handy tools for version control, so that when updating the scripts can correctly update their properties and function without the need to start a new save or clean your save with ReSaver.
-
 ### Further Refactors
 
 ***Player and Follower Monitor Scripts***
@@ -38,6 +34,10 @@ Since you're using IED anyway, add a new entry using the awesome IED in game UI 
 
 ***Quick Note***
 I saw some other IED mods that came out recent stored their positioning config in a json file. I'm not sure if I want to do that or not. Having an external file will prevent players from making changes while in game but it would be a lot easier to manage. I'll have to think about it.
+
+### Versioning - Better Update Process --Done--
+
+Script variables and properties are "baked" into save files so if the properties sent to the scripts change in the esp file they do not work correctly from an existing save. I want to implement a version control system, MCM offers some handy tools for version control, so that when updating the scripts can correctly update their properties and function without the need to start a new save or clean your save with ReSaver.
 
 ### MCM Setting to set behavior when the player has their weapons drawn --Done--
 
