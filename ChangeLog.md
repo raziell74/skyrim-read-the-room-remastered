@@ -28,8 +28,10 @@
 - All items flagged with the "RTR_HoodKW" keyword will now use the hood equip/unequip animations. This change applies to all dragon priest masks as well. There will be no lowered variant mesh for these though since I am not experienced in 3D modeling at all. But at least they won't look SUPER weird when RTR unequips them.
 - Refactored lowered hoods to be assignable via keyword. The `ReadTheRoom_KID.ini` file has been updated to support all vanilla hoods as well as those added by the [Weapons Armor Clothing and Clutter Fixes](https://www.nexusmods.com/skyrimspecialedition/mods/18994) (WACCF for short) mod. It is HIGHLY recommended to use WACCF, because it separates the hoods from the robes for many items. Without it things like monk robe hoods, arch-mage hood, and Dunmer Hoods cannot be managed through RTR.
 - Added a fall back system for adding direct Hood to Lowered Hood form assignment via the [FormList Manipulator FLM](https://www.nexusmods.com/skyrimspecialedition/mods/74037). A sample file with instructions for how to use it is included (`ReadTheRoom_Hoods_FLM.ini`). 
-- Fixed an issue where some hoods were being flagged as "Circlets" and would not be managed if the Player has the "Manage Circlets" setting disabled. All hoods are their own type now and aren't categorized as a sub-set of helmets / circlets
-- Fixed an issue where follower RTR placements were not being cleared when the player pressed the Delete key to clear RTR placeholders
+- Added a "Sheath On Animation" setting which will force the player to sheath their weapons to play the RTR animations. If this is disabled RTR will equip/unequip with no animation when weapons are drawn
+- MCM has been updated to include the new Remaster feature settings.
+- Added a patch for the [Read The Room - Settings Loader](https://www.nexusmods.com/skyrimspecialedition/mods/78689) mod
+  - Honestly might just switch to using MCM helper by default. MCM is an annoying tedious process without it.
 
 ### Bugs Squashed
 
@@ -76,6 +78,9 @@
 - [x] Added a check to see if the Player has the "ActorTypeCreature" keyword which is added when the player is transformed into a werewolf or vampire lord.
   - RTR will no longer execute helmet management automated or otherwise if the player is a "creature" 
 - [x] Some hoods would identify as circlets and wouldn't be correctly managed by RTR if the player had the "Manage Circlets like Helmets" option disabled
+- [x] Equip with no animation does not keep helmet on hip or lowered hood applied
+- [x] Followers that can turn into Werewolves or other creatures break if RTR triggers while they are in their transition
+- [x] Follower RTR placements were not being cleared when the player pressed the Delete key to clear RTR placeholders
 
 ### Added Dependencies
 
