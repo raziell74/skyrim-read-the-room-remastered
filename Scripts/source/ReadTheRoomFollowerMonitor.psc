@@ -431,6 +431,11 @@ Function EquipActorHeadgear()
 	RTR_PrintDebug(" ")
 	RTR_PrintDebug("[RTR-Follower] EquipActorHeadgear --------------------------------------------------------------------")
 
+	if FollowerRef.HasKeywordString("ActorTypeCreature")
+		RTR_PrintDebug("- Exiting EquipWithNoAnimation because actor is a creature")
+		return
+	endif
+
 	; Update the IED Node with the last_equipped item
 	UseHelmet()
 
@@ -489,8 +494,17 @@ EndFunction
 ; EquipWithNoAnimation
 ; Equips an item to an actor without playing an animation
 Function EquipWithNoAnimation(Bool sendFollowerEvent = true)
+	if FollowerRef.HasKeywordString("ActorTypeCreature")
+		RTR_PrintDebug("- Exiting EquipWithNoAnimation because actor is a creature")
+		return
+	endif
+
+	; Make sure our last equipped item is up to date
+	LastEquipped = RTR_GetLastEquipped(FollowerRef, LastEquippedType)
+	
 	; Update the IED Node with the last_equipped item
 	UseHelmet()
+	GoToState("busy")
 
 	if LastEquipped.HasKeywordString("RTR_ExcludeKW")
 		RemoveFromHip()
@@ -509,6 +523,9 @@ Function EquipWithNoAnimation(Bool sendFollowerEvent = true)
 		RemoveFromHip()
 		RemoveFromHand()
 	endif
+
+	Utility.wait(0.1)
+	GoToState("")
 EndFunction
 
 ; UnequipActorHeadgear
@@ -516,6 +533,11 @@ EndFunction
 Function UnequipActorHeadgear()
 	RTR_PrintDebug(" ")
 	RTR_PrintDebug("[RTR-Follower] UnequipActorHeadgear --------------------------------------------------------------------")
+
+	if FollowerRef.HasKeywordString("ActorTypeCreature")
+		RTR_PrintDebug("- Exiting EquipWithNoAnimation because actor is a creature")
+		return
+	endif
 	
 	; Update the IED Node with the equipped item
 	UseHelmet()
@@ -574,8 +596,17 @@ EndFunction
 ; UnequipWithNoAnimation
 ; Unequips an item from an actor without playing an animation
 Function UnequipWithNoAnimation()
+	if FollowerRef.HasKeywordString("ActorTypeCreature")
+		RTR_PrintDebug("- Exiting EquipWithNoAnimation because actor is a creature")
+		return
+	endif
+
+	; Make sure our last equipped item is up to date
+	LastEquipped = RTR_GetLastEquipped(FollowerRef, LastEquippedType)
+
 	; Update the IED Node with the equipped item
 	UseHelmet()
+	GoToState("busy")
 
 	if LastEquipped.HasKeywordString("RTR_ExcludeKW")
 		RemoveFromHip()
@@ -583,7 +614,6 @@ Function UnequipWithNoAnimation()
 		return
 	endif
 
-	LastEquippedType = RTR_InferItemType(LastEquipped)
 	if LastEquippedType == "Hood"
 		FollowerRef.UnequipItem(LastEquipped, true, true)
 		if LastLoweredHood
@@ -594,6 +624,9 @@ Function UnequipWithNoAnimation()
 		AttachToHip()
 		RemoveFromHand()
 	endif
+
+	Utility.wait(0.1)
+	GoToState("")
 EndFunction
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -11,7 +11,7 @@ String property PluginName = "ReadTheRoom.esp" auto
 ;
 ; @return Float
 Float Function RTR_GetVersion() global
-    return 1.0
+    return 1.2
 EndFunction
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

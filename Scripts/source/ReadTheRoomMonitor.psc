@@ -594,6 +594,13 @@ Function EquipWithNoAnimation(Bool sendFollowerEvent = true, Bool IsCombatEquip 
 
 	; Update the IED Node with the last_equipped item
 	UseHelmet()
+	GoToState("busy")
+
+	if LastEquipped.HasKeywordString("RTR_ExcludeKW")
+		RemoveFromHip()
+		RemoveFromHand()
+		return
+	endif
 
 	if LastEquippedType == "Hood"
 		if LastLoweredHood
@@ -616,6 +623,9 @@ Function EquipWithNoAnimation(Bool sendFollowerEvent = true, Bool IsCombatEquip 
 	if !IsCombatEquip
 		RecentAction = "Equip"
 	endif
+
+	Utility.wait(0.1)
+	GoToState("")
 EndFunction
 
 ; UnequipActorHeadgear
@@ -712,9 +722,19 @@ Function UnequipWithNoAnimation(Bool sendFollowerEvent = true)
 		RTR_PrintDebug("- Exiting because actor is a creature")
 		return
 	endif
+
+	; Make sure our last equipped item is up to date
+	LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
 	
 	; Update the IED Node with the equipped item
 	UseHelmet()
+	GoToState("busy")
+
+	if LastEquipped.HasKeywordString("RTR_ExcludeKW")
+		RemoveFromHip()
+		RemoveFromHand()
+		return
+	endif
 
 	if LastEquippedType == "Hood"
 		PlayerRef.UnequipItem(LastEquipped, false, true)
@@ -731,6 +751,9 @@ Function UnequipWithNoAnimation(Bool sendFollowerEvent = true)
 		SendModEvent("ReadTheRoomUnequipNoAnimation")
 	endif
 	RecentAction = "Unequip"
+
+	Utility.wait(0.1)
+	GoToState("")
 EndFunction
 
 ;;;; Busy State - Blocked Actions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
