@@ -87,6 +87,7 @@
 - [x] Some Vanilla/DLC Hoods aren't lowered and instead are treated like helmets
 - [x] Some Vanilla/DLC Masks and Hoods break RTR
 - [x] Compatibility issue with Nether's Follower Framework.
+- [x] Pauses Follower Support while in container menus to avoid lag caused by follower synchronization Event scripts
 
 ### Added Dependencies
 
