@@ -1,5 +1,9 @@
 ## MVP Release Features
 
+### CC Content Support
+
+Add support for any broken CC content head wear
+
 ### Further Refactors
 
 ***Player and Follower Monitor Scripts***
@@ -123,3 +127,21 @@ Modernize is an awesome mod that adds physics to the monk hood meshes. I want to
   - Clothes\Monk\MonkHood_Arg_1.nif
   - Clothes\Monk\MonkVariantHood_Kha_1.nif
   - Clothes\Necromancer\NecromancerHood_1.nif
+
+### Play Sounds when equipping/unequipping
+
+RTR had all sounds turned off for the equip/unequip of items (even though the animations would play silent "sounds" that NPCs would here while you were sneaking). I want to add appropriate sounds when equipping and uneuqipping a helmet, circlet, hat, or hood. I would add an MCM setting to toggle sounds on/off during sneaking as well. This setting will default to not play sounds while sneaking, cuz you're being sneaky, but players may want more immersion and want to hear the sounds while sneaking at the risk of alerting NPCs.
+
+-- Possible Vanilla Sound records to play
+
+- Hoods
+ITMClothingDownSD [SNDR:0003E909]
+ITMClothingUpSD [SNDR:0003E879]
+
+- Helmets
+ITMGenericArmorDownSD [SNDR:0003E60B]
+ITMGenericArmorUpSD [SNDR:0003E609]
+
+- Circlets / Hats
+ITMGenericClothingUpSD [SNDR:0003E633]
+ITMGenericClothingDownSD [SNDR:0003E62C]

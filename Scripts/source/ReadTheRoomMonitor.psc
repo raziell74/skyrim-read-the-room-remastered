@@ -75,6 +75,7 @@ Bool WasInCombat = false
 
 Event OnInit()
 	RegisterForMenu("InventoryMenu")
+	RegisterForMenu("ContainerMenu")
 	RegisterForKey(ToggleKey.GetValueInt())
 	RegisterForKey(DeleteKey.GetValueInt())
 	RegisterForKey(EnableKey.GetValueInt())
@@ -232,11 +233,13 @@ Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 			Debug.Notification(locationAction)
 		endif
 
+		Utility.wait(0.5) ; Short Delay before equipping or unequipping, because it looks better than finishing the equipping animation as the screen finally fades in.
+
 		if MostRecentLocationAction == "Equip"
 			LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
 			EquipActorHeadgear()
 		elseif MostRecentLocationAction == "Unequip"
-			UnequipActorHeadgear()		
+			UnequipActorHeadgear()
 		endif
 	endif
 
@@ -269,6 +272,8 @@ Event OnReadTheRoomCombatStateChanged(String eventName, String strArg, Float num
 			if CombatEquip.GetValueInt() == 1 && NotifyOnCombat.GetValueInt() == 1
 				Debug.Notification("Leaving Combat")
 			endIf
+			WasInCombat = false
+			Utility.wait(3.5) ; short delay of time before unequipping post combat so it doesn't feel abrupt
 			UnequipActorHeadgear()
 		endif
 	endIf
@@ -408,10 +413,19 @@ Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
 	endif
 EndEvent
 
+; OnMenuOpen Event Handler
+; Pauses RTR Follower Events while a container is open to prevent OnObjectEquip/Unequip Lag while trading with a follower
+Event OnMenuOpen(String MenuName)
+	if MenuName == "ContainerMenu"
+		SendModEvent("ReadTheRoomPauseFollowerActions")
+	endif
+EndEvent
+
 ; OnMenuClose Event Handler
 ; Checks if the actor closed their inventory and removes any placements / lowered hoods
-; @TODO - Add MCM option to add RTR placements if manually unequipping head gear
 Event OnMenuClose(String MenuName)
+	; SendModEvent to set Followers to 'busy' state when ever we're in the follower inventory menu so we don't slow down the game on every item we take
+
 	if MenuName == "InventoryMenu"
 		LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
 		if PlayerRef.IsEquipped(LastEquipped)
@@ -426,6 +440,11 @@ Event OnMenuClose(String MenuName)
 		endif
 	endif
 
+	; Resume Follower Processing
+	if MenuName == "ContainerMenu"
+		SendModEvent("ReadTheRoomResumeFollowerActions")
+	endif
+
 	; Regardless, the item should be removed from the hand
 	RemoveFromHand()
 EndEvent
@@ -438,7 +457,7 @@ Event OnRaceSwitchComplete()
 	; Removing and Readding the perk should refersh all properties and baked gender variables
 	if PlayerRef.HasPerk(ReadTheRoomPerk)
 		PlayerRef.RemovePerk(ReadTheRoomPerk)
-		Utility.wait(5.0)
+		Utility.wait(1.0)
 		PlayerRef.AddPerk(ReadTheRoomPerk)
 	endif
 EndEvent
@@ -722,13 +741,16 @@ State busy
 		endif
 	EndEvent
 
-	Event OnCombatStateChanged(Actor akTarget, int aeCombatState)
+	Event OnReadTheRoomCombatStateChanged(String eventName, String strArg, Float numArg, Form sender)
 	EndEvent
 
 	Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
 	EndEvent
 	
 	Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
+	EndEvent
+
+	Event OnMenuOpen(String MenuName)
 	EndEvent
 
 	Event OnMenuClose(String MenuName)
@@ -785,6 +807,8 @@ Function PostAnimCleanUp()
 		Game.ForceFirstPerson()
 		PlayerRef.SetAnimationVariableBool("RTR_ReturnToFirstPerson", false)
 	endif
+
+	Utility.wait(0.5) ; Short delay befoer allowing another RTR Action, prevents weird OnEquip / OnUnequip Loops
 
 	; Clear RTR_Action and return from busy state
 	PlayerRef.SetAnimationVariableInt("RTR_Action", 0)
@@ -867,7 +891,7 @@ EndFunction
 ; If it has then refreshes the RTR Monitor Perk with the updated version
 Function CheckForUpdates()
 	if RTR_Version != RTR_GetVersion()
-		Debug.Notification("Read The Room - Detected outdated scripts")
+		Debug.Notification("Read The Room - Detected outdated scripts, updating...")
 
 		; Use Game.GetFormFromFile to get a garenteed fresh version of the perk
 		ReadTheRoomPerk = Game.GetFormFromFile(0x800, "ReadTheRoom.esp") As Perk
@@ -880,6 +904,5 @@ Function CheckForUpdates()
 		endif
 
 		RTR_Version = RTR_GetVersion()
-		Debug.Notification("Read The Room - Updated to Version " + Substring(RTR_Version as String, 0, Find(RTR_Version as String, ".", 0)+2))
 	endif
 EndFunction

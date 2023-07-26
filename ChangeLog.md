@@ -32,6 +32,7 @@
 - MCM has been updated to include the new Remaster feature settings.
 - Added a patch for the [Read The Room - Settings Loader](https://www.nexusmods.com/skyrimspecialedition/mods/78689) mod
   - Honestly might just switch to using MCM helper by default. MCM is an annoying tedious process without it.
+- Implemented a safe update versioning system so that scripts can safely be updated mid-save without breaking anything
 
 ### Bugs Squashed
 
@@ -81,6 +82,11 @@
 - [x] Equip with no animation does not keep helmet on hip or lowered hood applied
 - [x] Followers that can turn into Werewolves or other creatures break if RTR triggers while they are in their transition
 - [x] Follower RTR placements were not being cleared when the player pressed the Delete key to clear RTR placeholders
+- [x] Circlets are still treated as Helmets even if "Manage Circlets like Helmets" is disabled in the MCM
+- [x] Function 'Require Armor for Hip Placement' is bugged
+- [x] Some Vanilla/DLC Hoods aren't lowered and instead are treated like helmets
+- [x] Some Vanilla/DLC Masks and Hoods break RTR
+- [x] Compatibility issue with Nether's Follower Framework.
 
 ### Added Dependencies
 
@@ -89,4 +95,4 @@
 - [FormList Manipulator - FLM](https://www.nexusmods.com/skyrimspecialedition/mods/74037)
   - *Optional* if you want to use the `ReadTheRoom_Hoods_FLM.ini` file to add direct lowered hood assignment for your favorite hood mods
 - [MCM Helper](https://www.nexusmods.com/skyrimspecialedition/mods/53000) 
-  - For the Settings Loader patch
+  - *Optional* For the Settings Loader patch

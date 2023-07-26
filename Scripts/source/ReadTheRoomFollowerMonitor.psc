@@ -122,6 +122,8 @@ Function SetupRTR()
     RegisterForModEvent("ReadTheRoomUnequip", "OnReadTheRoomUnequip")
     RegisterForModEvent("ReadTheRoomUnequipNoAnimation", "OnReadTheRoomUnequipNoAnimation")
 	RegisterForModEvent("ReadTheRoomLocationChange", "OnReadTheRoomLocationChange")
+	RegisterForModEvent("ReadTheRoomPauseFollowerActions", "OnReadTheRoomPauseFollowerActions")
+	RegisterForModEvent("ReadTheRoomResumeFollowerActions", "OnReadTheRoomResumeFollowerActions")
 
 	if !FollowerRef.IsEquipped(LastEquipped)
 		MostRecentEvent = "ReadTheRoomUnequip"
@@ -160,6 +162,12 @@ Event OnReadTheRoomClearPlacements(String eventName, String strArg, Float numArg
 		return
 	endif
 
+	LastEquipped = RTR_GetLastEquipped(FollowerRef, LastEquippedType)
+	LastEquippedType = RTR_InferItemType(LastEquipped)
+	if LastEquippedType == "Hood"
+		LastLoweredHood = RTR_GetLoweredHood(LastEquipped, LowerableHoods, LoweredHoods)
+	endif
+	
 	RemoveFromHip()
 	RemoveFromHand()
 	LastEquipped = None
@@ -246,6 +254,44 @@ Event OnReadTheRoomLocationChange(String eventName, String strArg, Float numArg,
 	if rtrAction == 0
 		GoToState("")
 	endif
+EndEvent
+
+Event OnReadTheRoomDisableFollowerActions(String eventName, String strArg, Float numArg, Form sender)
+	if ManageFollowers.GetValueInt() != 1 || !IsCurrentFollower()
+		return
+	endif
+
+	; Pause the follower's actions
+	GoToState("busy")
+EndEvent
+
+Event OnReadTheRoomEnableFollowerActions(String eventName, String strArg, Float numArg, Form sender)
+	if ManageFollowers.GetValueInt() != 1 || !IsCurrentFollower()
+		return
+	endif
+
+	; Adjust followers head gear based on most recent activity
+	Form Equipped = RTR_GetEquipped(FollowerRef, ManageCirclets.getValueInt() == 1)
+	if Equipped && (MostRecentEvent == "ReadTheRoomUnequip" || MostRecentEvent == "ReadTheRoomUnequipNoAnimation")
+		LastEquipped = Equipped
+		LastEquippedType = RTR_InferItemType(LastEquipped)
+		UnequipWithNoAnimation()
+	elseif Equipped && (MostRecentEvent == "ReadTheRoomEquip" || MostRecentEvent == "ReadTheRoomEquipNoAnimation")
+		; Helmet was equipped but also was recently equipped by RTR so just clear the RTR placements just in case
+		RemoveFromHip()
+		RemoveFromHand()
+	elseif !Equipped && (MostRecentEvent == "ReadTheRoomEquip" || MostRecentEvent == "ReadTheRoomEquipNoAnimation")
+		; Head gear was most likely completely removed so reset variables and remove RTR placements
+		MostRecentEvent = "None"
+		LastEquipped = None
+		LastEquippedType = "None"
+		LastLoweredHood = None
+		RemoveFromHip()
+		RemoveFromHand()
+	endIf
+
+	; Resume the follower's actions
+	GoToState("")
 EndEvent
 
 ;;;; Animation Event Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -595,6 +641,8 @@ Function PostAnimCleanUp()
 		FollowerRef.DrawWeapon()
 		FollowerRef.SetAnimationVariableBool("RTR_RedrawWeapons", false)
 	endif
+
+	Utility.wait(0.5) ; Short delay befoer allowing another RTR Action, prevents weird OnEquip / OnUnequip Loops
 
 	; Clear RTR_Action and return from busy state
 	FollowerRef.SetAnimationVariableInt("RTR_Action", 0)
