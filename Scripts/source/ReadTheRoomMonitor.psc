@@ -75,7 +75,7 @@ Bool WasInCombat = false
 
 Event OnInit()
 	RegisterForMenu("InventoryMenu")
-	RegisterForMenu("ContainerMenu")
+	RegisterForMenu("GiftMenu")
 	RegisterForKey(ToggleKey.GetValueInt())
 	RegisterForKey(DeleteKey.GetValueInt())
 	RegisterForKey(EnableKey.GetValueInt())
@@ -416,7 +416,7 @@ EndEvent
 ; OnMenuOpen Event Handler
 ; Pauses RTR Follower Events while a container is open to prevent OnObjectEquip/Unequip Lag while trading with a follower
 Event OnMenuOpen(String MenuName)
-	if MenuName == "ContainerMenu"
+	if MenuName == "GiftMenu"
 		SendModEvent("ReadTheRoomPauseFollowerActions")
 	endif
 EndEvent
@@ -441,7 +441,7 @@ Event OnMenuClose(String MenuName)
 	endif
 
 	; Resume Follower Processing
-	if MenuName == "ContainerMenu"
+	if MenuName == "GiftMenu"
 		SendModEvent("ReadTheRoomResumeFollowerActions")
 	endif
 

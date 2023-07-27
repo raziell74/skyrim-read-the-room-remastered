@@ -1,4 +1,4 @@
-ScriptName ReadTheRoomUtil 
+ScriptName ReadTheRoomUtil Hidden
 
 Import IED ; Immersive Equipment Display
 ; Import MiscUtil ; PapyrusUtil SE
