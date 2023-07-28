@@ -11,12 +11,31 @@ String property PluginName = "ReadTheRoom.esp" auto
 ;
 ; @return Float
 Float Function RTR_GetVersion() global
-    return 1.2
+    return 1.22
 EndFunction
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;; ReadTheRoom Helpers ;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; RTR_CanRun
+; Checks if the script should be running
+;
+; @return Bool
+Bool Function RTR_CanRun() global
+    ; Check Controls and Exit Early if any of them are disabled
+	; Solves any issue with RTR trigging when something else has purposefully disabled controls
+	if !Game.IsActivateControlsEnabled() || \
+		!Game.IsCamSwitchControlsEnabled() || \
+		!Game.IsFightingControlsEnabled() || \
+		!Game.IsJournalControlsEnabled() || \
+		!Game.IsMenuControlsEnabled() || \
+		!Game.IsMovementControlsEnabled() || \
+		!Game.IsSneakingControlsEnabled()
+		return false
+	endif
+    return true
+EndFunction
 
 ; RTR_IsValidHeadWear
 ; Checks if an item is a valid headwear item

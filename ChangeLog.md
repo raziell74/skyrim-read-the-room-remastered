@@ -1,5 +1,17 @@
 # Change Log
 
+## 1.22
+
+- MCM ReadTheRoom version will now match perk script versions. Simplifies updating the version so it only has to be bumped in the ReadTheRoomUtil scripts RTR_GetVersion() function and it will automatically versions across the entire mod.
+- [x] Fixed a bug where some actors were not receiving the NPC combat reporting script, which broke RTR Combat Equip functionality in some cases.
+
+## Version 1.21
+
+- Optimized the use of GlobalVariable.GetValueInt to use GetValue with traditional casting since the compiler auto-casting is slower than typical variable casting.
+- [x] [BugFixed] Lowerable hoods have a brief fully unequiped state when unequipping after a Combat Equip. The hood is removed without a lowered hood added and then the animation plays a tiny bit of time after that. It's not ... game breaking, but it does break the immersion.
+- [x] [BugFix] Most Recent RTR action will lose it's state when quitting the game and reloading a save. This causes followers and the player to not correctly equip/unequip head wear when changing cells / locations if the equip state was changed using the toggle key or manually in the inventory.
+- Optimized Equip/Unequip animation interruption, removes "jenkieness" when the character is trying to do something else as the animation starts.
+
 ## Version 1.2
 
 ### Changes and Updates 
