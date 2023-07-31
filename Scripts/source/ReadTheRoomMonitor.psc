@@ -394,9 +394,11 @@ Event OnAnimationEvent(ObjectReference akSource, String asEventName)
 
 		; Wait for player inventory to complete the equipping / unequipping actions
 		Bool finishedEquipUnequip = PlayerRef.GetAnimationVariableInt("IsEquipping") == 0 && PlayerRef.GetAnimationVariableInt("IsUnequipping") == 0
-		while !finishedEquipUnequip
+		Int waitCount = 0
+		while !finishedEquipUnequip && waitCount < 60
 			Utility.wait(0.1)
 			finishedEquipUnequip = PlayerRef.GetAnimationVariableInt("IsEquipping") == 0 && PlayerRef.GetAnimationVariableInt("IsUnequipping") == 0
+			waitCount += 1
 		endwhile
 
 		; Post Animation Clean Up
@@ -549,6 +551,7 @@ Function EquipActorHeadgear(Bool IsCombatEquip = false)
 		return
 	endif
 
+	; Skip animation if weapons are drawn but the setting is disabled
 	if !(SheathWeaponsForAnimation.GetValue() as Bool) && PlayerRef.IsWeaponDrawn()
 		EquipWithNoAnimation()
 		return
@@ -566,9 +569,9 @@ Function EquipActorHeadgear(Bool IsCombatEquip = false)
 
 	Bool was_drawn = RTR_SheathWeapon(PlayerRef)
 	Bool was_first_person = RTR_ForceThirdPerson(PlayerRef)
-
 	PlayerRef.SetAnimationVariableBool("RTR_RedrawWeapons", was_drawn)
 	PlayerRef.SetAnimationVariableBool("RTR_ReturnToFirstPerson", was_first_person)
+	Game.EnablePlayerControls()
 
 	GoToState("busy")
 	Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
@@ -674,6 +677,7 @@ Function UnequipActorHeadgear()
 		return
 	endif
 
+	; Skip animation if weapons are drawn but the setting is disabled
 	if !(SheathWeaponsForAnimation.GetValue() as Bool) && PlayerRef.IsWeaponDrawn()
 		UnequipWithNoAnimation()
 		return
@@ -691,9 +695,9 @@ Function UnequipActorHeadgear()
 
 	Bool was_drawn = RTR_SheathWeapon(PlayerRef)
 	Bool was_first_person = RTR_ForceThirdPerson(PlayerRef)
-
 	PlayerRef.SetAnimationVariableBool("RTR_RedrawWeapons", was_drawn)
 	PlayerRef.SetAnimationVariableBool("RTR_ReturnToFirstPerson", was_first_person)
+	Game.EnablePlayerControls()
 
 	GoToState("busy")
 	Debug.sendAnimationEvent(PlayerRef, "OffsetStop")

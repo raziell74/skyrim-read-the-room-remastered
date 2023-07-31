@@ -252,8 +252,12 @@ EndFunction
 Bool Function RTR_SheathWeapon(Actor target_actor) global
     if target_actor.IsWeaponDrawn()
 		Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
-		while target_actor.GetAnimationVariableInt("IsUnequipping") == 1
-			utility.wait(0.01)
+		Bool finishedEquipUnequip = target_actor.GetAnimationVariableInt("IsEquipping") == 0 && target_actor.GetAnimationVariableInt("IsUnequipping") == 0
+		Int waitCount = 0
+		while !finishedEquipUnequip && waitCount < 60
+			Utility.wait(0.1)
+			finishedEquipUnequip = target_actor.GetAnimationVariableInt("IsEquipping") == 0 && target_actor.GetAnimationVariableInt("IsUnequipping") == 0
+			waitCount += 1
 		endwhile
         return true
 	endif
