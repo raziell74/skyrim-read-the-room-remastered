@@ -144,6 +144,23 @@ Function SetupRTR()
 	; Listen for Actor Combat State Changes
 	RegisterForModEvent("ReadTheRoomCombatStateChanged", "OnReadTheRoomCombatStateChanged")
 
+	; Initialize variables for the current location
+	; Update the MostRecentLocationAction reference for other processes
+	Location akLoc = PlayerRef.GetCurrentLocation()
+	Bool equip_when_safe = EquipWhenSafe.GetValue() as Bool
+	Bool unequip_when_unsafe = UnequipWhenUnsafe.GetValue() as Bool
+	
+	String locationAction = RTR_GetLocationAction(akLoc, true, equip_when_safe, unequip_when_unsafe, SafeKeywords, HostileKeywords)
+	if locationAction == "Entering Safety" || locationAction == "Leaving Danger" 	
+		MostRecentLocationAction = "Unequip"
+	elseif locationAction == "Entering Danger" || locationAction == "Leaving Safety"
+		MostRecentLocationAction = "Equip"
+	else
+		MostRecentLocationAction = "None"
+	endif
+	PreviousLocationAction = MostRecentLocationAction
+
+	; Setup animations to be processed
 	PlayerRef.SetAnimationVariableInt("RTR_Action", 0)
 	GoToState("")
 
@@ -216,13 +233,14 @@ EndEvent
 ; Records Most Recent Location Action
 ; Equips/Unequips based off of Config Settings
 Event OnLocationChange(Location akOldLoc, Location akNewLoc)
+	Location akLoc = PlayerRef.GetCurrentLocation() ; After testing... I do not trust the akNewLoc parameter to be accurate after loading from save -.-'
 	LastEquipped = RTR_GetEquipped(PlayerRef, ManageCirclets.GetValue() as Bool)
 	Bool is_valid = RTR_IsValidHeadWear(PlayerRef, LastEquipped, LoweredHoods)
 	Bool equip_when_safe = EquipWhenSafe.GetValue() as Bool
 	Bool unequip_when_unsafe = UnequipWhenUnsafe.GetValue() as Bool
 
 	; Update the MostRecentLocationAction reference for other processes
-	String locationAction = RTR_GetLocationAction(akNewLoc, is_valid, equip_when_safe, unequip_when_unsafe, SafeKeywords, HostileKeywords)
+	String locationAction = RTR_GetLocationAction(akLoc, is_valid, equip_when_safe, unequip_when_unsafe, SafeKeywords, HostileKeywords)
 
 	if locationAction == "Entering Safety" || locationAction == "Leaving Danger" 	
 		MostRecentLocationAction = "Unequip"
@@ -233,7 +251,7 @@ Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 	endif
 	
 	; Only apply the action if we didn't already do it, prevents ToggleKey from being overwritten unless changing location action
-	if MostRecentLocationAction != PreviousLocationAction 
+	if MostRecentLocationAction != "None" && MostRecentLocationAction != PreviousLocationAction
 		if NotifyOnLocation.GetValue() as Bool
 			Debug.Notification(locationAction)
 		endif
