@@ -97,6 +97,7 @@ Function SetupRTR()
 	RegisterForKey(DeleteKey.GetValue() as Int)
 	RegisterForKey(EnableKey.GetValue() as Int)
 
+	; If player is stuck and they disable/enable using the key this should unstuck them
 	Game.EnablePlayerControls()
 	
 	; Update the last equipped item
