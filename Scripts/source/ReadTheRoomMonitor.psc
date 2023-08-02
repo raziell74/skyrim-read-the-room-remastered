@@ -76,12 +76,6 @@ Bool WasInCombat = false
 ;;;; Event Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 Event OnInit()
-	RegisterForMenu("InventoryMenu")
-	RegisterForMenu("GiftMenu")
-	RegisterForKey(ToggleKey.GetValue() as Int)
-	RegisterForKey(DeleteKey.GetValue() as Int)
-	RegisterForKey(EnableKey.GetValue() as Int)
-
 	SetupRTR()
 	Script_Version = RTR_GetVersion()
 	RTR_Version.SetValue(Script_Version) ; Updates the MCM with the current version
@@ -94,6 +88,15 @@ Event OnPlayerLoadGame()
 EndEvent
 
 Function SetupRTR()
+	RegisterForMenu("InventoryMenu")
+	RegisterForMenu("Journal Menu")
+	RegisterForMenu("ContainerMenu")
+	RegisterForMenu("GiftMenu")
+
+	RegisterForKey(ToggleKey.GetValue() as Int)
+	RegisterForKey(DeleteKey.GetValue() as Int)
+	RegisterForKey(EnableKey.GetValue() as Int)
+
 	Game.EnablePlayerControls()
 	
 	; Update the last equipped item
@@ -223,6 +226,7 @@ Event OnKeyDown(Int KeyCode)
 		LastEquipped = None
 		LastLoweredHood = None
 		LastEquippedType = "None"
+		Game.EnablePlayerControls()
 		GoToState("")
 	endif
 EndEvent
@@ -301,40 +305,6 @@ Event OnReadTheRoomCombatStateChanged(String eventName, String strArg, Float num
 			UnequipActorHeadgear()
 		endif
 		WasInCombat = false
-	endIf
-
-	if aeCombatState == 2
-		; Someone is looking for the player
-		; @todo Implement this as a new feature with its own MCM option that will mark "searching" to be the same as entering combat 
-	endif
-EndEvent
-
-Event OnCombatStateChanged(Actor akTarget, int aeCombatState)
-	; Ignore the event if if CombatEquip is disabled
-	if (CombatEquip.GetValue() as Int) == 0
-		return
-	endif
-
-	if aeCombatState == 1 && PlayerRef.IsInCombat() && !PlayerRef.IsEquipped(LastEquipped)
-		; An NPC has reported they are in combat with the player and the player is not wearing the item
-		if (NotifyOnCombat.GetValue() as Bool)
-			Debug.Notification("Entering Combat!")
-		endIf
-		WasInCombat = true
-		EquipActorHeadgear(true)
-	endif
-	
-	if aeCombatState == 0 && WasInCombat && !PlayerRef.IsInCombat()
-		; Player left combat
-		; Return to the most recent action
-		if RecentAction == "Unequip"
-			if (NotifyOnCombat.GetValue() as Bool)
-				Debug.Notification("Leaving Combat")
-			endIf
-			WasInCombat = false
-			Utility.wait(3.5) ; short delay of time before unequipping post combat so it doesn't feel abrupt
-			UnequipActorHeadgear()
-		endif
 	endIf
 
 	if aeCombatState == 2
@@ -478,7 +448,7 @@ EndEvent
 ; OnMenuOpen Event Handler
 ; Pauses RTR Follower Events while a container is open to prevent OnObjectEquip/Unequip Lag while trading with a follower
 Event OnMenuOpen(String MenuName)
-	if MenuName == "GiftMenu"
+	if MenuName == "ContainerMenu" || MenuName == "GiftMenu"
 		SendModEvent("ReadTheRoomPauseFollowerActions")
 	endif
 EndEvent
@@ -486,8 +456,6 @@ EndEvent
 ; OnMenuClose Event Handler
 ; Checks if the actor closed their inventory and removes any placements / lowered hoods
 Event OnMenuClose(String MenuName)
-	; SendModEvent to set Followers to 'busy' state when ever we're in the follower inventory menu so we don't slow down the game on every item we take
-
 	if MenuName == "InventoryMenu"
 		LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
 		if PlayerRef.IsEquipped(LastEquipped)
@@ -500,15 +468,18 @@ Event OnMenuClose(String MenuName)
 			;	    - 1: Attach to Belt / Lower Hood
 			; UnequipWithNoAnimation()
 		endif
+
+		RemoveFromHand() ; I don't think this is needed anymore but leaving it here just in case
 	endif
 
 	; Resume Follower Processing
-	if MenuName == "GiftMenu"
+	if MenuName == "ContainerMenu" || MenuName == "GiftMenu"
 		SendModEvent("ReadTheRoomResumeFollowerActions")
 	endif
 
-	; Regardless, the item should be removed from the hand
-	RemoveFromHand()
+	if MenuName == "Journal Menu"
+		; @Todo check if an update to registrations and positioning needs to be done
+	endif
 EndEvent
 
 ; OnRaceSwitchComplete Event Handler
@@ -589,7 +560,6 @@ Function EquipActorHeadgear(Bool IsCombatEquip = false)
 	Bool was_first_person = RTR_ForceThirdPerson(PlayerRef)
 	PlayerRef.SetAnimationVariableBool("RTR_RedrawWeapons", was_drawn)
 	PlayerRef.SetAnimationVariableBool("RTR_ReturnToFirstPerson", was_first_person)
-	Game.EnablePlayerControls()
 
 	GoToState("busy")
 	Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
@@ -715,7 +685,6 @@ Function UnequipActorHeadgear()
 	Bool was_first_person = RTR_ForceThirdPerson(PlayerRef)
 	PlayerRef.SetAnimationVariableBool("RTR_RedrawWeapons", was_drawn)
 	PlayerRef.SetAnimationVariableBool("RTR_ReturnToFirstPerson", was_first_person)
-	Game.EnablePlayerControls()
 
 	GoToState("busy")
 	Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
