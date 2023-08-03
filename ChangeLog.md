@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.24
+
+- Fully switched to MCM Helper for the mcm. MCM Helper is now a requirement
+- [ ] Added MCM option to "Redraw Weapons" after RTR equips/unequips when Sheath Weapons is enabled. 
+  - Thinking this should be multi-value int value. 0 = Draw Weapons After Equip and Unequip, 1 = Redraw Weapons after Equip, 2 = Redraw Weapons after Unequip, 3 = Disabled.
+- Script and MCM Version bump to 1.23
+
 ## 1.23
 
 - MCM ReadTheRoom version will now match perk script versions. 
@@ -127,4 +134,3 @@
 - [FormList Manipulator - FLM](https://www.nexusmods.com/skyrimspecialedition/mods/74037)
   - *Optional* if you want to use the `ReadTheRoom_Hoods_FLM.ini` file to add direct lowered hood assignment for your favorite hood mods
 - [MCM Helper](https://www.nexusmods.com/skyrimspecialedition/mods/53000) 
-  - *Optional* For the Settings Loader patch
