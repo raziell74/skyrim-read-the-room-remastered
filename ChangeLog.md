@@ -1,5 +1,24 @@
 # Change Log
 
+## 1.23
+
+- MCM ReadTheRoom version will now match perk script versions. 
+  - Simplifies updating the version so it only has to be bumped in the ReadTheRoomUtil scripts RTR_GetVersion() function and it will automatically versions across the entire mod.
+- Added Temporary "stuck" work around by enabling game controls when RTR is cleared (delete key pressed). 
+  - Downside is that this gives a shortcut to enable game controls during events that should disable them. 
+  - Mostly for my own play testing, This will be moved in a future update with an "unstuck" button in the MCM
+  - Will need to enable menu access during RTR actions
+- [x] Fixed a bug where some actors were not receiving the NPC combat reporting script, which broke RTR Combat Equip functionality in some cases.
+- [x] Fixed a bug where sheathing would disable player controls but would get stuck if RTR sheathing was triggered during sprinting.
+- [x] NPC combat reporting script is now applied to all actors
+- [x] Added a more reliable way of forcefully fixing follower head wear when moving through interior/exterior cells.
+- [x] Attempted to add a "pause" functionality to followers so RTR actions can be paused when changing a followers equipment in their inventory
+- [x] Fixed recent location action tracking when loading from a previous save
+- [x] Fixed an issue where location changes could produce a notification reading "None"
+- [x] Fixed an issue with follower trading was not properly registering to pause follower functionality while their containers are open
+- [x] Moved Event registrations to the setup phase so they are refreshed on game load
+- [x] MCM updates to IED positioning were not being applied until the game was reloaded or the mod was disabled and reenabled
+
 ## 1.22
 
 - MCM ReadTheRoom version will now match perk script versions. Simplifies updating the version so it only has to be bumped in the ReadTheRoomUtil scripts RTR_GetVersion() function and it will automatically versions across the entire mod.

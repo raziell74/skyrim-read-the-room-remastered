@@ -7,6 +7,7 @@ ScriptName ReadTheRoomMonitor extends ActiveMagicEffect
 Import IED ; Immersive Equipment Display
 Import StringUtil ; SKSE String Utility
 Import ReadTheRoomUtil ; Our helper Functions
+Import MiscUtil ; Misc Utility Functions
 
 ; Uninitialized Script Version
 Float Script_Version = 0.0
@@ -88,6 +89,7 @@ Event OnPlayerLoadGame()
 EndEvent
 
 Function SetupRTR()
+	MiscUtil.PrintConsole("ReadTheRoomMonitor: SetupRTR() Called")
 	RegisterForMenu("InventoryMenu")
 	RegisterForMenu("Journal Menu")
 	RegisterForMenu("ContainerMenu")
@@ -104,6 +106,10 @@ Function SetupRTR()
 	LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
 	LastEquippedType = RTR_InferItemType(LastEquipped)
 	IsFemale = PlayerRef.GetActorBase().GetSex() == 1
+
+	; Delete any existing IED Placements, to ensure a full refresh
+	DeleteItemActor(PlayerRef, PluginName, HelmetOnHip)
+	DeleteItemActor(PlayerRef, PluginName, HelmetOnHand)
 
 	; Attach helm to the hip
 	Bool HipEnabled = LastEquippedType != "Hood" && !PlayerRef.IsEquipped(LastEquipped)
