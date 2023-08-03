@@ -1,4 +1,4 @@
-ScriptName ReadTheRoomUtil 
+ScriptName ReadTheRoomUtil Hidden
 
 Import IED ; Immersive Equipment Display
 ; Import MiscUtil ; PapyrusUtil SE
@@ -11,12 +11,31 @@ String property PluginName = "ReadTheRoom.esp" auto
 ;
 ; @return Float
 Float Function RTR_GetVersion() global
-    return 1.2
+    return 1.22
 EndFunction
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;; ReadTheRoom Helpers ;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; RTR_CanRun
+; Checks if the script should be running
+;
+; @return Bool
+Bool Function RTR_CanRun() global
+    ; Check Controls and Exit Early if any of them are disabled
+	; Solves any issue with RTR trigging when something else has purposefully disabled controls
+	if !Game.IsActivateControlsEnabled() || \
+		!Game.IsCamSwitchControlsEnabled() || \
+		!Game.IsFightingControlsEnabled() || \
+		!Game.IsJournalControlsEnabled() || \
+		!Game.IsMenuControlsEnabled() || \
+		!Game.IsMovementControlsEnabled() || \
+		!Game.IsSneakingControlsEnabled()
+		return false
+	endif
+    return true
+EndFunction
 
 ; RTR_IsValidHeadWear
 ; Checks if an item is a valid headwear item
@@ -233,8 +252,12 @@ EndFunction
 Bool Function RTR_SheathWeapon(Actor target_actor) global
     if target_actor.IsWeaponDrawn()
 		Game.DisablePlayerControls(0, 1, 0, 0, 0, 1, 1)
-		while target_actor.GetAnimationVariableInt("IsUnequipping") == 1
-			utility.wait(0.01)
+		Bool finishedEquipUnequip = target_actor.GetAnimationVariableInt("IsEquipping") == 0 && target_actor.GetAnimationVariableInt("IsUnequipping") == 0
+		Int waitCount = 0
+		while !finishedEquipUnequip && waitCount < 60
+			Utility.wait(0.1)
+			finishedEquipUnequip = target_actor.GetAnimationVariableInt("IsEquipping") == 0 && target_actor.GetAnimationVariableInt("IsUnequipping") == 0
+			waitCount += 1
 		endwhile
         return true
 	endif

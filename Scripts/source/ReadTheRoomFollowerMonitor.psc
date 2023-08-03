@@ -8,7 +8,7 @@ Import IED ; Immersive Equipment Display
 Import ReadTheRoomUtil ; Our helper functions
 
 ; Uninitialized Script Version
-Float RTR_Version = 0.0
+Float Script_Version = 0.0
 
 ; Read The Room Follower Perk
 Perk property ReadTheRoomFollowerPerk auto
@@ -17,6 +17,7 @@ Perk property ReadTheRoomFollowerPerk auto
 Faction property CurrentFollowerFaction auto
 
 ; Management Settings
+GlobalVariable property RTR_EquipState auto
 GlobalVariable property ManageFollowers auto
 GlobalVariable property ManageCirclets auto
 GlobalVariable property RemoveHelmetWithoutArmor auto
@@ -55,12 +56,26 @@ Bool IsFollowerSetup = false
 
 Event OnInit()
 	SetupRTR()
-	RTR_Version = RTR_GetVersion()
+	Script_Version = RTR_GetVersion()
 EndEvent
 
 Event OnLoad()
 	SetupRTR()
 	CheckForUpdates()
+EndEvent
+
+Event OnAttachedToCell()
+	; Attempt to correct game engine bug where local script variables are sometimes reset when first entering
+	; a world space cell after loading a save
+	if MostRecentEvent != "ReadTheRoomEquip" && MostRecentEvent != "ReadTheRoomUnequip"
+		; Attempt to correct RTR state on game load
+		Utility.wait(1.0)
+		if (RTR_EquipState.GetValue() as Int) == 1
+			EquipActorHeadgear()
+		elseif (RTR_EquipState.GetValue() as Int) == 0
+			UnequipActorHeadgear()
+		endif
+	endif
 EndEvent
 
 Function SetupRTR()
@@ -76,7 +91,7 @@ Function SetupRTR()
 	DeleteItemActor(FollowerRef, PluginName, HelmetOnHand)
 
 	; Attach helm to the hip
-	Bool HipEnabled = ManageFollowers.GetValueInt() == 1 && IsCurrentFollower() && !FollowerRef.IsEquipped(LastEquipped) && LastEquippedType != "Hood"
+	Bool HipEnabled = (ManageFollowers.GetValue() as Bool) && IsCurrentFollower() && !FollowerRef.IsEquipped(LastEquipped) && LastEquippedType != "Hood"
 	Float[] hip_position = RTR_GetPosition(LastEquippedType, HipAnchor())
 	Float[] hip_rotation = RTR_GetRotation(LastEquippedType, HipAnchor())
 
@@ -122,6 +137,8 @@ Function SetupRTR()
     RegisterForModEvent("ReadTheRoomUnequip", "OnReadTheRoomUnequip")
     RegisterForModEvent("ReadTheRoomUnequipNoAnimation", "OnReadTheRoomUnequipNoAnimation")
 	RegisterForModEvent("ReadTheRoomLocationChange", "OnReadTheRoomLocationChange")
+	RegisterForModEvent("ReadTheRoomPauseFollowerActions", "OnReadTheRoomPauseFollowerActions")
+	RegisterForModEvent("ReadTheRoomResumeFollowerActions", "OnReadTheRoomResumeFollowerActions")
 
 	if !FollowerRef.IsEquipped(LastEquipped)
 		MostRecentEvent = "ReadTheRoomUnequip"
@@ -129,11 +146,19 @@ Function SetupRTR()
 
 	FollowerRef.SetAnimationVariableInt("RTR_Action", 0)
 	GoToState("")
+
+	; Attempt to correct RTR state on game load
+	Utility.wait(0.1)
+	if (RTR_EquipState.GetValue() as Int) == 1
+		EquipActorHeadgear()
+	elseif (RTR_EquipState.GetValue() as Int) == 0
+		UnequipActorHeadgear()
+	endif
 EndFunction
 
 Bool Function CanProcessFollower()
 	; Do nothing if this isn't a current follower
-    if ManageFollowers.GetValueInt() != 1 || !IsCurrentFollower()
+    if !(ManageFollowers.GetValue() as Bool) || !IsCurrentFollower()
         return false
     endif
 
@@ -160,6 +185,12 @@ Event OnReadTheRoomClearPlacements(String eventName, String strArg, Float numArg
 		return
 	endif
 
+	LastEquipped = RTR_GetLastEquipped(FollowerRef, LastEquippedType)
+	LastEquippedType = RTR_InferItemType(LastEquipped)
+	if LastEquippedType == "Hood"
+		LastLoweredHood = RTR_GetLoweredHood(LastEquipped, LowerableHoods, LoweredHoods)
+	endif
+	
 	RemoveFromHip()
 	RemoveFromHand()
 	LastEquipped = None
@@ -226,14 +257,14 @@ EndEvent
 
 ; Work around for some follower frameworks and outfit managers (looking at you NFF) that forcefully re-equip followers gear when ever you change cells
 Event OnReadTheRoomLocationChange(String eventName, String strArg, Float numArg, Form sender)
-	if ManageFollowers.GetValueInt() != 1 || !IsCurrentFollower()
+	if !(ManageFollowers.GetValue() as Bool) || !IsCurrentFollower()
         return
     endif
 
 	GoToState("CellChange")
 
 	; If the follower somehow managed to get their gear on before we even got here, remove it
-	Form Equipped = RTR_GetEquipped(FollowerRef, ManageCirclets.getValueInt() == 1)
+	Form Equipped = RTR_GetEquipped(FollowerRef, ManageCirclets.GetValue() as Bool)
 	if Equipped && (MostRecentEvent == "ReadTheRoomUnequip" || MostRecentEvent == "ReadTheRoomUnequipNoAnimation")
 		UnequipWithNoAnimation()
 	endIf
@@ -246,6 +277,44 @@ Event OnReadTheRoomLocationChange(String eventName, String strArg, Float numArg,
 	if rtrAction == 0
 		GoToState("")
 	endif
+EndEvent
+
+Event OnReadTheRoomDisableFollowerActions(String eventName, String strArg, Float numArg, Form sender)
+	if !(ManageFollowers.GetValue() as Bool) || !IsCurrentFollower()
+		return
+	endif
+
+	; Pause the follower's actions
+	GoToState("busy")
+EndEvent
+
+Event OnReadTheRoomEnableFollowerActions(String eventName, String strArg, Float numArg, Form sender)
+	if !(ManageFollowers.GetValue() as Bool) || !IsCurrentFollower()
+		return
+	endif
+
+	; Adjust followers head gear based on most recent activity
+	Form Equipped = RTR_GetEquipped(FollowerRef, ManageCirclets.getValue() as Bool)
+	if Equipped && (MostRecentEvent == "ReadTheRoomUnequip" || MostRecentEvent == "ReadTheRoomUnequipNoAnimation")
+		LastEquipped = Equipped
+		LastEquippedType = RTR_InferItemType(LastEquipped)
+		UnequipWithNoAnimation()
+	elseif Equipped && (MostRecentEvent == "ReadTheRoomEquip" || MostRecentEvent == "ReadTheRoomEquipNoAnimation")
+		; Helmet was equipped but also was recently equipped by RTR so just clear the RTR placements just in case
+		RemoveFromHip()
+		RemoveFromHand()
+	elseif !Equipped && (MostRecentEvent == "ReadTheRoomEquip" || MostRecentEvent == "ReadTheRoomEquipNoAnimation")
+		; Head gear was most likely completely removed so reset variables and remove RTR placements
+		MostRecentEvent = "None"
+		LastEquipped = None
+		LastEquippedType = "None"
+		LastLoweredHood = None
+		RemoveFromHip()
+		RemoveFromHand()
+	endIf
+
+	; Resume the follower's actions
+	GoToState("")
 EndEvent
 
 ;;;; Animation Event Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -329,7 +398,7 @@ EndEvent
 ; OnObjectEquipped Event Handler
 ; Cheks if the actor equipped head gear outside of RTR and removes any placements / lowered hoods
 Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
-	if ManageFollowers.GetValueInt() != 1 || !IsCurrentFollower()
+	if !(ManageFollowers.GetValue() as Bool) || !IsCurrentFollower()
         return
     endif
 
@@ -364,12 +433,12 @@ EndEvent
 ; Also checkes if the actor removed their head gear outside of RTR and removes any placements / lowered hoods
 ; @TODO - Add MCM option to add RTR placements if manually unequipping head gear
 Event OnObjectUnequipped(Form akBaseObject, ObjectReference akReference)
-	if ManageFollowers.GetValueInt() != 1 || !IsCurrentFollower()
+	if !(ManageFollowers.GetValue() as Bool) || !IsCurrentFollower()
         return
     endif
 	
 	; Check if it was armor that was removed
-	if (RemoveHelmetWithoutArmor.GetValueInt() == 1 && !RTR_IsTorsoEquipped(FollowerRef))
+	if (RemoveHelmetWithoutArmor.GetValue() as Bool) && !RTR_IsTorsoEquipped(FollowerRef)
 		RemoveFromHip()
 		RemoveFromHand()
 	endif
@@ -432,6 +501,7 @@ Function EquipActorHeadgear()
 	FollowerRef.SetAnimationVariableBool("RTR_RedrawWeapons", was_drawn)
 
     GoToState("busy")
+	Debug.sendAnimationEvent(FollowerRef, "OffsetStop")
 	Debug.sendAnimationEvent(FollowerRef, animation)
 	
 	; Add a typical timeout to ensure the post-animation is called
@@ -452,6 +522,7 @@ Function EquipWithNoAnimation(Bool sendFollowerEvent = true)
 	; Update the IED Node with the last_equipped item
 	UseHelmet()
 	GoToState("busy")
+	Debug.sendAnimationEvent(FollowerRef, "OffsetStop")
 
 	if LastEquipped.HasKeywordString("RTR_ExcludeKW")
 		RemoveFromHip()
@@ -522,6 +593,7 @@ Function UnequipActorHeadgear()
 	FollowerRef.SetAnimationVariableBool("RTR_RedrawWeapons", was_drawn)
 
     GoToState("busy")
+	Debug.sendAnimationEvent(FollowerRef, "OffsetStop")
 	Debug.sendAnimationEvent(FollowerRef, animation)
 
 	; Add a typical timeout to ensure the post-animation is called
@@ -542,6 +614,7 @@ Function UnequipWithNoAnimation()
 	; Update the IED Node with the equipped item
 	UseHelmet()
 	GoToState("busy")
+	Debug.sendAnimationEvent(FollowerRef, "OffsetStop")
 
 	if LastEquipped.HasKeywordString("RTR_ExcludeKW")
 		RemoveFromHip()
@@ -578,15 +651,14 @@ Function PostAnimCleanUp()
 	if animAction == "Equip" || animAction == "EquipHood"
 		; Finalize Equip
 		EquipWithNoAnimation()
-		Debug.sendAnimationEvent(FollowerRef, "OffsetStop")
 	elseif animAction == "Unequip" || animAction == "UnequipHood"
 		; Finalize Unequip
 		UnequipWithNoAnimation()
-		Debug.sendAnimationEvent(FollowerRef, "OffsetStop")
 	endif
 	
 	; Ensure the hand node is disabled before continuing
 	RemoveFromHand()
+	Debug.sendAnimationEvent(FollowerRef, "OffsetStop")
 
 	; Return to previous weapon state, if animation wasn't interuppted
 	Bool draw_weapon = FollowerRef.GetAnimationVariableBool("RTR_RedrawWeapons")
@@ -595,6 +667,8 @@ Function PostAnimCleanUp()
 		FollowerRef.DrawWeapon()
 		FollowerRef.SetAnimationVariableBool("RTR_RedrawWeapons", false)
 	endif
+
+	Utility.wait(0.5) ; Short delay befoer allowing another RTR Action, prevents weird OnEquip / OnUnequip Loops
 
 	; Clear RTR_Action and return from busy state
 	FollowerRef.SetAnimationVariableInt("RTR_Action", 0)
@@ -685,7 +759,7 @@ State CellChange
 	; OnObjectEquipped CellChange State Override
 	; Reverse cell triggered head wear equips from third party mods like NFF
 	Event OnObjectEquipped(Form akBaseObject, ObjectReference akReference)
-		if ManageFollowers.GetValueInt() != 1 || !IsCurrentFollower()
+		if !(ManageFollowers.GetValue() as Bool) || !IsCurrentFollower()
 			return
 		endif
 
@@ -711,7 +785,7 @@ EndState
 ; Checks if the script version has changed 
 ; If it has then refreshes the RTR Monitor Perk with the updated version
 Function CheckForUpdates()
-	if RTR_Version != RTR_GetVersion()
+	if Script_Version != RTR_GetVersion()
 		; Use Game.GetFormFromFile to get a garenteed fresh version of the perk
 		ReadTheRoomFollowerPerk = Game.GetFormFromFile(0xE5A, "ReadTheRoom.esp") As Perk
 
@@ -722,6 +796,6 @@ Function CheckForUpdates()
 			FollowerRef.AddPerk(ReadTheRoomFollowerPerk)
 		endif
 
-		RTR_Version = RTR_GetVersion()
+		Script_Version = RTR_GetVersion()
 	endif
 EndFunction

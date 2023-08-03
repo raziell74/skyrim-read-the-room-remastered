@@ -1,5 +1,36 @@
 # Change Log
 
+## 1.23
+
+- MCM ReadTheRoom version will now match perk script versions. 
+  - Simplifies updating the version so it only has to be bumped in the ReadTheRoomUtil scripts RTR_GetVersion() function and it will automatically versions across the entire mod.
+- Added Temporary "stuck" work around by enabling game controls when RTR is cleared (delete key pressed). 
+  - Downside is that this gives a shortcut to enable game controls during events that should disable them. 
+  - Mostly for my own play testing, This will be moved in a future update with an "unstuck" button in the MCM
+  - Will need to enable menu access during RTR actions
+- [x] Fixed a bug where some actors were not receiving the NPC combat reporting script, which broke RTR Combat Equip functionality in some cases.
+- [x] Fixed a bug where sheathing would disable player controls but would get stuck if RTR sheathing was triggered during sprinting.
+- [x] NPC combat reporting script is now applied to all actors
+- [x] Added a more reliable way of forcefully fixing follower head wear when moving through interior/exterior cells.
+- [x] Attempted to add a "pause" functionality to followers so RTR actions can be paused when changing a followers equipment in their inventory
+- [x] Fixed recent location action tracking when loading from a previous save
+- [x] Fixed an issue where location changes could produce a notification reading "None"
+- [x] Fixed an issue with follower trading was not properly registering to pause follower functionality while their containers are open
+- [x] Moved Event registrations to the setup phase so they are refreshed on game load
+- [x] MCM updates to IED positioning were not being applied until the game was reloaded or the mod was disabled and reenabled
+
+## 1.22
+
+- MCM ReadTheRoom version will now match perk script versions. Simplifies updating the version so it only has to be bumped in the ReadTheRoomUtil scripts RTR_GetVersion() function and it will automatically versions across the entire mod.
+- [x] Fixed a bug where some actors were not receiving the NPC combat reporting script, which broke RTR Combat Equip functionality in some cases.
+
+## Version 1.21
+
+- Optimized the use of GlobalVariable.GetValueInt to use GetValue with traditional casting since the compiler auto-casting is slower than typical variable casting.
+- [x] [BugFixed] Lowerable hoods have a brief fully unequiped state when unequipping after a Combat Equip. The hood is removed without a lowered hood added and then the animation plays a tiny bit of time after that. It's not ... game breaking, but it does break the immersion.
+- [x] [BugFix] Most Recent RTR action will lose it's state when quitting the game and reloading a save. This causes followers and the player to not correctly equip/unequip head wear when changing cells / locations if the equip state was changed using the toggle key or manually in the inventory.
+- Optimized Equip/Unequip animation interruption, removes "jenkieness" when the character is trying to do something else as the animation starts.
+
 ## Version 1.2
 
 ### Changes and Updates 
@@ -32,6 +63,7 @@
 - MCM has been updated to include the new Remaster feature settings.
 - Added a patch for the [Read The Room - Settings Loader](https://www.nexusmods.com/skyrimspecialedition/mods/78689) mod
   - Honestly might just switch to using MCM helper by default. MCM is an annoying tedious process without it.
+- Implemented a safe update versioning system so that scripts can safely be updated mid-save without breaking anything
 
 ### Bugs Squashed
 
@@ -81,6 +113,12 @@
 - [x] Equip with no animation does not keep helmet on hip or lowered hood applied
 - [x] Followers that can turn into Werewolves or other creatures break if RTR triggers while they are in their transition
 - [x] Follower RTR placements were not being cleared when the player pressed the Delete key to clear RTR placeholders
+- [x] Circlets are still treated as Helmets even if "Manage Circlets like Helmets" is disabled in the MCM
+- [x] Function 'Require Armor for Hip Placement' is bugged
+- [x] Some Vanilla/DLC Hoods aren't lowered and instead are treated like helmets
+- [x] Some Vanilla/DLC Masks and Hoods break RTR
+- [x] Compatibility issue with Nether's Follower Framework.
+- [x] Pauses Follower Support while in container menus to avoid lag caused by follower synchronization Event scripts
 
 ### Added Dependencies
 
@@ -89,4 +127,4 @@
 - [FormList Manipulator - FLM](https://www.nexusmods.com/skyrimspecialedition/mods/74037)
   - *Optional* if you want to use the `ReadTheRoom_Hoods_FLM.ini` file to add direct lowered hood assignment for your favorite hood mods
 - [MCM Helper](https://www.nexusmods.com/skyrimspecialedition/mods/53000) 
-  - For the Settings Loader patch
+  - *Optional* For the Settings Loader patch
