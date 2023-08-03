@@ -73,23 +73,19 @@ String PreviousLocationAction = "None"
 String RecentAction = "None"
 Bool IsPlayerSetup = false
 Bool WasInCombat = false
+Bool IsInitialized = false
 
 ;;;; Event Handlers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 Event OnInit()
-	SetupRTR()
-	Script_Version = RTR_GetVersion()
-	RTR_Version.SetValue(Script_Version) ; Updates the MCM with the current version
-	Debug.Notification("Read The Room - Version " + Substring(RTR_Version as String, 0, Find(RTR_Version as String, ".", 0)+3) + " Installed Successfully!")
-EndEvent
+	; If script is already initialized, avoid doing it again
+	if IsInitialized
+		MiscUtil.PrintConsole("ReadTheRoomMonitor: Script Already Initialized, skipping...")
+		return
+	endIf
 
-Event OnPlayerLoadGame()
-	SetupRTR()
-	CheckForUpdates()
-EndEvent
-
-Function SetupRTR()
-	MiscUtil.PrintConsole("ReadTheRoomMonitor: SetupRTR() Called")
+	MiscUtil.PrintConsole("ReadTheRoomMonitor: Initializing")
+	
 	RegisterForMenu("InventoryMenu")
 	RegisterForMenu("Journal Menu")
 	RegisterForMenu("ContainerMenu")
@@ -99,8 +95,38 @@ Function SetupRTR()
 	RegisterForKey(DeleteKey.GetValue() as Int)
 	RegisterForKey(EnableKey.GetValue() as Int)
 
-	; If player is stuck and they disable/enable using the key this should unstuck them
-	Game.EnablePlayerControls()
+	Script_Version = RTR_GetVersion()
+	RTR_Version.SetValue(Script_Version) ; Updates the MCM with the current version
+	Debug.Notification("Read The Room - Version " + Substring(RTR_Version.GetValue() as String, 0, Find(RTR_Version.GetValue() as String, ".", 0)+3) + " Installed Successfully!")
+	MiscUtil.PrintConsole("Read The Room - Version " + Substring(RTR_Version.GetValue() as String, 0, Find(RTR_Version.GetValue() as String, ".", 0)+3) + " Installed Successfully!")
+	
+	IsInitialized = true
+	IsPlayerSetup = false
+EndEvent
+
+Event OnPlayerLoadGame()
+	CheckForUpdates()
+
+	; Only run if the script has been initialized, avoids duplicate initialization setups
+	if !IsInitialized
+		MiscUtil.PrintConsole("ReadTheRoomMonitor: Script is not initialized yet, skipping on player load setup...")
+		return
+	endif
+
+	MiscUtil.PrintConsole("ReadTheRoomMonitor: OnPlayerLoadGame - Running SetupRTR()")
+	SetupRTR()
+
+	; Attempt to correct RTR state on game load
+	Utility.wait(0.1)
+	if (RTR_EquipState.GetValue() as Int) == 1
+		EquipActorHeadgear()
+	elseif (RTR_EquipState.GetValue() as Int) == 0
+		UnequipActorHeadgear()
+	endif
+EndEvent
+
+Function SetupRTR()
+	MiscUtil.PrintConsole("ReadTheRoomMonitor: SetupRTR() Called")
 	
 	; Update the last equipped item
 	LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
@@ -174,13 +200,7 @@ Function SetupRTR()
 	PlayerRef.SetAnimationVariableInt("RTR_Action", 0)
 	GoToState("")
 
-	; Attempt to correct RTR state on game load
-	Utility.wait(0.1)
-	if (RTR_EquipState.GetValue() as Int) == 1
-		EquipActorHeadgear()
-	elseif (RTR_EquipState.GetValue() as Int) == 0
-		UnequipActorHeadgear()
-	endif
+	IsPlayerSetup = true
 EndFunction
 
 ; OnKeyDown Event Handler
@@ -208,6 +228,7 @@ Event OnKeyDown(Int KeyCode)
 			GoToState("busy")
 		else
 			PlayerRef.addperk(ReadTheRoomPerk)
+			MiscUtil.PrintConsole("ReadTheRoomMonitor: KeyCode EnableKey pressed without the Perk, running SetupRTR()")
 			SetupRTR()
 			Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
 			GoToState("")
@@ -765,6 +786,7 @@ State busy
 				GoToState("busy")
 			else
 				PlayerRef.addperk(ReadTheRoomPerk)
+				MiscUtil.PrintConsole("ReadTheRoomMonitor: [BUSYSTATE] KeyCode EnableKey pressed, running SetupRTR()")
 				SetupRTR()
 				Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
 				GoToState("")
@@ -898,9 +920,10 @@ EndFunction
 ; UseHelmet
 ; Sets an Armor Form as the IED placement display forms
 Function UseHelmet()
-	if !IsPlayerSetup || !LastEquipped || LastEquippedType == "None"
+	if !IsPlayerSetup
+		MiscUtil.PrintConsole("ReadTheRoomMonitor: UseHelmet() detected a need to run SetupRTR() - IsPlayerSetup " + IsPlayerSetup as String + " LastEquipped " + LastEquipped.GetName() + " LastEquippedType " + LastEquippedType)
 		SetupRTR()
-		IsPlayerSetup = true
+		IsPlayerSetup = True
 	endif
 
 	; Conditional Placement Scaling / Lowered Hood Update
@@ -948,17 +971,18 @@ EndFunction
 Function CheckForUpdates()
 	if Script_Version != RTR_GetVersion()
 		Debug.Notification("Read The Room - Detected outdated scripts, updating...")
+		IsInitialized = false
 
 		; Use Game.GetFormFromFile to get a garenteed fresh version of the perk
-		ReadTheRoomPerk = Game.GetFormFromFile(0x800, "ReadTheRoom.esp") As Perk
+		Perk RTRPerk = Game.GetFormFromFile(0x800, "ReadTheRoom.esp") As Perk
+		Spell RTRSpell = Game.GetFormFromFile(0x801, "ReadTheRoom.esp") As Spell
 
 		; Removing and Readding the perk should refersh all properties and baked variables
 		if PlayerRef.HasPerk(ReadTheRoomPerk)
 			PlayerRef.RemovePerk(ReadTheRoomPerk)
-			Utility.wait(5.0)
-			PlayerRef.AddPerk(ReadTheRoomPerk)
+			PlayerRef.RemoveSpell(RTRSpell)
+			Utility.wait(2.5)
+			PlayerRef.AddPerk(RTRPerk)
 		endif
-
-		Script_Version = RTR_GetVersion()
 	endif
 EndFunction

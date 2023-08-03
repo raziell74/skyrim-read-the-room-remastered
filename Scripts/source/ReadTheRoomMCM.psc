@@ -81,16 +81,18 @@ Actor player
 
 ; Returns version of this script.
 Int Function GetVersion()
-    return 2 ;MCM Helper
+    return 5 ;MCM Helper
 EndFunction
 
 Event OnVersionUpdate(int aVersion)
-	parent.OnVersionUpdate()
+	parent.OnVersionUpdate(aVersion)
+    RTR_Version.SetValue(RTR_GetVersion())
     MigrateToMCMHelper()
     VerboseMessage("OnVersionUpdate: MCM Updated For Version " + Substring(RTR_Version.GetValue() as String, 0, Find(RTR_Version.GetValue() as String, ".", 0)+3))
-    MiscUtil.PrintConsole("ReadTheRoom MCM Updated")
-    MiscUtil.PrintConsole("RTR Version: " + Substring(RTR_Version.GetValue() as String, 0, Find(RTR_Version.GetValue() as String, ".", 0)+3))
-    MiscUtil.PrintConsole("MCM Helper Version: " + aVersion)
+    MiscUtil.PrintConsole("ReadTheRoom:OnVersionUpdate - MCM Updated")
+    MiscUtil.PrintConsole("MCM Helper Version - " + aVersion)
+    MiscUtil.PrintConsole("RTR Version - " + Substring(RTR_Version.GetValue() as String, 0, Find(RTR_Version.GetValue() as String, ".", 0)+3))
+    RefreshMenu()
 EndEvent
 
 ; Event called periodically if the active magic effect/alias/form is registered for update events. This event will not be sent if the game is in menu mode. 
@@ -537,7 +539,7 @@ Function MigrateToMCMHelper()
     Else
         SetModSettingInt("iNotifyOn:HelmetEquipUnequip", 3)
     EndIf
-    SetModSettingString("sVersion:Version", RTR_Version.GetValue() as String)
+    SetModSettingString("sVersion:Version", Substring(RTR_Version.GetValue() as String, 0, Find(RTR_Version.GetValue() as String, ".", 0)+3))
     SetModSettingInt("iToggleequipped:Keybinds", ToggleKey.GetValue() as Int)
     SetModSettingInt("iClearplacedheadgear:Keybinds", DeleteKey.GetValue() as Int)
     SetModSettingInt("iDisablesPlayerFunctionality:Keybinds", EnableKey.GetValue() as Int)

@@ -12,6 +12,9 @@
             "cursorFillMode": "topToBottom",
             "content": [
                 {
+                    "type": "empty"
+                },
+                {
                     "type": "header",
                     "text": "$HelmetEquipUnequip_Header"
                 },
