@@ -1,0 +1,1040 @@
+{
+    "modName": "ReadTheRoom",
+    "displayName": "$ReadtheRoom",
+    "minMcmVersion": 9,
+    "pluginRequirements": [],
+    "cursorFillMode": "topToBottom",
+    "content": [],
+    "customContent": {},
+    "pages": [
+        {
+            "pageDisplayName": "$Settings_Page",
+            "cursorFillMode": "topToBottom",
+            "content": [
+                {
+                    "type": "header",
+                    "text": "$HelmetEquipUnequip_Header"
+                },
+                {
+                    "id": "iEquipWhen:HelmetEquipUnequip",
+                    "type": "enum",
+                    "text": "$EquipWhen",
+                    "help": "$EquipWhenHelmetEquipUnequip_Help",
+                    "valueOptions": {
+                        "options": [
+                            "$Nearingdanger_ENUM",
+                            "$Leavingsafety_ENUM",
+                            "$Onlywithtogglekey_ENUM"
+                        ],
+                        "sourceType": "ModSettingInt",
+                        "defaultValue": 0
+                    }
+                },
+                {
+                    "id": "iUnequipWhen:HelmetEquipUnequip",
+                    "type": "enum",
+                    "text": "$UnequipWhen",
+                    "help": "$UnequipWhenHelmetEquipUnequip_Help",
+                    "valueOptions": {
+                        "options": [
+                            "$Enteringsafety_ENUM",
+                            "$Leavingdanger_ENUM",
+                            "$Onlywithtogglekey_ENUM"
+                        ],
+                        "sourceType": "ModSettingInt",
+                        "defaultValue": 0
+                    }
+                },
+                {
+                    "id": "bManageFollowerHeadgear:HelmetEquipUnequip",
+                    "type": "toggle",
+                    "text": "$ManageFollowerHeadgear",
+                    "help": "$ManageFollowerHeadgearHelmetEquipUnequip_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingBool",
+                        "defaultValue": true
+                    }
+                },
+                {
+                    "id": "bCombatEquip:HelmetEquipUnequip",
+                    "type": "toggle",
+                    "text": "$CombatEquip",
+                    "help": "$CombatEquipHelmetEquipUnequip_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingBool",
+                        "defaultValue": true
+                    }
+                },
+                {
+                    "id": "bCombatequipusesanimation:HelmetEquipUnequip",
+                    "type": "toggle",
+                    "text": "$Combatequipusesanimation",
+                    "help": "$CombatequipusesanimationHelmetEquipUnequip_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingBool",
+                        "defaultValue": true
+                    }
+                },
+                {
+                    "id": "bManageCircletslikeHelmets:HelmetEquipUnequip",
+                    "type": "toggle",
+                    "text": "$ManageCircletslikeHelmets",
+                    "help": "$ManageCircletslikeHelmetsHelmetEquipUnequip_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingBool",
+                        "defaultValue": true
+                    }
+                },
+                {
+                    "id": "bRequirearmorforhipplacement:HelmetEquipUnequip",
+                    "type": "toggle",
+                    "text": "$Requirearmorforhipplacement",
+                    "help": "$RequirearmorforhipplacementHelmetEquipUnequip_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingBool",
+                        "defaultValue": true
+                    }
+                },
+                {
+                    "id": "bSheathWeaponsForAnimation:HelmetEquipUnequip",
+                    "type": "toggle",
+                    "text": "$SheathWeaponsWhen",
+                    "help": "$SheathWeaponsWhen_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingBool",
+                        "defaultValue": true
+                    }
+                },
+                {
+                    "id": "iNotifyOn:HelmetEquipUnequip",
+                    "type": "enum",
+                    "text": "$NotifyOn",
+                    "help": "$NotifyOn_Help",
+                    "valueOptions": {
+                        "options": [
+                            "$NotifyOnLocationAndCombat_ENUM",
+                            "$NotifyOnLocation_ENUM",
+                            "$NotifyOnCombat_ENUM",
+                            "$NotifyOnNone_ENUM"
+                        ],
+                        "sourceType": "ModSettingInt",
+                        "defaultValue": 0
+                    }
+                },
+                {
+                    "id": "sVersion:Version",
+                    "type": "text",
+                    "text": "$ReadTheRoomVersion",
+                    "help": "$ReadTheRoomVersion_Help",
+                    "valueOptions": {
+                        "value": "1.0"
+                    },
+                    "position": 1
+                },
+                {
+                    "type": "header",
+                    "text": "$Keybinds_Header"
+                },
+                {
+                    "id": "iToggleequipped:Keybinds",
+                    "type": "keymap",
+                    "text": "$Toggleequipped",
+                    "help": "",
+                    "valueOptions": {
+                        "sourceType": "ModSettingInt",
+                        "defaultValue": 27
+                    },
+                    "ignoreConflicts": false
+                },
+                {
+                    "id": "iClearplacedheadgear:Keybinds",
+                    "type": "keymap",
+                    "text": "$Clearplacedheadgear",
+                    "help": "",
+                    "valueOptions": {
+                        "sourceType": "ModSettingInt",
+                        "defaultValue": 40
+                    },
+                    "ignoreConflicts": false
+                },
+                {
+                    "id": "iDisablesPlayerFunctionality:Keybinds",
+                    "type": "keymap",
+                    "text": "$DisablesPlayerFunctionality",
+                    "help": "",
+                    "valueOptions": {
+                        "sourceType": "ModSettingInt",
+                        "defaultValue": 26
+                    },
+                    "ignoreConflicts": false
+                },
+                {
+                    "type": "empty"
+                },
+                {
+                    "type": "header",
+                    "text": "$TroubleshootingUninstall_Header"
+                },
+                {
+                    "id": "sAddPerk:TroubleshootingUninstall",
+                    "type": "text",
+                    "text": "",
+                    "help": "$AddPerkTroubleshootingUninstall_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingString",
+                        "defaultValue": "Enable Mod - Player"
+                    },
+                    "action": {
+                        "type": "CallFunction",
+                        "function": "AddPerk"
+                    }
+                },
+                {
+                    "id": "sRemovePerk:TroubleshootingUninstall",
+                    "type": "text",
+                    "text": "",
+                    "help": "$RemovePerkTroubleshootingUninstall_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingString",
+                        "defaultValue": "Disable Mod - Player"
+                    },
+                    "action": {
+                        "type": "CallFunction",
+                        "function": "RemovePerk"
+                    }
+                },
+                {
+                    "id": "sDisableAllHelmets:TroubleshootingUninstall",
+                    "type": "text",
+                    "text": "",
+                    "help": "",
+                    "valueOptions": {
+                        "sourceType": "ModSettingString",
+                        "defaultValue": "Clear any placed headgear"
+                    },
+                    "action": {
+                        "type": "CallFunction",
+                        "function": "DisableAllHelmets"
+                    }
+                }
+            ]
+        },
+        {
+            "pageDisplayName": "$Positioning_Page",
+            "cursorFillMode": "topToBottom",
+            "content": [
+                {
+                    "type": "header",
+                    "text": "$HelmetHipPositionMale_Header"
+                },
+                {
+                    "id": "fX:HelmetHipPositionMale",
+                    "type": "slider",
+                    "text": "$X",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 12.8,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fY:HelmetHipPositionMale",
+                    "type": "slider",
+                    "text": "$Y",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": -10.25,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fZ:HelmetHipPositionMale",
+                    "type": "slider",
+                    "text": "$Z",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": -0.65,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fPitch:HelmetHipPositionMale",
+                    "type": "slider",
+                    "text": "$Pitch",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": -52.9,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fRoll:HelmetHipPositionMale",
+                    "type": "slider",
+                    "text": "$Roll",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 15.0,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fYaw:HelmetHipPositionMale",
+                    "type": "slider",
+                    "text": "$Yaw",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 94.5,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "type": "empty"
+                },
+                {
+                    "type": "header",
+                    "text": "$CircletHipPositionMale_Header"
+                },
+                {
+                    "id": "fX:CircletHipPositionMale",
+                    "type": "slider",
+                    "text": "$X",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 12.8,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fY:CircletHipPositionMale",
+                    "type": "slider",
+                    "text": "$Y",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": -10.25,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fZ:CircletHipPositionMale",
+                    "type": "slider",
+                    "text": "$Z",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": -0.65,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fPitch:CircletHipPositionMale",
+                    "type": "slider",
+                    "text": "$Pitch",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 46.0,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fRoll:CircletHipPositionMale",
+                    "type": "slider",
+                    "text": "$Roll",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 15.0,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fYaw:CircletHipPositionMale",
+                    "type": "slider",
+                    "text": "$Yaw",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 68.9,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "type": "empty"
+                },
+                {
+                    "type": "header",
+                    "text": "$HelmetHandPositionMale_Header"
+                },
+                {
+                    "id": "fX:HelmetHandPositionMale",
+                    "type": "slider",
+                    "text": "$X",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 6.8,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fY:HelmetHandPositionMale",
+                    "type": "slider",
+                    "text": "$Y",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": -11.75,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fZ:HelmetHandPositionMale",
+                    "type": "slider",
+                    "text": "$Z",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": -10.85,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fPitch:HelmetHandPositionMale",
+                    "type": "slider",
+                    "text": "$Pitch",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 270.6,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fRoll:HelmetHandPositionMale",
+                    "type": "slider",
+                    "text": "$Roll",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 0.44,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fYaw:HelmetHandPositionMale",
+                    "type": "slider",
+                    "text": "$Yaw",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 260.45,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "type": "empty"
+                },
+                {
+                    "type": "header",
+                    "text": "$CircletHandPositionMale_Header"
+                },
+                {
+                    "id": "fX:CircletHandPositionMale",
+                    "type": "slider",
+                    "text": "$X",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": -0.2,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fY:CircletHandPositionMale",
+                    "type": "slider",
+                    "text": "$Y",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": -11.25,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fZ:CircletHandPositionMale",
+                    "type": "slider",
+                    "text": "$Z",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 10.85,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fPitch:CircletHandPositionMale",
+                    "type": "slider",
+                    "text": "$Pitch",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 270.6,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fRoll:CircletHandPositionMale",
+                    "type": "slider",
+                    "text": "$Roll",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 22.94,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fYaw:CircletHandPositionMale",
+                    "type": "slider",
+                    "text": "$Yaw",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 260.45,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "type": "empty"
+                },
+                {
+                    "type": "header",
+                    "text": "$HelmetHipPositionFemale_Header",
+                    "position": 1
+                },
+                {
+                    "id": "fX:HelmetHipPositionFemale",
+                    "type": "slider",
+                    "text": "$X",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 12.8,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fY:HelmetHipPositionFemale",
+                    "type": "slider",
+                    "text": "$Y",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": -10.25,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fZ:HelmetHipPositionFemale",
+                    "type": "slider",
+                    "text": "$Z",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": -0.65,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fPitch:HelmetHipPositionFemale",
+                    "type": "slider",
+                    "text": "$Pitch",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": -52.9,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fRoll:HelmetHipPositionFemale",
+                    "type": "slider",
+                    "text": "$Roll",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 15.0,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fYaw:HelmetHipPositionFemale",
+                    "type": "slider",
+                    "text": "$Yaw",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 94.4,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "type": "empty"
+                },
+                {
+                    "type": "header",
+                    "text": "$CircletHipPositionFemale_Header"
+                },
+                {
+                    "id": "fX:CircletHipPositionFemale",
+                    "type": "slider",
+                    "text": "$X",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 12.8,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fY:CircletHipPositionFemale",
+                    "type": "slider",
+                    "text": "$Y",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": -10.25,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fZ:CircletHipPositionFemale",
+                    "type": "slider",
+                    "text": "$Z",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": -0.65,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fPitch:CircletHipPositionFemale",
+                    "type": "slider",
+                    "text": "$Pitch",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 46.0,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fRoll:CircletHipPositionFemale",
+                    "type": "slider",
+                    "text": "$Roll",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 15.0,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fYaw:CircletHipPositionFemale",
+                    "type": "slider",
+                    "text": "$Yaw",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 68.9,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "type": "empty"
+                },
+                {
+                    "type": "header",
+                    "text": "$HelmetHandPositionFemale_Header"
+                },
+                {
+                    "id": "fX:HelmetHandPositionFemale",
+                    "type": "slider",
+                    "text": "$X",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 8.0,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fY:HelmetHandPositionFemale",
+                    "type": "slider",
+                    "text": "$Y",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": -15.0,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fZ:HelmetHandPositionFemale",
+                    "type": "slider",
+                    "text": "$Z",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 10.85,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fPitch:HelmetHandPositionFemale",
+                    "type": "slider",
+                    "text": "$Pitch",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 260.0,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fRoll:HelmetHandPositionFemale",
+                    "type": "slider",
+                    "text": "$Roll",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 29.0,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fYaw:HelmetHandPositionFemale",
+                    "type": "slider",
+                    "text": "$Yaw",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 245.0,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "type": "empty"
+                },
+                {
+                    "type": "header",
+                    "text": "$CircletHandPositionFemale_Header"
+                },
+                {
+                    "id": "fX:CircletHandPositionFemale",
+                    "type": "slider",
+                    "text": "$X",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": -0.2,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fY:CircletHandPositionFemale",
+                    "type": "slider",
+                    "text": "$Y",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": -15.0,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fZ:CircletHandPositionFemale",
+                    "type": "slider",
+                    "text": "$Z",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 10.85,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fPitch:CircletHandPositionFemale",
+                    "type": "slider",
+                    "text": "$Pitch",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 270.6,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fRoll:CircletHandPositionFemale",
+                    "type": "slider",
+                    "text": "$Roll",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 22.94,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "id": "fYaw:CircletHandPositionFemale",
+                    "type": "slider",
+                    "text": "$Yaw",
+                    "help": "",
+                    "valueOptions": {
+                        "min": -360,
+                        "max": 360,
+                        "step": 0.1,
+                        "defaultValue": 260.45,
+                        "sourceType": "ModSettingFloat",
+                        "formatString": "{1}"
+                    }
+                },
+                {
+                    "type": "empty"
+                }
+            ]
+        },
+        {
+            "pageDisplayName": "$Maintenance_Page",
+            "cursorFillMode": "topToBottom",
+            "content": [
+                {
+                    "type": "header",
+                    "text": "$AutoloadSettings_Header"
+                },
+                {
+                    "id": "bEnabled:Maintenance",
+                    "type": "toggle",
+                    "text": "$Enabled",
+                    "help": "$EnabledMaintenance_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingBool",
+                        "defaultValue": true
+                    }
+                },
+                {
+                    "id": "iLoadingDelay:Maintenance",
+                    "type": "slider",
+                    "text": "$LoadingDelay",
+                    "help": "$LoadingDelayMaintenance_Help",
+                    "valueOptions": {
+                        "min": 0,
+                        "max": 600,
+                        "step": 1,
+                        "defaultValue": 0,
+                        "sourceType": "ModSettingInt",
+                        "formatString": "{0}"
+                    }
+                },
+                {
+                    "id": "sLoadSettings:Maintenance",
+                    "type": "text",
+                    "text": "$LoadSettings",
+                    "help": "$LoadSettingsMaintenance_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingString",
+                        "defaultValue": ""
+                    },
+                    "action": {
+                        "type": "CallFunction",
+                        "function": "Load"
+                    }
+                },
+                {
+                    "id": "sResetSettings:Maintenance",
+                    "type": "text",
+                    "text": "$ResetSettings",
+                    "help": "$ResetSettingsMaintenance_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingString",
+                        "defaultValue": ""
+                    },
+                    "action": {
+                        "type": "CallFunction",
+                        "function": "Default"
+                    }
+                },
+                {
+                    "id": "bLoadSettingsonReload:Maintenance",
+                    "type": "toggle",
+                    "text": "$LoadSettingsonReload",
+                    "help": "$LoadSettingsonReloadMaintenance_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingBool",
+                        "defaultValue": false
+                    }
+                },
+                {
+                    "id": "bVerbose:Maintenance",
+                    "type": "toggle",
+                    "text": "$Verbose",
+                    "help": "$VerboseMaintenance_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingBool",
+                        "defaultValue": false
+                    }
+                }
+            ]
+        }
+    ]
+}
