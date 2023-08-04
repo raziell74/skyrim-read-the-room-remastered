@@ -1125,5 +1125,7 @@ Function CheckForUpdates()
 			Utility.wait(1.5)
 			PlayerRef.AddPerk(RTRPerk)
 		endif
+
+		Script_Version = RTR_GetVersion()
 	endif
 EndFunction
