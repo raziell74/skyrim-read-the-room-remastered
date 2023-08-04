@@ -149,6 +149,17 @@
                     }
                 },
                 {
+                    "id": "bOnlyRedrawWeapons:WeaponDrawSheath",
+                    "type": "toggle",
+                    "text": "$OnlyRedrawWeapons",
+                    "help": "$OnlyRedrawWeapons_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingBool",
+                        "defaultValue": true
+                    },
+                    "groupCondition": 2
+                },
+                {
                     "id": "bDrawWeaponsOnCombat:WeaponDrawSheath",
                     "type": "toggle",
                     "text": "$DrawWeaponsOnCombat",
@@ -175,17 +186,6 @@
                     "type": "toggle",
                     "text": "$DrawWeaponsOnToggle",
                     "help": "$DrawWeaponsOnToggle_Help",
-                    "valueOptions": {
-                        "sourceType": "ModSettingBool",
-                        "defaultValue": true
-                    },
-                    "groupCondition": 2
-                },
-                {
-                    "id": "bOnlyRedrawWeapons:WeaponDrawSheath",
-                    "type": "toggle",
-                    "text": "$OnlyRedrawWeapons",
-                    "help": "$OnlyRedrawWeapons_Help",
                     "valueOptions": {
                         "sourceType": "ModSettingBool",
                         "defaultValue": true
