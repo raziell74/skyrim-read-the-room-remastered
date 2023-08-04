@@ -12,6 +12,9 @@
             "cursorFillMode": "topToBottom",
             "content": [
                 {
+                    "type": "empty"
+                },
+                {
                     "type": "header",
                     "text": "$HelmetEquipUnequip_Header"
                 },
@@ -96,16 +99,6 @@
                     }
                 },
                 {
-                    "id": "bSheathWeaponsForAnimation:HelmetEquipUnequip",
-                    "type": "toggle",
-                    "text": "$SheathWeaponsWhen",
-                    "help": "$SheathWeaponsWhen_Help",
-                    "valueOptions": {
-                        "sourceType": "ModSettingBool",
-                        "defaultValue": true
-                    }
-                },
-                {
                     "id": "iNotifyOn:HelmetEquipUnequip",
                     "type": "enum",
                     "text": "$NotifyOn",
@@ -120,6 +113,84 @@
                         "sourceType": "ModSettingInt",
                         "defaultValue": 0
                     }
+                },
+                {
+                    "type": "empty"
+                },
+                {
+                    "type": "header",
+                    "text": "$WeaponDrawSheath_Header"
+                },
+                {
+                    "id": "bSheathWeaponsForAnimation:WeaponDrawSheath",
+                    "type": "toggle",
+                    "text": "$SheathWeaponsWhen",
+                    "help": "$SheathWeaponsWhen_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingBool",
+                        "defaultValue": true
+                    }
+                },
+                {
+                    "id": "iDrawWeaponsAfter:WeaponDrawSheath",
+                    "type": "enum",
+                    "text": "$DrawWeaponsAfter",
+                    "help": "$DrawWeaponsAfter_Help",
+                    "groupControl": 2,
+                    "valueOptions": {
+                        "options": [
+                            "$DrawWeaponsAfterDisabled_ENUM",
+                            "$DrawWeaponsAfterEquipUnequip_ENUM",
+                            "$DrawWeaponsAfterEquip_ENUM",
+                            "$DrawWeaponsAfterUnequip_ENUM"
+                        ],
+                        "sourceType": "ModSettingInt",
+                        "defaultValue": 1
+                    }
+                },
+                {
+                    "id": "bOnlyRedrawWeapons:WeaponDrawSheath",
+                    "type": "toggle",
+                    "text": "$OnlyRedrawWeapons",
+                    "help": "$OnlyRedrawWeapons_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingBool",
+                        "defaultValue": true
+                    },
+                    "groupCondition": 2
+                },
+                {
+                    "id": "bDrawWeaponsOnCombat:WeaponDrawSheath",
+                    "type": "toggle",
+                    "text": "$DrawWeaponsOnCombat",
+                    "help": "$DrawWeaponsOnCombat_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingBool",
+                        "defaultValue": true
+                    },
+                    "groupCondition": 2
+                },
+                {
+                    "id": "bDrawWeaponsOnLocation:WeaponDrawSheath",
+                    "type": "toggle",
+                    "text": "$DrawWeaponsOnLocation",
+                    "help": "$DrawWeaponsOnLocation_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingBool",
+                        "defaultValue": true
+                    },
+                    "groupCondition": 2
+                },
+                {
+                    "id": "bDrawWeaponsOnToggle:WeaponDrawSheath",
+                    "type": "toggle",
+                    "text": "$DrawWeaponsOnToggle",
+                    "help": "$DrawWeaponsOnToggle_Help",
+                    "valueOptions": {
+                        "sourceType": "ModSettingBool",
+                        "defaultValue": true
+                    },
+                    "groupCondition": 2
                 },
                 {
                     "id": "sVersion:Version",

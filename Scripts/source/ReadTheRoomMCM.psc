@@ -69,6 +69,13 @@ GlobalVariable Property HandRotationRollCircletFemale Auto
 GlobalVariable Property HandRotationYawCircletFemale Auto
 GlobalVariable Property RTR_Version Auto
 GlobalVariable Property SheathWeaponsForAnimation Auto
+
+GlobalVariable Property DrawWeaponsAfter Auto ; DrawWeaponsAfter [GLOB:0x82D]
+GlobalVariable Property DrawWeaponsOnCombat Auto ; DrawWeaponsOnCombat [GLOB:0x830]
+GlobalVariable Property DrawWeaponsOnLocation Auto ; DrawWeaponsOnLocation [GLOB:0x82F]
+GlobalVariable Property DrawWeaponsOnToggle Auto ; DrawWeaponsOnToggle [GLOB:FE001831]
+GlobalVariable Property OnlyRedrawWeapons Auto ; OnlyRedrawWeapons [GLOB:0x82E]
+
 GlobalVariable Property NotifyOnLocation Auto
 GlobalVariable Property NotifyOnCombat Auto
 
@@ -81,16 +88,15 @@ Actor player
 
 ; Returns version of this script.
 Int Function GetVersion()
-    return 2 ;MCM Helper
+    return 5 ;MCM Helper
 EndFunction
 
 Event OnVersionUpdate(int aVersion)
-	parent.OnVersionUpdate()
+	parent.OnVersionUpdate(aVersion)
+    RTR_Version.SetValue(RTR_GetVersion())
     MigrateToMCMHelper()
     VerboseMessage("OnVersionUpdate: MCM Updated For Version " + Substring(RTR_Version.GetValue() as String, 0, Find(RTR_Version.GetValue() as String, ".", 0)+3))
-    MiscUtil.PrintConsole("ReadTheRoom MCM Updated")
-    MiscUtil.PrintConsole("RTR Version: " + Substring(RTR_Version.GetValue() as String, 0, Find(RTR_Version.GetValue() as String, ".", 0)+3))
-    MiscUtil.PrintConsole("MCM Helper Version: " + aVersion)
+    RefreshMenu()
 EndEvent
 
 ; Event called periodically if the active magic effect/alias/form is registered for update events. This event will not be sent if the game is in menu mode. 
@@ -160,8 +166,6 @@ Event OnSettingChange(String a_ID)
         ManageCirclets.SetValue(GetModSettingBool("bManageCircletslikeHelmets:HelmetEquipUnequip") as Float)
     ElseIf a_ID == "bRequirearmorforhipplacement:HelmetEquipUnequip"
         RemoveHelmetWithoutArmor.SetValue(GetModSettingBool("bRequirearmorforhipplacement:HelmetEquipUnequip") as Float)
-    ElseIf a_ID == "bSheathWeaponsForAnimation:HelmetEquipUnequip"
-        SheathWeaponsForAnimation.SetValue(GetModSettingBool("bSheathWeaponsForAnimation:HelmetEquipUnequip") as Float)
     ElseIf a_ID == "iNotifyOn:HelmetEquipUnequip"
         Int iNotifyValue = GetModSettingInt("iNotifyOn:HelmetEquipUnequip")
         If iNotifyValue == 0
@@ -177,6 +181,18 @@ Event OnSettingChange(String a_ID)
             NotifyOnLocation.SetValue(0.0)
             NotifyOnCombat.SetValue(0.0)
         EndIf
+    ElseIf a_ID == "bSheathWeaponsForAnimation:WeaponDrawSheath"
+        SheathWeaponsForAnimation.SetValue(GetModSettingBool("bSheathWeaponsForAnimation:HelmetEquipUnequip") as Float)
+        RefreshMenu()
+    ElseIf a_ID == "iDrawWeaponsAfter:WeaponDrawSheath"
+        DrawWeaponsAfter.SetValue(GetModSettingInt("iDrawWeaponsAfter:WeaponDrawSheath") as Float)
+        RefreshMenu()
+    ElseIf a_ID == "bDrawWeaponsOnCombat:WeaponDrawSheath"
+        DrawWeaponsOnCombat.SetValue(GetModSettingBool("bDrawWeaponsOnCombat:WeaponDrawSheath") as Float)
+    ElseIf a_ID == "bDrawWeaponsOnLocation:WeaponDrawSheath"
+        DrawWeaponsOnLocation.SetValue(GetModSettingBool("bDrawWeaponsOnLocation:WeaponDrawSheath") as Float)
+    ElseIf a_ID == "bOnlyRedrawWeapons:WeaponDrawSheath"
+        OnlyRedrawWeapons.SetValue(GetModSettingBool("bOnlyRedrawWeapons:WeaponDrawSheath") as Float)
     ElseIf a_ID == "iToggleequipped:Keybinds"
         ToggleKey.SetValue(GetModSettingInt("iToggleequipped:Keybinds") as Float)
         HotkeyGuard("iToggleequipped:Keybinds", ToggleKey)
@@ -341,8 +357,12 @@ Function Default()
     SetModSettingBool("bCombatequipusesanimation:HelmetEquipUnequip", True)
     SetModSettingBool("bManageCircletslikeHelmets:HelmetEquipUnequip", True)
     SetModSettingBool("bRequirearmorforhipplacement:HelmetEquipUnequip", True)
-    SetModSettingBool("bSheathWeaponsForAnimation:HelmetEquipUnequip", True) 
     SetModSettingInt("iNotifyOn:HelmetEquipUnequip", 0)
+    SetModSettingBool("bSheathWeaponsForAnimation:WeaponDrawSheath", True) 
+    SetModSettingInt("iDrawWeaponsAfter:WeaponDrawSheath", 1)
+    SetModSettingBool("bDrawWeaponsOnCombat:WeaponDrawSheath", True)
+    SetModSettingBool("bDrawWeaponsOnLocation:WeaponDrawSheath", True)
+    SetModSettingBool("bOnlyRedrawWeapons:WeaponDrawSheath", True)
     SetModSettingString("sVersion:Version", "1.0")
     SetModSettingInt("iToggleequipped:Keybinds", 27)
     SetModSettingInt("iClearplacedheadgear:Keybinds", 40)
@@ -411,7 +431,6 @@ Function Load()
     CombatEquipAnimation.SetValue(GetModSettingBool("bCombatequipusesanimation:HelmetEquipUnequip") as Float)
     ManageCirclets.SetValue(GetModSettingBool("bManageCircletslikeHelmets:HelmetEquipUnequip") as Float)
     RemoveHelmetWithoutArmor.SetValue(GetModSettingBool("bRequirearmorforhipplacement:HelmetEquipUnequip") as Float)
-    SheathWeaponsForAnimation.SetValue(GetModSettingBool("bSheathWeaponsForAnimation:HelmetEquipUnequip") as Float)
     Int iNotifyValue = GetModSettingInt("iNotifyOn:HelmetEquipUnequip")
     If iNotifyValue == 0
         NotifyOnLocation.SetValue(1.0)
@@ -426,6 +445,11 @@ Function Load()
         NotifyOnLocation.SetValue(0.0)
         NotifyOnCombat.SetValue(0.0)
     EndIf
+    SheathWeaponsForAnimation.SetValue(GetModSettingBool("bSheathWeaponsForAnimation:WeaponDrawSheath") as Float)
+    DrawWeaponsAfter.SetValue(GetModSettingInt("iDrawWeaponsAfter:WeaponDrawSheath") as Float)
+    DrawWeaponsOnCombat.SetValue(GetModSettingBool("bDrawWeaponsOnCombat:WeaponDrawSheath") as Float)
+    DrawWeaponsOnLocation.SetValue(GetModSettingBool("bDrawWeaponsOnLocation:WeaponDrawSheath") as Float)
+    OnlyRedrawWeapons.SetValue(GetModSettingBool("bOnlyRedrawWeapons:WeaponDrawSheath") as Float)
     SetModSettingString("sVersion:Version", Substring(RTR_Version.GetValue() as String, 0, Find(RTR_Version.GetValue() as String, ".", 0)+3))
     ToggleKey.SetValue(GetModSettingInt("iToggleequipped:Keybinds") as Float)
     DeleteKey.SetValue(GetModSettingInt("iClearplacedheadgear:Keybinds") as Float)
@@ -527,7 +551,6 @@ Function MigrateToMCMHelper()
     SetModSettingBool("bCombatequipusesanimation:HelmetEquipUnequip", CombatEquipAnimation.GetValue() as Bool)
     SetModSettingBool("bManageCircletslikeHelmets:HelmetEquipUnequip", ManageCirclets.GetValue() as Bool)
     SetModSettingBool("bRequirearmorforhipplacement:HelmetEquipUnequip", RemoveHelmetWithoutArmor.GetValue() as Bool)
-    SetModSettingBool("bSheathWeaponsForAnimation:HelmetEquipUnequip", SheathWeaponsForAnimation.GetValue() as Bool)
     If (NotifyOnLocation.GetValue() as Bool) && (NotifyOnCombat.GetValue() as Bool)
         SetModSettingInt("iNotifyOn:HelmetEquipUnequip", 0)
     ElseIf (NotifyOnLocation.GetValue() as Bool) && !(NotifyOnCombat.GetValue() as Bool)
@@ -537,7 +560,12 @@ Function MigrateToMCMHelper()
     Else
         SetModSettingInt("iNotifyOn:HelmetEquipUnequip", 3)
     EndIf
-    SetModSettingString("sVersion:Version", RTR_Version.GetValue() as String)
+    SetModSettingBool("bSheathWeaponsForAnimation:WeaponDrawSheath", SheathWeaponsForAnimation.GetValue() as Bool)
+    SetModSettingInt("iDrawWeaponsAfter:WeaponDrawSheath", DrawWeaponsAfter.GetValue() as Int)
+    SetModSettingBool("bDrawWeaponsOnCombat:WeaponDrawSheath", DrawWeaponsOnCombat.GetValue() as Bool)
+    SetModSettingBool("bDrawWeaponsOnLocation:WeaponDrawSheath", DrawWeaponsOnLocation.GetValue() as Bool)
+    SetModSettingBool("bOnlyRedrawWeapons:WeaponDrawSheath", OnlyRedrawWeapons.GetValue() as Bool)
+    SetModSettingString("sVersion:Version", Substring(RTR_Version.GetValue() as String, 0, Find(RTR_Version.GetValue() as String, ".", 0)+3))
     SetModSettingInt("iToggleequipped:Keybinds", ToggleKey.GetValue() as Int)
     SetModSettingInt("iClearplacedheadgear:Keybinds", DeleteKey.GetValue() as Int)
     SetModSettingInt("iDisablesPlayerFunctionality:Keybinds", EnableKey.GetValue() as Int)
