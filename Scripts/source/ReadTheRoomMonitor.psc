@@ -7,7 +7,6 @@ ScriptName ReadTheRoomMonitor extends ActiveMagicEffect
 Import IED ; Immersive Equipment Display
 Import StringUtil ; SKSE String Utility
 Import ReadTheRoomUtil ; Our helper Functions
-Import MiscUtil ; Misc Utility Functions
 
 ; Uninitialized Script Version
 Float Script_Version = 0.0
@@ -88,11 +87,8 @@ Bool IsLocationEquip = false
 Event OnInit()
 	; If script is already initialized, avoid doing it again
 	if IsInitialized
-		MiscUtil.PrintConsole("ReadTheRoomMonitor: Script Already Initialized, skipping...")
 		return
 	endIf
-
-	MiscUtil.PrintConsole("ReadTheRoomMonitor: Initializing")
 	
 	RegisterForMenu("InventoryMenu")
 	RegisterForMenu("Journal Menu")
@@ -128,7 +124,6 @@ Event OnInit()
 		Script_Version = RTR_GetVersion()
 		RTR_Version.SetValue(Script_Version) ; Updates the MCM with the current version
 		Debug.Notification("Read The Room - Version " + Substring(RTR_Version.GetValue() as String, 0, Find(RTR_Version.GetValue() as String, ".", 0)+3) + " Installed Successfully!")
-		MiscUtil.PrintConsole("Read The Room - Version " + Substring(RTR_Version.GetValue() as String, 0, Find(RTR_Version.GetValue() as String, ".", 0)+3) + " Installed Successfully!")
 	endif
 EndEvent
 
@@ -137,11 +132,9 @@ Event OnPlayerLoadGame()
 	
 	; Only run if the script has been initialized, avoids duplicate initialization setups
 	if !IsInitialized
-		MiscUtil.PrintConsole("ReadTheRoomMonitor: Script is not initialized yet, skipping on player load setup...")
 		return
 	endif
 	
-	MiscUtil.PrintConsole("ReadTheRoomMonitor: OnPlayerLoadGame - Running SetupRTR()")
 	SetupRTR()
 	
 	; Attempt to correct RTR state on game load
@@ -154,8 +147,6 @@ Event OnPlayerLoadGame()
 EndEvent
 
 Function SetupRTR()
-	MiscUtil.PrintConsole("ReadTheRoomMonitor: SetupRTR() Called")
-	
 	; Update the last equipped item
 	LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
 	LastEquippedType = RTR_InferItemType(LastEquipped)
@@ -259,7 +250,6 @@ Event OnKeyDown(Int KeyCode)
 			GoToState("busy")
 		else
 			PlayerRef.addperk(ReadTheRoomPerk)
-			MiscUtil.PrintConsole("ReadTheRoomMonitor: KeyCode EnableKey pressed without the Perk, running SetupRTR()")
 			SetupRTR()
 			WasInCombat = false
 			IsCombatEquip = false
@@ -366,17 +356,14 @@ EndEvent
 ; OnReadTheRoomCombatStateChanged Event Handler
 ; Toggles Headgear based off Players Combat State
 Event OnReadTheRoomCombatStateChanged(String eventName, String strArg, Float numArg, Form sender)
-	MiscUtil.PrintConsole("ReadTheRoomMonitor - CombatStateChanged Mod Event Received")
 	; Ignore the event if if CombatEquip is disabled
 	if !(CombatEquip.GetValue() as Bool)
-		MiscUtil.PrintConsole("ReadTheRoomMonitor - CombatEquip.GetValue() is false. Exiting")
 		return
 	endif
 
 	Int aeCombatState = numArg as Int
 	if aeCombatState == 1 && !WasInCombat && PlayerRef.IsInCombat()
 		if !PlayerRef.IsEquipped(LastEquipped)
-			MiscUtil.PrintConsole("ReadTheRoomMonitor -  An NPC has reported they and the player are in combat and the player is not the last equipped head wear")
 			; An NPC has reported they and the player are in combat and the player is not the last equipped head wear
 			if NotifyOnCombat.GetValue() as Bool
 				Debug.Notification("Entering Combat!")
@@ -390,7 +377,6 @@ Event OnReadTheRoomCombatStateChanged(String eventName, String strArg, Float num
 	
 	if aeCombatState == 0 && WasInCombat && !PlayerRef.IsInCombat()
 		; Player left combat
-		MiscUtil.PrintConsole("ReadTheRoomMonitor -  Player left combat")
 		WasInCombat = false
 		IsCombatEquip = true
 		IsLocationEquip = false
@@ -637,7 +623,6 @@ Function EquipActorHeadgear()
 
 	; Skip animation if weapons are drawn but the setting is disabled
 	if !(SheathWeaponsForAnimation.GetValue() as Bool) && PlayerRef.IsWeaponDrawn()
-		MiscUtil.PrintConsole("ReadTheRoomMonitor: Quick Equipping - SheathWeaponsForAnimation is false")
 		EquipWithNoAnimation()
 		return
 	endif
@@ -670,17 +655,13 @@ Function EquipActorHeadgear()
 	
 	if !OnlyRedrawWeapons.GetValue() as Bool
 		if DrawWeaponsAfter.GetValue() as Int == 1 || DrawWeaponsAfter.GetValue() as Int == 2
-			MiscUtil.PrintConsole("ReadTheRoomMonitor: Drawing Weapons allowed for Equip")
 			if IsCombatEquip && DrawWeaponsOnCombat.GetValue() as Bool
-				MiscUtil.PrintConsole("ReadTheRoomMonitor: Drawing Weapons for Combat Equip")
 				PlayerRef.DrawWeapon()
 			endif
 			if IsLocationEquip && DrawWeaponsOnLocation.GetValue() as Bool
-				MiscUtil.PrintConsole("ReadTheRoomMonitor: Drawing Weapons for Location Equip")
 				PlayerRef.DrawWeapon()
 			endif
 			if !IsCombatEquip && !IsLocationEquip && DrawWeaponsOnToggle.GetValue() as Bool
-				MiscUtil.PrintConsole("ReadTheRoomMonitor: Drawing Weapons for Toggle Equip")
 				PlayerRef.DrawWeapon()
 			endif
 		endif
@@ -811,17 +792,13 @@ Function UnequipActorHeadgear()
 
 	if !OnlyRedrawWeapons.GetValue() as Bool
 		if DrawWeaponsAfter.GetValue() as Int == 1 || DrawWeaponsAfter.GetValue() as Int == 3
-			MiscUtil.PrintConsole("ReadTheRoomMonitor: Drawing Weapons allowed for Unequip")
 			if IsCombatEquip && DrawWeaponsOnCombat.GetValue() as Bool
-				MiscUtil.PrintConsole("ReadTheRoomMonitor: Drawing Weapons for Combat Unequip")
 				PlayerRef.DrawWeapon()
 			endif
 			if IsLocationEquip && DrawWeaponsOnLocation.GetValue() as Bool
-				MiscUtil.PrintConsole("ReadTheRoomMonitor: Drawing Weapons for Location Unequip")
 				PlayerRef.DrawWeapon()
 			endif
 			if !IsCombatEquip && !IsLocationEquip && DrawWeaponsOnToggle.GetValue() as Bool
-				MiscUtil.PrintConsole("ReadTheRoomMonitor: Drawing Weapons for Toggle Equip")
 				PlayerRef.DrawWeapon()
 			endif
 		endif
@@ -888,7 +865,6 @@ State busy
 				GoToState("busy")
 			else
 				PlayerRef.addperk(ReadTheRoomPerk)
-				MiscUtil.PrintConsole("ReadTheRoomMonitor: [BUSYSTATE] KeyCode EnableKey pressed, running SetupRTR()")
 				SetupRTR()
 				Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
 				GoToState("")
@@ -977,23 +953,15 @@ Function PostAnimCleanUp()
 	; Redraw weapons based on Configuration
 	Bool draw_weapon = PlayerRef.GetAnimationVariableBool("RTR_RedrawWeapons")
 	if draw_weapon && OnlyRedrawWeapons.GetValue() as Bool
-		MiscUtil.PrintConsole("ReadTheRoomMonitor: Redrawing Weapons... RecentAction = " + RecentAction + " DrawWeaponsAfter = " + DrawWeaponsAfter.GetValue() as Int)
 		if RecentAction == "Equip" 
 			if DrawWeaponsAfter.GetValue() as Int == 1 || DrawWeaponsAfter.GetValue() as Int == 2
-				MiscUtil.PrintConsole("ReadTheRoomMonitor: Redrawing Weapons allowed for Equip")
-				MiscUtil.PrintConsole("IsCombatEquip = " + IsCombatEquip + " DrawWeaponsOnCombat = " + DrawWeaponsOnCombat.GetValue() as Bool)
 				if IsCombatEquip && DrawWeaponsOnCombat.GetValue() as Bool
-					MiscUtil.PrintConsole("ReadTheRoomMonitor: Redrawing Weapons for Combat Equip")
 					PlayerRef.DrawWeapon()
 				endif
-				MiscUtil.PrintConsole("IsLocationEquip = " + IsLocationEquip + " DrawWeaponsOnLocation = " + DrawWeaponsOnLocation.GetValue() as Bool)
 				if IsLocationEquip && DrawWeaponsOnLocation.GetValue() as Bool
-					MiscUtil.PrintConsole("ReadTheRoomMonitor: Redrawing Weapons for Location Equip")
 					PlayerRef.DrawWeapon()
 				endif
-				MiscUtil.PrintConsole("DrawWeaponsOnToggle = " + DrawWeaponsOnToggle.GetValue() as Bool)
 				if !IsCombatEquip && !IsLocationEquip && DrawWeaponsOnToggle.GetValue() as Bool
-					MiscUtil.PrintConsole("ReadTheRoomMonitor: Redrawing Weapons for Toggle Equip")
 					PlayerRef.DrawWeapon()
 				endif
 			endif
@@ -1001,20 +969,13 @@ Function PostAnimCleanUp()
 
 		if RecentAction == "Unequip" 
 			if DrawWeaponsAfter.GetValue() as Int == 1 || DrawWeaponsAfter.GetValue() as Int == 3
-				MiscUtil.PrintConsole("ReadTheRoomMonitor: Redrawing Weapons allowed for Unequip")
-				MiscUtil.PrintConsole("IsCombatEquip = " + IsCombatEquip + " DrawWeaponsOnCombat = " + DrawWeaponsOnCombat.GetValue() as Bool)
 				if IsCombatEquip && DrawWeaponsOnCombat.GetValue() as Bool
-					MiscUtil.PrintConsole("ReadTheRoomMonitor: Redrawing Weapons for Combat Unequip")
 					PlayerRef.DrawWeapon()
 				endif
-				MiscUtil.PrintConsole("IsLocationEquip = " + IsLocationEquip + " DrawWeaponsOnLocation = " + DrawWeaponsOnLocation.GetValue() as Bool)
 				if IsLocationEquip && DrawWeaponsOnLocation.GetValue() as Bool
-					MiscUtil.PrintConsole("ReadTheRoomMonitor: Redrawing Weapons for Location Unequip")
 					PlayerRef.DrawWeapon()
 				endif
-				MiscUtil.PrintConsole("DrawWeaponsOnToggle = " + DrawWeaponsOnToggle.GetValue() as Bool)
 				if !IsCombatEquip && !IsLocationEquip && DrawWeaponsOnToggle.GetValue() as Bool
-					MiscUtil.PrintConsole("ReadTheRoomMonitor: Redrawing Weapons for Toggle Equip")
 					PlayerRef.DrawWeapon()
 				endif
 			endif
@@ -1065,7 +1026,6 @@ EndFunction
 ; Sets an Armor Form as the IED placement display forms
 Function UseHelmet()
 	if !IsPlayerSetup
-		MiscUtil.PrintConsole("ReadTheRoomMonitor: UseHelmet() detected a need to run SetupRTR() - IsPlayerSetup " + IsPlayerSetup as String + " LastEquipped " + LastEquipped.GetName() + " LastEquippedType " + LastEquippedType)
 		SetupRTR()
 		IsPlayerSetup = True
 	endif
@@ -1113,9 +1073,6 @@ EndFunction
 ; Checks if the script version has changed 
 ; If it has then refreshes the RTR Monitor Perk with the updated version
 Function CheckForUpdates()
-	MiscUtil.PrintConsole("ReadTheRoomMonitor: Checking for updates...")
-	MiscUtil.PrintConsole("Script_Version = " + Script_Version as String + " RTR_GetVersion() = " + RTR_GetVersion() as String)
-
 	if Script_Version != RTR_GetVersion()
 		Debug.Notification("Read The Room - Detected outdated scripts, updating...")
 		IsInitialized = false
