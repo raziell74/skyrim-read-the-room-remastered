@@ -80,7 +80,6 @@ String RecentAction = "None"
 Bool IsPlayerSetup = false
 Bool WasInCombat = false
 Bool IsInitialized = false
-
 Bool IsCombatEquip = false
 Bool IsLocationEquip = false
 
@@ -118,28 +117,30 @@ Event OnInit()
 	; Listen for Actor Combat State Changes
 	RegisterForModEvent("ReadTheRoomCombatStateChanged", "OnReadTheRoomCombatStateChanged")
 
-	Script_Version = RTR_GetVersion()
-	RTR_Version.SetValue(Script_Version) ; Updates the MCM with the current version
-	Debug.Notification("Read The Room - Version " + Substring(RTR_Version.GetValue() as String, 0, Find(RTR_Version.GetValue() as String, ".", 0)+3) + " Installed Successfully!")
-	MiscUtil.PrintConsole("Read The Room - Version " + Substring(RTR_Version.GetValue() as String, 0, Find(RTR_Version.GetValue() as String, ".", 0)+3) + " Installed Successfully!")
-	
+	; Re-initialize local variables to default values
 	IsInitialized = true
 	IsPlayerSetup = false
-
 	WasInCombat = false
 	IsCombatEquip = false
 	IsLocationEquip = false
+
+	if Script_Version != RTR_GetVersion()
+		Script_Version = RTR_GetVersion()
+		RTR_Version.SetValue(Script_Version) ; Updates the MCM with the current version
+		Debug.Notification("Read The Room - Version " + Substring(RTR_Version.GetValue() as String, 0, Find(RTR_Version.GetValue() as String, ".", 0)+3) + " Installed Successfully!")
+		MiscUtil.PrintConsole("Read The Room - Version " + Substring(RTR_Version.GetValue() as String, 0, Find(RTR_Version.GetValue() as String, ".", 0)+3) + " Installed Successfully!")
+	endif
 EndEvent
 
 Event OnPlayerLoadGame()
 	CheckForUpdates()
-
+	
 	; Only run if the script has been initialized, avoids duplicate initialization setups
 	if !IsInitialized
 		MiscUtil.PrintConsole("ReadTheRoomMonitor: Script is not initialized yet, skipping on player load setup...")
 		return
 	endif
-
+	
 	MiscUtil.PrintConsole("ReadTheRoomMonitor: OnPlayerLoadGame - Running SetupRTR()")
 	SetupRTR()
 	
@@ -1112,6 +1113,9 @@ EndFunction
 ; Checks if the script version has changed 
 ; If it has then refreshes the RTR Monitor Perk with the updated version
 Function CheckForUpdates()
+	MiscUtil.PrintConsole("ReadTheRoomMonitor: Checking for updates...")
+	MiscUtil.PrintConsole("Script_Version = " + Script_Version as String + " RTR_GetVersion() = " + RTR_GetVersion() as String)
+
 	if Script_Version != RTR_GetVersion()
 		Debug.Notification("Read The Room - Detected outdated scripts, updating...")
 		IsInitialized = false
@@ -1125,7 +1129,5 @@ Function CheckForUpdates()
 			Utility.wait(1.5)
 			PlayerRef.AddPerk(RTRPerk)
 		endif
-
-		Script_Version = RTR_GetVersion()
 	endif
 EndFunction
