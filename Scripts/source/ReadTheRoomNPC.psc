@@ -13,13 +13,7 @@ Actor property PlayerRef auto
 ; Event OnCombatStateChanged
 ; Send a mod event to the player when the NPC combat state changes and their target is the player
 Event OnCombatStateChanged(Actor akTarget, int aeCombatState)
-    if akTarget == PlayerRef
-	    SendModEvent("ReadTheRoomCombatStateChanged", akTarget.GetActorBase().GetName(), aeCombatState as Float)
-    endIf
-
-    if aeCombatState == 0
-        SendModEvent("ReadTheRoomCombatStateChanged", akTarget.GetActorBase().GetName(), 0.0)
-    endIf
+    SendModEvent("ReadTheRoomCombatStateChanged", akTarget.GetActorBase().GetName(), aeCombatState as Float)
 EndEvent
 
 ; Event OnDeath
