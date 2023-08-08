@@ -8,3 +8,4 @@ Check the Change Log for a list of bugs that have been squashed so far!
   - This issue is being addressed in the "Uninstall Button" feature outlined in the "future plans" section.
 - [ ] CC Content helmets and hats don't work
 - [ ] Immersive Armors Helmets don't work
+- [ ] If you take a helmet from a follower and then unequip/re-equip your helmet it will add the followers previously eqiupped helmet to their inventory and equip it.

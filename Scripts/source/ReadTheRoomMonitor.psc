@@ -201,19 +201,23 @@ Function SetupRTR()
 
 	; Initialize variables for the current location
 	; Update the MostRecentLocationAction reference for other processes
-	Location akLoc = PlayerRef.GetCurrentLocation()
-	Bool equip_when_safe = EquipWhenSafe.GetValue() as Bool
-	Bool unequip_when_unsafe = UnequipWhenUnsafe.GetValue() as Bool
-	
-	String locationAction = RTR_GetLocationAction(akLoc, true, equip_when_safe, unequip_when_unsafe, SafeKeywords, HostileKeywords)
-	if locationAction == "Entering Safety" || locationAction == "Leaving Danger" 	
-		MostRecentLocationAction = "Unequip"
-	elseif locationAction == "Entering Danger" || locationAction == "Leaving Safety"
-		MostRecentLocationAction = "Equip"
+	if PreviousLocationAction == "None"
+		Location akLoc = PlayerRef.GetCurrentLocation()
+		Bool isWearingHeadwear = RTR_IsValidHeadWear(PlayerRef, LastEquipped, LoweredHoods)
+		Int equipWhen = EquipWhenSafe.GetValue() as Int
+		Int unequipWhen = UnequipWhenUnsafe.GetValue() as Int
+		String locationAction = RTR_GetLocationAction(akLoc, isWearingHeadwear, equipWhen, unequipWhen, SafeKeywords, HostileKeywords)
+		if locationAction == "Entering Safety" || locationAction == "Leaving Danger" 	
+			MostRecentLocationAction = "Unequip"
+		elseif locationAction == "Entering Danger" || locationAction == "Leaving Safety"
+			MostRecentLocationAction = "Equip"
+		else
+			MostRecentLocationAction = "None"
+		endif
+		PreviousLocationAction = MostRecentLocationAction
 	else
-		MostRecentLocationAction = "None"
+		MostRecentLocationAction = PreviousLocationAction
 	endif
-	PreviousLocationAction = MostRecentLocationAction
 
 	; Setup animations to be processed
 	PlayerRef.SetAnimationVariableInt("RTR_Action", 0)
@@ -271,20 +275,6 @@ Event OnKeyDown(Int KeyCode)
 			LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
 			EquipActorHeadgear()
 		endif
-
-		; Check players location, so manual toggle can overwrite the current location action 
-		Location akLoc = PlayerRef.GetCurrentLocation()
-		Bool equip_when_safe = EquipWhenSafe.GetValue() as Bool
-		Bool unequip_when_unsafe = UnequipWhenUnsafe.GetValue() as Bool
-		String locationAction = RTR_GetLocationAction(akLoc, true, equip_when_safe, unequip_when_unsafe, SafeKeywords, HostileKeywords)
-		if locationAction == "Entering Safety" || locationAction == "Leaving Danger" 	
-			MostRecentLocationAction = "Unequip"
-		elseif locationAction == "Entering Danger" || locationAction == "Leaving Safety"
-			MostRecentLocationAction = "Equip"
-		else
-			MostRecentLocationAction = "None"
-		endif
-		PreviousLocationAction = MostRecentLocationAction
 	endif
 
 	; Force clear attachment nodes
@@ -311,28 +301,30 @@ EndEvent
 Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 	Location akLoc = PlayerRef.GetCurrentLocation() ; After testing... I do not trust the akNewLoc parameter to be accurate after loading from save -.-'
 	LastEquipped = RTR_GetEquipped(PlayerRef, ManageCirclets.GetValue() as Bool)
-	Bool is_valid = RTR_IsValidHeadWear(PlayerRef, LastEquipped, LoweredHoods)
-	Bool equip_when_safe = EquipWhenSafe.GetValue() as Bool
-	Bool unequip_when_unsafe = UnequipWhenUnsafe.GetValue() as Bool
+	Bool isWearingHeadwear = RTR_IsValidHeadWear(PlayerRef, LastEquipped, LoweredHoods)
+	Int equipWhen = EquipWhenSafe.GetValue() as Int ; 0 = Nearing Danger, 1 = Leaving Safety, 3 = Only On toggle
+	Int unequipWhen = UnequipWhenUnsafe.GetValue() as Int ; 0 = Entering Safety, 1 = Leaving Danger, 3 = Only On toggle
 
 	; Update the MostRecentLocationAction reference for other processes
-	String locationAction = RTR_GetLocationAction(akLoc, is_valid, equip_when_safe, unequip_when_unsafe, SafeKeywords, HostileKeywords)
+	String locationAction = RTR_GetLocationAction(akLoc, isWearingHeadwear, equipWhen, UnequipWhen, SafeKeywords, HostileKeywords)
 
 	if locationAction == "Entering Safety" || locationAction == "Leaving Danger" 	
 		MostRecentLocationAction = "Unequip"
 	elseif locationAction == "Entering Danger" || locationAction == "Leaving Safety"
 		MostRecentLocationAction = "Equip"
 	else
-		MostRecentLocationAction = "None"
+		; "None" is returned for a lot of world locations and that can occur just outside of cities. 
+		; To prevent Manual Toggles from being overriden when the player goes into the 'wilds' and comes back, We keep the previous location action
+		MostRecentLocationAction = PreviousLocationAction
 	endif
 	
 	; Only apply the action if we didn't already do it, prevents ToggleKey from being overwritten unless changing location action
-	if MostRecentLocationAction != "None" && MostRecentLocationAction != PreviousLocationAction
+	if MostRecentLocationAction != PreviousLocationAction
 		if NotifyOnLocation.GetValue() as Bool
 			Debug.Notification(locationAction)
 		endif
 
-		Utility.wait(0.5) ; Short Delay before equipping or unequipping, because it looks better than finishing the equipping animation as the screen finally fades in.
+		Utility.wait(0.5) ; Short Delay before equipping or unequipping, allowing time for load fading to complete when loading between different location cells
 
 		if MostRecentLocationAction == "Equip"
 			LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
@@ -885,10 +877,10 @@ State busy
 
 	Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 		; Update the MostRecentLocationAction reference even in Busy State
-		Bool is_valid = RTR_IsValidHeadWear(PlayerRef, LastEquipped, LoweredHoods)
-		Bool equip_when_safe = EquipWhenSafe.GetValue() as Bool
-		Bool unequip_when_unsafe = UnequipWhenUnsafe.GetValue() as Bool
-		String locationAction = RTR_GetLocationAction(akNewLoc, is_valid, equip_when_safe, unequip_when_unsafe, SafeKeywords, HostileKeywords)
+		Bool isWearingHeadwear = RTR_IsValidHeadWear(PlayerRef, LastEquipped, LoweredHoods)
+		Int equipWhen = EquipWhenSafe.GetValue() as Int
+		Int unequipWhen = UnequipWhenUnsafe.GetValue() as Int
+		String locationAction = RTR_GetLocationAction(akNewLoc, isWearingHeadwear, equipWhen, unequipWhen, SafeKeywords, HostileKeywords)
 		if locationAction == "Entering Safety" || locationAction == "Leaving Danger" 	
 			MostRecentLocationAction = "Unequip"
 		elseif locationAction == "Entering Danger" || locationAction == "Leaving Safety"

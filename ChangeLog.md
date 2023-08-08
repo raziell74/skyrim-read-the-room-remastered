@@ -6,6 +6,7 @@
 - [ ] Added MCM option to "Redraw Weapons" after RTR equips/unequips when Sheath Weapons is enabled. 
   - Thinking this should be multi-value int value. 0 = Draw Weapons After Equip and Unequip, 1 = Redraw Weapons after Equip, 2 = Redraw Weapons after Unequip, 3 = Disabled.
 - Script and MCM Version bump to 1.24
+- [x] Fixed a bug with the new Remastered scripts that was type casting location actions to a bool when there are in fact 3 different actions to account for. 
 
 ## 1.23
 
