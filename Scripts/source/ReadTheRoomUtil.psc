@@ -1,7 +1,6 @@
 ScriptName ReadTheRoomUtil Hidden
 
 Import IED ; Immersive Equipment Display
-; Import MiscUtil ; PapyrusUtil SE
 
 String property PluginName = "ReadTheRoom.esp" auto
 
@@ -64,11 +63,6 @@ Bool Function RTR_IsValidHeadWear(Actor target_actor, Form item, FormList Lowere
         ; Since Lowered Hoods are equipped and not placed through IED they can show up here, we need to 
         ; invalidate them so they character doesn't try to equip/unequip them
         if LoweredHoods.HasForm(item)
-            return false
-        endif
-
-        ; Does the actor have the item in their inventory?
-        if target_actor.GetItemCount(item as Armor) == 0
             return false
         endif
 
@@ -216,7 +210,7 @@ String Function RTR_GetLocationAction(Location loc, Bool is_wearing_headwear, In
 	Bool isHostile = RTR_LocationHasKeyword(loc, hostile_keywords)
 
     if is_wearing_headwear
-        ; Unequip by Location
+        ; Unequip by Location 
         if isSafe && unequip_when == 0
             return "Entering Safety"
         endif
@@ -225,12 +219,12 @@ String Function RTR_GetLocationAction(Location loc, Bool is_wearing_headwear, In
             return "Leaving Danger"
         endif
     else
-        ; Equip by Location
+        ; Equip by Location 
         if isHostile && equip_when == 0
             return "Nearing Danger"
         endif
 
-        if !isHostile && equip_when == 1
+        if !isSafe && !isHostile && equip_when == 1
             return "Leaving Safety"
         endif
     endif
@@ -344,7 +338,7 @@ EndFunction
 ; @param String prev_equip_type
 ; @return Form
 Form Function RTR_GetLastEquipped(Actor target_actor, String LastEquippedType) global
-    Form last_equipped
+    Form last_equipped = None
     Int helmet_aiBipedSlot = 1
     Int circlet_aiBipedSlot = 12
 
