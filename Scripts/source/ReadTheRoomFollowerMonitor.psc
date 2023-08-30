@@ -150,9 +150,9 @@ Function SetupRTR()
 	; Attempt to correct RTR state on game load
 	Utility.wait(0.1)
 	if (RTR_EquipState.GetValue() as Int) == 1
-		EquipActorHeadgear()
+		EquipWithNoAnimation()
 	elseif (RTR_EquipState.GetValue() as Int) == 0
-		UnequipActorHeadgear()
+		UnequipWithNoAnimation()
 	endif
 EndFunction
 
@@ -456,12 +456,13 @@ EndEvent
 ; EquipActorHeadgear
 ; Triggers equipping head gear to an actor
 Function EquipActorHeadgear()
-	if FollowerRef.HasKeywordString("ActorTypeCreature")
+	; Update the IED Node with the last_equipped item
+	LastEquipped = RTR_GetLastEquipped(FollowerRef, LastEquippedType)
+	UseHelmet()
+
+	if FollowerRef.HasKeywordString("ActorTypeCreature") || LastEquipped == None || FollowerRef.GetItemCount(LastEquipped as Armor) <= 0
 		return
 	endif
-
-	; Update the IED Node with the last_equipped item
-	UseHelmet()
 
 	if LastEquipped.HasKeywordString("RTR_ExcludeKW")
 		RemoveFromHip()
@@ -501,6 +502,7 @@ Function EquipActorHeadgear()
 	FollowerRef.SetAnimationVariableBool("RTR_RedrawWeapons", was_drawn)
 
     GoToState("busy")
+	Utility.wait(Utility.RandomFloat()) ; Randomize the unequip time to make multiple followers feel less robotic
 	Debug.sendAnimationEvent(FollowerRef, "OffsetStop")
 	Debug.sendAnimationEvent(FollowerRef, animation)
 	
@@ -512,15 +514,14 @@ EndFunction
 ; EquipWithNoAnimation
 ; Equips an item to an actor without playing an animation
 Function EquipWithNoAnimation(Bool sendFollowerEvent = true)
-	if FollowerRef.HasKeywordString("ActorTypeCreature")
+	; Update the IED Node with the last_equipped item
+	LastEquipped = RTR_GetLastEquipped(FollowerRef, LastEquippedType)
+	UseHelmet()
+
+	if FollowerRef.HasKeywordString("ActorTypeCreature") || LastEquipped == None || FollowerRef.GetItemCount(LastEquipped as Armor) <= 0
 		return
 	endif
 
-	; Make sure our last equipped item is up to date
-	LastEquipped = RTR_GetLastEquipped(FollowerRef, LastEquippedType)
-	
-	; Update the IED Node with the last_equipped item
-	UseHelmet()
 	GoToState("busy")
 	Debug.sendAnimationEvent(FollowerRef, "OffsetStop")
 
@@ -593,6 +594,7 @@ Function UnequipActorHeadgear()
 	FollowerRef.SetAnimationVariableBool("RTR_RedrawWeapons", was_drawn)
 
     GoToState("busy")
+	Utility.wait(Utility.RandomFloat()) ; Randomize the unequip time to make multiple followers feel less robotic
 	Debug.sendAnimationEvent(FollowerRef, "OffsetStop")
 	Debug.sendAnimationEvent(FollowerRef, animation)
 

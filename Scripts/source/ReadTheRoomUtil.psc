@@ -1,7 +1,6 @@
 ScriptName ReadTheRoomUtil Hidden
 
 Import IED ; Immersive Equipment Display
-; Import MiscUtil ; PapyrusUtil SE
 
 String property PluginName = "ReadTheRoom.esp" auto
 
@@ -64,11 +63,6 @@ Bool Function RTR_IsValidHeadWear(Actor target_actor, Form item, FormList Lowere
         ; Since Lowered Hoods are equipped and not placed through IED they can show up here, we need to 
         ; invalidate them so they character doesn't try to equip/unequip them
         if LoweredHoods.HasForm(item)
-            return false
-        endif
-
-        ; Does the actor have the item in their inventory?
-        if target_actor.GetItemCount(item as Armor) == 0
             return false
         endif
 
@@ -206,37 +200,31 @@ EndFunction
 ;
 ; @param Location loc
 ; @param Bool has_valid_helmet
-; @param Bool equip_when_safe
-; @param Bool unequip_when_unsafe
+; @param Int equip_when 0 = Nearing Danger, 1 = Leaving Safety, 3 = Only On toggle
+; @param Int unequip_when 0 = Entering Safety, 1 = Leaving Danger, 3 = Only On toggle
 ; @param FormList safe_keywords
 ; @param FormList hostile_keywords
-; @return String "Equip", "Unequip", or "None"
-String Function RTR_GetLocationAction(Location loc, Bool has_valid_helmet, Bool equip_when_safe, Bool unequip_when_unsafe, FormList safe_keywords, FormList hostile_keywords) global
-    Bool IsSafe = RTR_LocationHasKeyword(loc, safe_keywords)
-	Bool IsHostile = RTR_LocationHasKeyword(loc, hostile_keywords)
+; @return String "Entering Safety", "Leaving Safety", "Nearing Danger", "Leaving Danger", or "None"
+String Function RTR_GetLocationAction(Location loc, Bool is_wearing_headwear, Int equip_when, Int unequip_when, FormList safe_keywords, FormList hostile_keywords) global
+    Bool isSafe = RTR_LocationHasKeyword(loc, safe_keywords)
+	Bool isHostile = RTR_LocationHasKeyword(loc, hostile_keywords)
 
-    if has_valid_helmet
-        ; Unequip in safe/non-hostile locations
-        Bool CanUnequipInSafeLoc = IsSafe && !unequip_when_unsafe
-        Bool CanUnequipInNonHostileLoc = !IsHostile && unequip_when_unsafe
-
-        if CanUnequipInSafeLoc
+    if is_wearing_headwear
+        ; Unequip by Location 
+        if isSafe && unequip_when == 0
             return "Entering Safety"
         endif
 
-        if CanUnequipInNonHostileLoc
+        if !isHostile && unequip_when == 1
             return "Leaving Danger"
         endif
     else
-        ; Equip in hostile/non-safe locations
-        Bool CanEquipInHostileLoc = IsHostile && !equip_when_safe
-        Bool CanEquipInNonHostileLoc = !IsHostile && equip_when_safe
-
-        if CanEquipInHostileLoc
+        ; Equip by Location 
+        if isHostile && equip_when == 0
             return "Nearing Danger"
         endif
 
-        if CanEquipInNonHostileLoc
+        if !isSafe && !isHostile && equip_when == 1
             return "Leaving Safety"
         endif
     endif
@@ -350,7 +338,7 @@ EndFunction
 ; @param String prev_equip_type
 ; @return Form
 Form Function RTR_GetLastEquipped(Actor target_actor, String LastEquippedType) global
-    Form last_equipped
+    Form last_equipped = None
     Int helmet_aiBipedSlot = 1
     Int circlet_aiBipedSlot = 12
 

@@ -3,9 +3,14 @@
 ## 1.24
 
 - Fully switched to MCM Helper for the mcm. MCM Helper is now a requirement
-- [ ] Added MCM option to "Redraw Weapons" after RTR equips/unequips when Sheath Weapons is enabled. 
-  - Thinking this should be multi-value int value. 0 = Draw Weapons After Equip and Unequip, 1 = Redraw Weapons after Equip, 2 = Redraw Weapons after Unequip, 3 = Disabled.
+- [x] Added MCM option to "Redraw Weapons" after RTR equips/unequips when Sheath Weapons is enabled
 - Script and MCM Version bump to 1.24
+- [x] Fixed a bug with the new Remastered scripts that was type casting location actions to a bool when there are in fact 3 different actions to account for.
+- [x] Fixed issue where RTR was not properly detecting if the last equipped head gear item is in the players/followers inventory
+- [x] Added random wait times for each follower after the player initiates equip/unequip animations so followers don't all do it at the exact same time. Should help them feel less "robotic".
+- [x] Fixed locational awareness always reported as "None"
+- [x] Updated 'leaving safety' equip logic to not equip if it is a safe location and it is not hostile.
+- [x] RTR will no longer attempt to equip head gear if none was ever worn
 
 ## 1.23
 
