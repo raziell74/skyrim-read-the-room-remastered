@@ -20,24 +20,23 @@ Uninstalling should do the following:
 - Removes RTR perks, spells, and keywords from NPCs
   - Need to add a tracker for NPCs who receive the Follower Perk
 
-### Additional Positioning options
-
-Previously the Attachment Node, Item Scale, and inventory requirement were hardcoded into the scripts. These should be adjustable as well, what if a player doesn't want the items on their hip ("NPC Pelvis [Pelv]")? I'll be opening up these as options that you can configure. But keep in mind that the animation will still move the hand to the hip unless you replace that as well. So if you attach the "hip" placement to your foot the animation will still end with the hand going to the hip.
-
-Most players should probably keep to the defaults but can't hurt to give the player more control. Plus these options will be more useful in the next planned feature!
-
-### Helmet Specific Custom IED positioning
+### Helmet Specific Custom IED positioning --HEAVY LIFT--
 
 The original Read The Room allowed players to make changes the positioning of the helmets IED placements, but some mod armors have GND meshes that might not be centered within the GND collision box as they should be and this can result in "floaty" items in the IED placements. I want to add the ability to add custom positioning for specific pieces.
 
 I'd love to make something to do this while in game but that takes A LOT more work than simply adding it to MCM. For now you'll just have to deal with clunky experience going in and out of MCM.
 
 ***Hot Tip!***
-
 Since you're using IED anyway, add a new entry using the awesome IED in game UI with the item you are trying to customize. Then you can visually see the positioning live in game on your character! Once you've got a satisfactory result, jot down the node and positioning you've landed on and update those in the MCM. You should probably disable the IED item you made though, otherwise it will stick there forever. *Note* I really wanted to figure out how to expose RTR's IED placements in the IED GUI but unfortunately IED separates these completely and there is no way to view them through their in game UI :'( 
 
 ***Quick Note***
 I saw some other IED mods that came out recent stored their positioning config in a json file. I'm not sure if I want to do that or not. Having an external file will prevent players from making changes while in game but it would be a lot easier to manage. I'll have to think about it.
+
+### Additional Positioning options
+
+Previously the Attachment Node, Item Scale, and inventory requirement were hardcoded into the scripts. These should be adjustable as well, what if a player doesn't want the items on their hip ("NPC Pelvis [Pelv]")? I'll be opening up these as options that you can configure. But keep in mind that the animation will still move the hand to the hip unless you replace that as well. So if you attach the "hip" placement to your foot the animation will still end with the hand going to the hip.
+
+Most players should probably keep to the defaults but can't hurt to give the player more control. Plus these options will be more useful in the next planned feature!
 
 ### Versioning - Better Update Process --Done--
 
