@@ -5,11 +5,6 @@ Check the Change Log for a list of bugs that have been squashed so far!
 
 _Legend: [ ] = Not Started, [-] = In Progress, [x] = Complete_
 
-- [-] If there is no last_equipped item form
-  - Player has just started the game, RTR will still run logic and animations even with no helmet
-- [x] RTR does not properly detect if the last equipped head gear item is in the players inventory
-  - Results in combat equip adding the item to the player and equipping it
-  - Another example is removing a head gear item from a follower and then triggering RTR equip will force the item back into the followers inventory and equip it
 - [ ] Wooden Mask (Labyrithian) Auto equips when leaving the mask realm
 - [ ] Cannot remove ReadTheRoom
   - This issue is being addressed in the "Uninstall Button" feature outlined in the "future plans" section.

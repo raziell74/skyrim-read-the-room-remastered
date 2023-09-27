@@ -75,6 +75,7 @@ String LastEquippedType = "None"
 Float AnimTimeoutBuffer = 0.05
 String MostRecentLocationAction = "None"
 String PreviousLocationAction = "None"
+String PreviousLocationActionDesc = "None"
 String RecentAction = "None"
 Bool IsPlayerSetup = false
 Bool WasInCombat = false
@@ -203,19 +204,29 @@ Function SetupRTR()
 	; Update the MostRecentLocationAction reference for other processes
 	if PreviousLocationAction == "None"
 		Location akLoc = PlayerRef.GetCurrentLocation()
-		Bool isWearingHeadwear = RTR_GetEquipped(PlayerRef, ManageCirclets.getValue() as Bool) as Bool
+		Bool isWearingHeadwear = RTR_GetEquipped(PlayerRef, ManageCirclets.getValue() as Bool) != None
 		Int equipWhen = EquipWhenSafe.GetValue() as Int
 		Int unequipWhen = UnequipWhenUnsafe.GetValue() as Int
-		String locationAction = RTR_GetLocationAction(akLoc, isWearingHeadwear, equipWhen, unequipWhen, SafeKeywords, HostileKeywords)
-		if locationAction == "Entering Safety" || locationAction == "Leaving Danger" 	
+		String locationActionDesc = RTR_GetLocationAction(akLoc, PreviousLocationActionDesc, isWearingHeadwear, SafeKeywords, HostileKeywords)
+		PreviousLocationActionDesc = locationActionDesc
+
+		; Equip Scenarios
+		if locationActionDesc == "Nearing Danger" && equipWhen == 0
+			MostRecentLocationAction = "Equip"
+		endif
+		if locationActionDesc == "Leaving Safety" && equipWhen == 1
+			MostRecentLocationAction = "Equip"
+		endif
+
+		; Unequip Scenarios
+		if locationActionDesc == "Entering Safety" && unequipWhen == 0
+			MostRecentLocationAction = "Unequip"
+		endif
+		if locationActionDesc == "Leaving Danger" && unequipWhen == 1
 			MostRecentLocationAction = "Unequip"
 		endif
 		
-		if locationAction == "Nearing Danger" || locationAction == "Leaving Safety"
-			MostRecentLocationAction = "Equip"
-		endif
-		
-		if locationAction == "None"
+		if locationActionDesc == "None"
 			MostRecentLocationAction = "None"
 		endif
 		PreviousLocationAction = MostRecentLocationAction
@@ -270,9 +281,10 @@ Event OnKeyDown(Int KeyCode)
 	; Manually Toggle Head Gear
 	if KeyCode == (ToggleKey.GetValue() as Int)
 		LastEquipped = RTR_GetEquipped(PlayerRef, ManageCirclets.getValue() as Bool)
-		WasInCombat = false
+
 		IsCombatEquip = false
 		IsLocationEquip = false
+		
 		if RTR_IsValidHeadWear(PlayerRef, LastEquipped, LoweredHoods)
 			UnequipActorHeadgear()
 		else
@@ -307,51 +319,76 @@ EndEvent
 Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 	Location akLoc = PlayerRef.GetCurrentLocation() ; After testing... I do not trust the akNewLoc parameter to be accurate after loading from save -.-'
 	LastEquipped = RTR_GetEquipped(PlayerRef, ManageCirclets.GetValue() as Bool)
-	Bool isWearingHeadwear = RTR_GetEquipped(PlayerRef, ManageCirclets.getValue() as Bool) as Bool
+	Bool isWearingHeadwear = RTR_GetEquipped(PlayerRef, ManageCirclets.getValue() as Bool) != None
 	Int equipWhen = EquipWhenSafe.GetValue() as Int ; 0 = Nearing Danger, 1 = Leaving Safety, 3 = Only On toggle
 	Int unequipWhen = UnequipWhenUnsafe.GetValue() as Int ; 0 = Entering Safety, 1 = Leaving Danger, 3 = Only On toggle
 
 	; Update the MostRecentLocationAction reference for other processes
-	String locationAction = RTR_GetLocationAction(akLoc, isWearingHeadwear, equipWhen, UnequipWhen, SafeKeywords, HostileKeywords)
+	String locationActionDesc = RTR_GetLocationAction(akLoc, PreviousLocationActionDesc, isWearingHeadwear, SafeKeywords, HostileKeywords)
 
-	if locationAction == "Entering Safety" || locationAction == "Leaving Danger" 	
+	; Unequip Scenarios
+	if locationActionDesc == "Entering Safety" && unequipWhen == 0
+		MostRecentLocationAction = "Unequip"
+	endif
+	if locationActionDesc == "Leaving Danger" && unequipWhen == 1
 		MostRecentLocationAction = "Unequip"
 	endif
 
-	if locationAction == "Nearing Danger" || locationAction == "Leaving Safety"
+	; Equip Scenarios
+	if locationActionDesc == "Nearing Danger" && equipWhen == 0
+		MostRecentLocationAction = "Equip"
+	endif
+	if locationActionDesc == "Leaving Safety" && equipWhen == 1
 		MostRecentLocationAction = "Equip"
 	endif
 
+	; MiscUtil.PrintConsole("Location Action Changed to '" + locationActionDesc + "' PreviousLocationActionDesc '" + PreviousLocationActionDesc + "' Is Wearing a Helmt? " + isWearingHeadwear as String + " MostRecentAction: " + MostRecentLocationAction + " PreviousLocationAction: " + PreviousLocationAction)
+	PreviousLocationActionDesc = locationActionDesc
+
 	; "None" is returned for a lot of world locations and that can occur just outside of cities. 
-	if locationAction == "None"
-		; To prevent Manual Toggles from being overriden when the player goes into the 'wilds' and comes back, We keep the previous location action
-		MostRecentLocationAction = PreviousLocationAction
+	if locationActionDesc == "None"
+		locationActionDesc = "Entering Wilderness" ; For flavor
+
+		; Prevent equip/unequip from firing with combat equip when location settings are turned off
+		if equipWhen == 3 && PreviousLocationAction == "Equip"
+			MostRecentLocationAction = "None"
+			PreviousLocationAction = "None"
+		elseif unequipWhen == 3 && PreviousLocationAction == "Unequip"
+			MostRecentLocationAction = "None"
+			PreviousLocationAction = "None"
+		else 
+			; Prevent equip/unequip from firing when transitioning to and from wilderness
+			MostRecentLocationAction = PreviousLocationAction
+		endif
 	endif
-	
-	if NotifyOnLocation.GetValue() as Bool
-		Debug.Notification(locationAction)
+
+	Utility.wait(1.0) ; Allow time for load fading to complete
+	if NotifyOnLocation.GetValue() as Int == 1
+		Debug.Notification(locationActionDesc)
 	endif
-	
+
 	; Only apply the action if we didn't already do it, prevents ToggleKey from being overwritten unless changing location action
 	if MostRecentLocationAction != PreviousLocationAction
-		Utility.wait(1.5) ; Short Delay before equipping or unequipping, allowing time for load fading to complete when loading between different location cells
+		; If player is in combat, wait until they are out of combat before equipping/unequipping
+		if PlayerRef.IsInCombat()
+			return
+		endif
 
 		if MostRecentLocationAction == "Equip"
 			LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
-			WasInCombat = false
 			IsCombatEquip = false
 			IsLocationEquip = true
 			EquipActorHeadgear()
 		elseif MostRecentLocationAction == "Unequip"
-			WasInCombat = false
 			IsCombatEquip = false
 			IsLocationEquip = true
 			UnequipActorHeadgear()
 		endif
+
+		; Record the previous location action so we don't fire the same action over and over again
+		PreviousLocationAction = MostRecentLocationAction
 	endif
 
-	; Record the previous location action so we don't fire the same action over and over again
-	PreviousLocationAction = MostRecentLocationAction
 	SendModEvent("ReadTheRoomLocationChange")
 EndEvent
 
@@ -373,6 +410,7 @@ Event OnReadTheRoomCombatStateChanged(String eventName, String strArg, Float num
 			WasInCombat = true
 			IsCombatEquip = true
 			IsLocationEquip = false
+			
 			EquipActorHeadgear()
 		endif
 	endif
@@ -387,7 +425,11 @@ Event OnReadTheRoomCombatStateChanged(String eventName, String strArg, Float num
 		if (NotifyOnCombat.GetValue() as Bool)
 			Debug.Notification("Leaving Combat")
 		endIf
-		UnequipActorHeadgear()
+
+		; Take location into account when leaving combat
+		if MostRecentLocationAction == "Unequip"
+			UnequipActorHeadgear()	
+		endif
 	endIf
 
 	if aeCombatState == 2
@@ -474,7 +516,11 @@ Event OnAnimationEvent(ObjectReference akSource, String asEventName)
 
 		; Post Animation Clean Up
 		Game.EnablePlayerControls()
-		PostAnimCleanUp()
+		
+		RemoveFromHand()
+		Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
+		
+		; PostAnimCleanUp()
 	endif
 EndEvent
 
@@ -590,6 +636,7 @@ Function EquipActorHeadgear()
 	; Check Controls and Exit Early if any of them are disabled
 	; Solves any issue with RTR trigging when something else has purposefully disabled controls
 	if !RTR_CanRun() || PlayerRef.HasKeywordString("ActorTypeCreature") || LastEquipped == None || PlayerRef.GetItemCount(LastEquipped as Armor) <= 0
+		Debug.Notification("Player is to busy to equip head gear")
 		return
 	endif
 
@@ -602,30 +649,32 @@ Function EquipActorHeadgear()
 
 	; Combat State Unequip
 	if PlayerRef.IsInCombat()
-		if (CombatEquip.GetValue() as Int) == 0
+		if IsCombatEquip && CombatEquip.GetValue() as Int == 0
 			return
 		endif
 
 		; Equip with no animation
-		if !(CombatEquipAnimation.GetValue() as Bool)
+		if CombatEquipAnimation.GetValue() as Int == 0
 			EquipWithNoAnimation(true)
 			return
 		endif
 	endif
 
 	; Check Actor status for any conditions that would prevent animation
-	if PlayerRef.GetSitState() || \
+	if	PlayerRef.GetSitState() || \
 		PlayerRef.IsSwimming() || \
 		PlayerRef.GetAnimationVariableInt("bInJumpState") == 1 || \
 		PlayerRef.GetAnimationVariableInt("IsEquipping") == 1 || \
 		PlayerRef.GetAnimationVariableInt("IsUnequipping") == 1
+		
 		; Force equip with no animation
+		; MiscUtil.PrintConsole("Player is in non-animatable state. Equiping with no animation")
 		EquipWithNoAnimation()
 		return
 	endif
 
 	; Skip animation if weapons are drawn but the setting is disabled
-	if !(SheathWeaponsForAnimation.GetValue() as Bool) && PlayerRef.IsWeaponDrawn()
+	if PlayerRef.IsWeaponDrawn() && (SheathWeaponsForAnimation.GetValue() as Bool) == False
 		EquipWithNoAnimation()
 		return
 	endif
@@ -656,17 +705,43 @@ Function EquipActorHeadgear()
 	Utility.wait(animation_time)
 	PostAnimCleanUp()
 	
-	if !OnlyRedrawWeapons.GetValue() as Bool
-		if DrawWeaponsAfter.GetValue() as Int == 1 || DrawWeaponsAfter.GetValue() as Int == 2
-			if IsCombatEquip && DrawWeaponsOnCombat.GetValue() as Bool
-				PlayerRef.DrawWeapon()
-			endif
-			if IsLocationEquip && DrawWeaponsOnLocation.GetValue() as Bool
-				PlayerRef.DrawWeapon()
-			endif
-			if !IsCombatEquip && !IsLocationEquip && DrawWeaponsOnToggle.GetValue() as Bool
-				PlayerRef.DrawWeapon()
-			endif
+	; Draw Weapon Logic
+	if OnlyRedrawWeapons.GetValue() as Bool == True
+		; MiscUtil.PrintConsole("Only Redraw Weapons is enabled, exiting weap equip logic")
+		return
+	endif
+
+	Int draw_weapons_after = DrawWeaponsAfter.GetValue() as Int
+	String draw_weapons_after_string = "Undefined"
+	
+	; @DEBUG
+	if draw_weapons_after == 0
+		draw_weapons_after_string = "DrawWeaponsAfter Never"
+	elseif draw_weapons_after == 1
+		draw_weapons_after_string = "DrawWeaponsAfter Equip and Unequip"
+	elseif draw_weapons_after == 2
+		draw_weapons_after_string = "DrawWeaponsAfter Equip"
+	elseif draw_weapons_after == 3
+		draw_weapons_after_string = "DrawWeaponsAfter Unequip"
+	endif
+
+	; MiscUtil.PrintConsole("Headwear Equipped: Draw Weapons? draw_weapons_after_string " + draw_weapons_after_string + "'")
+
+	; DrawWeaponsAfter 0 = Never, 1 = Equip and Unequip, 2 = Equip, 3 = Unequip
+	if draw_weapons_after == 1 || draw_weapons_after == 2 
+		; MiscUtil.PrintConsole("Combat Equip Weapon Draw? IsCombatEquip = " + IsCombatEquip as String + " DrawWeaponsOnCombat = " + (DrawWeaponsOnCombat.GetValue() as Bool) as String)
+		if IsCombatEquip && DrawWeaponsOnCombat.GetValue() as Bool
+			PlayerRef.DrawWeapon()
+		endif
+
+		; MiscUtil.PrintConsole("Location Equip Weapon Draw? IsLocationEquip = " + IsLocationEquip as String + " DrawWeaponsOnLocation = " + (DrawWeaponsOnLocation.GetValue() as Bool) as String)
+		if IsLocationEquip && DrawWeaponsOnLocation.GetValue() as Bool
+			PlayerRef.DrawWeapon()
+		endif
+
+		; MiscUtil.PrintConsole("Manual Toggle Equip Weapon Draw? IsCombatEquip = " + IsCombatEquip as String + " IsLocationEquip = " + IsLocationEquip as String + " DrawWeaponsOnToggle = " + (DrawWeaponsOnToggle.GetValue() as Bool) as String)
+		if !IsCombatEquip && !IsLocationEquip && DrawWeaponsOnToggle.GetValue() as Bool
+			PlayerRef.DrawWeapon()
 		endif
 	endif
 EndFunction
@@ -722,14 +797,16 @@ EndFunction
 ; UnequipActorHeadgear
 ; Triggers unequipping head gear from an actor
 Function UnequipActorHeadgear()
+	; Update the IED Node with the equipped item
+	LastEquipped = RTR_GetLastEquipped(PlayerRef, LastEquippedType)
+	UseHelmet()
+
 	; Check Controls and Exit Early if any of them are disabled
 	; Solves any issue with RTR trigging when something else has purposefully disabled controls
-	if !RTR_CanRun() || PlayerRef.HasKeywordString("ActorTypeCreature")
+	if !RTR_CanRun() || PlayerRef.HasKeywordString("ActorTypeCreature")|| LastEquipped == None
+		Debug.Notification("Player is to busy to unequip head gear")
 		return
 	endif
-	
-	; Update the IED Node with the equipped item
-	UseHelmet()
 
 	; Exit early if the actor is not wearing the item
 	if !PlayerRef.IsEquipped(LastEquipped)
@@ -738,13 +815,13 @@ Function UnequipActorHeadgear()
 	endif
 
 	; Combat State Unequip
-	if PlayerRef.GetCombatState()
-		if (CombatEquip.GetValue() as Int) == 0
+	if PlayerRef.IsInCombat()
+		if IsCombatEquip && CombatEquip.GetValue() as Int == 0
 			return
 		endif
 
 		; Unequip with no animation
-		if !(CombatEquipAnimation.GetValue() as Bool)
+		if CombatEquipAnimation.GetValue() as Int == 0
 			UnequipWithNoAnimation()
 			return
 		endif
@@ -756,13 +833,15 @@ Function UnequipActorHeadgear()
 		PlayerRef.GetAnimationVariableInt("bInJumpState") == 1 || \
 		PlayerRef.GetAnimationVariableInt("IsEquipping") == 1 || \
 		PlayerRef.GetAnimationVariableInt("IsUnequipping") == 1
+		
 		; Force unequip with no animation
+		; MiscUtil.PrintConsole("Player is in non-animatable state. Unequipping with no animation")
 		UnequipWithNoAnimation()
 		return
 	endif
 
 	; Skip animation if weapons are drawn but the setting is disabled
-	if !(SheathWeaponsForAnimation.GetValue() as Bool) && PlayerRef.IsWeaponDrawn()
+	if PlayerRef.IsWeaponDrawn() && (SheathWeaponsForAnimation.GetValue() as Bool) == False
 		UnequipWithNoAnimation()
 		return
 	endif
@@ -793,17 +872,45 @@ Function UnequipActorHeadgear()
 	Utility.wait(animation_time)
 	PostAnimCleanUp()
 
-	if !OnlyRedrawWeapons.GetValue() as Bool
-		if DrawWeaponsAfter.GetValue() as Int == 1 || DrawWeaponsAfter.GetValue() as Int == 3
-			if IsCombatEquip && DrawWeaponsOnCombat.GetValue() as Bool
-				PlayerRef.DrawWeapon()
-			endif
-			if IsLocationEquip && DrawWeaponsOnLocation.GetValue() as Bool
-				PlayerRef.DrawWeapon()
-			endif
-			if !IsCombatEquip && !IsLocationEquip && DrawWeaponsOnToggle.GetValue() as Bool
-				PlayerRef.DrawWeapon()
-			endif
+	; Draw Weapon Logic
+	; MiscUtil.PrintConsole("Deciding to draw weapons after unequip")
+	if OnlyRedrawWeapons.GetValue() as Bool 
+		; exit if we only redraw weapons, redraw logic in PostAnimCleanUp
+		; MiscUtil.PrintConsole("Only Redraw Weapons is enabled, exiting weap equip logic")
+		return
+	endif
+
+	Int draw_weapons_after = DrawWeaponsAfter.GetValue() as Int
+	String draw_weapons_after_string = "Undefined"
+	
+	; @DEBUG
+	if draw_weapons_after == 0
+		draw_weapons_after_string = "DrawWeaponsAfter Never"
+	elseif draw_weapons_after == 1
+		draw_weapons_after_string = "DrawWeaponsAfter Equip and Unequip"
+	elseif draw_weapons_after == 2
+		draw_weapons_after_string = "DrawWeaponsAfter Equip"
+	elseif draw_weapons_after == 3
+		draw_weapons_after_string = "DrawWeaponsAfter Unequip"
+	endif
+
+	; MiscUtil.PrintConsole("Headwear Unequipped: Draw Weapons? draw_weapons_after_string '" + draw_weapons_after_string + "'")
+
+	; DrawWeaponsAfter 0 = Never, 1 = Equip and Unequip, 2 = Equip, 3 = Unequip
+	if draw_weapons_after == 1 || draw_weapons_after == 3
+		; MiscUtil.PrintConsole("Combat Unequip Weapon Draw? IsCombatEquip = " + IsCombatEquip as String + " DrawWeaponsOnCombat = " + (DrawWeaponsOnCombat.GetValue() as Bool) as String)
+		if IsCombatEquip && DrawWeaponsOnCombat.GetValue() as Bool
+			PlayerRef.DrawWeapon()
+		endif
+
+		; MiscUtil.PrintConsole("Location Unequip Weapon Draw? IsLocationEquip = " + IsLocationEquip as String + " DrawWeaponsOnLocation = " + (DrawWeaponsOnLocation.GetValue() as Bool) as String)
+		if IsLocationEquip && DrawWeaponsOnLocation.GetValue() as Bool
+			PlayerRef.DrawWeapon()
+		endif
+
+		; MiscUtil.PrintConsole("Manual Toggle Unequip Weapon Draw? IsCombatEquip = " + IsCombatEquip as String + " IsLocationEquip = " + IsLocationEquip as String + " DrawWeaponsOnToggle = " + (DrawWeaponsOnToggle.GetValue() as Bool) as String)
+		if !IsCombatEquip && !IsLocationEquip && DrawWeaponsOnToggle.GetValue() as Bool
+			PlayerRef.DrawWeapon()
 		endif
 	endif
 EndFunction
@@ -888,19 +995,29 @@ State busy
 
 	Event OnLocationChange(Location akOldLoc, Location akNewLoc)
 		; Update the MostRecentLocationAction reference even in Busy State
-		Bool isWearingHeadwear = RTR_GetEquipped(PlayerRef, ManageCirclets.getValue() as Bool) as Bool
+		Bool isWearingHeadwear = RTR_GetEquipped(PlayerRef, ManageCirclets.getValue() as Bool) != None
 		Int equipWhen = EquipWhenSafe.GetValue() as Int
 		Int unequipWhen = UnequipWhenUnsafe.GetValue() as Int
-		String locationAction = RTR_GetLocationAction(akNewLoc, isWearingHeadwear, equipWhen, unequipWhen, SafeKeywords, HostileKeywords)
-		if locationAction == "Entering Safety" || locationAction == "Leaving Danger" 	
+		String locationActionDesc = RTR_GetLocationAction(akNewLoc, PreviousLocationActionDesc, isWearingHeadwear, SafeKeywords, HostileKeywords)
+		PreviousLocationActionDesc = locationActionDesc
+
+		; Equip Scenarios
+		if locationActionDesc == "Nearing Danger" && equipWhen == 0
+			MostRecentLocationAction = "Equip"
+		endif
+		if locationActionDesc == "Leaving Safety" && equipWhen == 1
+			MostRecentLocationAction = "Equip"
+		endif
+
+		; Unequip Scenarios
+		if locationActionDesc == "Entering Safety" && unequipWhen == 0
+			MostRecentLocationAction = "Unequip"
+		endif
+		if locationActionDesc == "Leaving Danger" && unequipWhen == 1
 			MostRecentLocationAction = "Unequip"
 		endif
 		
-		if locationAction == "Nearing Danger" || locationAction == "Leaving Safety"
-			MostRecentLocationAction = "Equip"
-		endif
-		
-		if locationAction == "None"
+		if locationActionDesc == "None"
 			MostRecentLocationAction = "None"
 		endif
 	EndEvent
@@ -958,38 +1075,57 @@ Function PostAnimCleanUp()
 	Debug.sendAnimationEvent(PlayerRef, "OffsetStop")
 
 	; Redraw weapons based on Configuration
+	; MiscUtil.PrintConsole("Deciding to redraw weapons")
 	Bool draw_weapon = PlayerRef.GetAnimationVariableBool("RTR_RedrawWeapons")
-	if draw_weapon && OnlyRedrawWeapons.GetValue() as Bool
-		if RecentAction == "Equip" 
-			if DrawWeaponsAfter.GetValue() as Int == 1 || DrawWeaponsAfter.GetValue() as Int == 2
-				if IsCombatEquip && DrawWeaponsOnCombat.GetValue() as Bool
-					PlayerRef.DrawWeapon()
-				endif
-				if IsLocationEquip && DrawWeaponsOnLocation.GetValue() as Bool
-					PlayerRef.DrawWeapon()
-				endif
-				if !IsCombatEquip && !IsLocationEquip && DrawWeaponsOnToggle.GetValue() as Bool
-					PlayerRef.DrawWeapon()
-				endif
-			endif
+	if draw_weapon && OnlyRedrawWeapons.GetValue() as Bool == True
+		Int draw_weapons_after = DrawWeaponsAfter.GetValue() as Int
+		String draw_weapons_after_string = "Undefined"
+
+		; @DEBUG
+		if draw_weapons_after == 0
+			draw_weapons_after_string = "DrawWeaponsAfter Never"
+		elseif draw_weapons_after == 1
+			draw_weapons_after_string = "DrawWeaponsAfter Equip and Unequip"
+		elseif draw_weapons_after == 2
+			draw_weapons_after_string = "DrawWeaponsAfter Equip"
+		elseif draw_weapons_after == 3
+			draw_weapons_after_string = "DrawWeaponsAfter Unequip"
 		endif
 
-		if RecentAction == "Unequip" 
-			if DrawWeaponsAfter.GetValue() as Int == 1 || DrawWeaponsAfter.GetValue() as Int == 3
-				if IsCombatEquip && DrawWeaponsOnCombat.GetValue() as Bool
-					PlayerRef.DrawWeapon()
-				endif
-				if IsLocationEquip && DrawWeaponsOnLocation.GetValue() as Bool
-					PlayerRef.DrawWeapon()
-				endif
-				if !IsCombatEquip && !IsLocationEquip && DrawWeaponsOnToggle.GetValue() as Bool
-					PlayerRef.DrawWeapon()
-				endif
-			endif
+		; MiscUtil.PrintConsole("RecentAction = " + RecentAction + "draw_weapons_after_string '" + draw_weapons_after_string + "'")
+		; MiscUtil.PrintConsole("Redraw Weapon? IsCombatEquip = " + IsCombatEquip as String + " IsLocationEquip = " + IsLocationEquip as String)
+		; MiscUtil.PrintConsole("DrawWeaponsOnCombat = " + (DrawWeaponsOnToggle.GetValue() as Bool) as String + " DrawWeaponsOnLocation = " + (DrawWeaponsOnToggle.GetValue() as Bool) as String + " DrawWeaponsOnToggle = " + (DrawWeaponsOnToggle.GetValue() as Bool) as String)
+		
+		Bool canAttemptRedraw = false
+		if draw_weapons_after == 0
+			canAttemptRedraw = false
+		elseif RecentAction == "Equip" && (draw_weapons_after == 1 || draw_weapons_after == 2)
+			; MiscUtil.PrintConsole("Can Attempt Weapon Redraw after Equip")
+			canAttemptRedraw = true
+		elseif RecentAction == "Unequip" && (draw_weapons_after == 1 || draw_weapons_after == 3)
+			; MiscUtil.PrintConsole("Can Attempt Weapon Redraw after Unequip")
+			canAttemptRedraw = true
 		endif
 
-		PlayerRef.SetAnimationVariableBool("RTR_RedrawWeapons", false)
+		; DrawWeaponsAfter 0 = Never, 1 = Equip and Unequip, 2 = Equip, 3 = Unequip
+		if canAttemptRedraw
+			if IsCombatEquip && DrawWeaponsOnCombat.GetValue() as Bool == True
+				; MiscUtil.PrintConsole("Combat Equip Weapon Redraw")
+				PlayerRef.DrawWeapon()
+			endif
+			if IsLocationEquip && DrawWeaponsOnLocation.GetValue() as Bool == True
+				; MiscUtil.PrintConsole("Location Equip/Unequip Weapon Redraw")
+				PlayerRef.DrawWeapon()
+			endif
+			if !IsCombatEquip && !IsLocationEquip && DrawWeaponsOnToggle.GetValue() as Int == 1
+				; MiscUtil.PrintConsole("Manual Toggle Weapon Redraw")
+				PlayerRef.DrawWeapon()
+			endif
+		endif
+	else
+		; MiscUtil.PrintConsole("Weapon Redraw disabled. OnlyRedrawWeapons = " + (OnlyRedrawWeapons.GetValue() as Bool) as String + " draw_weapon = " + draw_weapon as String)
 	endif
+	PlayerRef.SetAnimationVariableBool("RTR_RedrawWeapons", false)
 
 	; Return player to first person
 	Bool return_to_first_person = PlayerRef.GetAnimationVariableBool("RTR_ReturnToFirstPerson")

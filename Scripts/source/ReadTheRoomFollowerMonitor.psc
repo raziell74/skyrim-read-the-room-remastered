@@ -502,8 +502,9 @@ Function EquipActorHeadgear()
 	FollowerRef.SetAnimationVariableBool("RTR_RedrawWeapons", was_drawn)
 
     GoToState("busy")
-	Utility.wait(Utility.RandomFloat()) ; Randomize the unequip time to make multiple followers feel less robotic
+	Utility.wait(Utility.RandomFloat(0.0, 1.5)) ; Randomize the unequip time to make multiple followers feel less robotic
 	Debug.sendAnimationEvent(FollowerRef, "OffsetStop")
+	Utility.wait(0.1)
 	Debug.sendAnimationEvent(FollowerRef, animation)
 	
 	; Add a typical timeout to ensure the post-animation is called
@@ -594,8 +595,9 @@ Function UnequipActorHeadgear()
 	FollowerRef.SetAnimationVariableBool("RTR_RedrawWeapons", was_drawn)
 
     GoToState("busy")
-	Utility.wait(Utility.RandomFloat()) ; Randomize the unequip time to make multiple followers feel less robotic
+	Utility.wait(Utility.RandomFloat(0.0, 1.5)) ; Randomize the unequip time to make multiple followers feel less robotic
 	Debug.sendAnimationEvent(FollowerRef, "OffsetStop")
+	Utility.wait(0.1)
 	Debug.sendAnimationEvent(FollowerRef, animation)
 
 	; Add a typical timeout to ensure the post-animation is called

@@ -182,7 +182,7 @@ Event OnSettingChange(String a_ID)
             NotifyOnCombat.SetValue(0.0)
         EndIf
     ElseIf a_ID == "bSheathWeaponsForAnimation:WeaponDrawSheath"
-        SheathWeaponsForAnimation.SetValue(GetModSettingBool("bSheathWeaponsForAnimation:HelmetEquipUnequip") as Float)
+        SheathWeaponsForAnimation.SetValue(GetModSettingBool("bSheathWeaponsForAnimation:WeaponDrawSheath") as Float)
         RefreshMenu()
     ElseIf a_ID == "iDrawWeaponsAfter:WeaponDrawSheath"
         DrawWeaponsAfter.SetValue(GetModSettingInt("iDrawWeaponsAfter:WeaponDrawSheath") as Float)

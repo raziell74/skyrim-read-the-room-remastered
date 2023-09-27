@@ -11,6 +11,19 @@
 - [x] Fixed locational awareness always reported as "None"
 - [x] Updated 'leaving safety' equip logic to not equip if it is a safe location and it is not hostile.
 - [x] RTR will no longer attempt to equip head gear if none was ever worn
+- [x] Fixed an issue where RTR would run even if the player never had a Last Equipped head gear item. Only happens on new saves.
+- [x] Fixed locational awareness not correctly equipping or unequipping if wearing a lowered hood
+- [x] Fixed an issue where the Sheath Weapons setting was not being correctly updated in the MCM
+- [x] Adjusted location notification to always notify even if the an action isn't executed
+- [x] Changed logic behind detecting location types to be more reliable
+- [x] Location notifications will now include "Wilderness" if the location is not one of the preset location types
+- [x] Increased Delay time for Followers to equip/unequip head gear after the player does
+- [x] Added additional "OffsetStop" calls to prevent animations to stick on the final frame before a timeout can correct it
+- [x] Most recent location action is now considered when exiting combat so RTR will not remove headwear in dangerous locations
+- [x] Fixed an issue where the Post Animation Cleanup was called multiple times per animation
+- [x] Added notification for when RTR cannot update head gear due to the player being in a state that prevents animation or gear management
+- [x] Adjusted logic around Drawing weapons after an RTR action to be more reliable
+- [x] Fixed a bug where lowered hoods would count as head gear. This caused a false positive when checking if the player was wearing head gear
 
 ## 1.23
 

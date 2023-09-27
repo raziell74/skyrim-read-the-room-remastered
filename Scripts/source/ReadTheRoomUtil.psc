@@ -100,8 +100,6 @@ EndFunction
 ; @param Bool manage_circlets
 ; @return Armor
 Form Function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
-    Form equipped_head_wear
-
     ; Ignore slots that are not possible head wear
     int slotsChecked
     slotsChecked += 0x00000004 ; Body
@@ -122,6 +120,9 @@ Form Function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
             Armor thisArmor = target_actor.GetWornForm(thisSlot) as Armor
             if (thisArmor)
                 if (thisArmor.HasKeywordString("RTR_HoodKW")) ; Equipped item is a hood
+                    if thisArmor.HasKeywordString("RTR_LoweredHood")
+                        return None ; Lowered Hoods need to be ignored as headwear
+                    endif
                     return thisArmor
                 elseif (thisArmor.isHelmet()) ; Equipped item is a helmet
                     return thisArmor
@@ -136,7 +137,7 @@ Form Function RTR_GetEquipped(Actor target_actor, Bool manage_circlets) global
         thisSlot *= 2 ; double the number to move on to the next slot
     endWhile
     
-    return equipped_head_wear
+    return None
 EndFunction
 
 ; RTR_GetLoweredHood
@@ -200,35 +201,57 @@ EndFunction
 ;
 ; @param Location loc
 ; @param Bool has_valid_helmet
-; @param Int equip_when 0 = Nearing Danger, 1 = Leaving Safety, 3 = Only On toggle
-; @param Int unequip_when 0 = Entering Safety, 1 = Leaving Danger, 3 = Only On toggle
 ; @param FormList safe_keywords
 ; @param FormList hostile_keywords
 ; @return String "Entering Safety", "Leaving Safety", "Nearing Danger", "Leaving Danger", or "None"
-String Function RTR_GetLocationAction(Location loc, Bool is_wearing_headwear, Int equip_when, Int unequip_when, FormList safe_keywords, FormList hostile_keywords) global
+String Function RTR_GetLocationAction(Location loc, String previous_location_action, Bool is_wearing_headwear, FormList safe_keywords, FormList hostile_keywords) global
     Bool isSafe = RTR_LocationHasKeyword(loc, safe_keywords)
 	Bool isHostile = RTR_LocationHasKeyword(loc, hostile_keywords)
 
-    if is_wearing_headwear
-        ; Unequip by Location 
-        if isSafe && unequip_when == 0
+    if previous_location_action == "None" ; Assign based on headwear state
+        if is_wearing_headwear
+            ; Unequip by Location
+            if isSafe
+                return "Entering Safety"
+            endif
+
+            if !isHostile
+                return "Leaving Danger"
+            endif
+        else
+            ; Equip by Location 
+            if isHostile
+                return "Nearing Danger"
+            endif
+
+            if !isSafe
+                return "Leaving Safety"
+            endif
+        endif
+    else ; Assign by previous location action
+        ; Safe Location
+        if isSafe && previous_location_action != "Entering Safety"
             return "Entering Safety"
         endif
 
-        if !isHostile && unequip_when == 1
-            return "Leaving Danger"
-        endif
-    else
-        ; Equip by Location 
-        if isHostile && equip_when == 0
+        ; Hostile Location
+        if isHostile && previous_location_action != "Nearing Danger"
             return "Nearing Danger"
         endif
 
-        if !isSafe && !isHostile && equip_when == 1
-            return "Leaving Safety"
+        ; Wilderness
+        if !isSafe && !isHostile
+            if previous_location_action == "Entering Safety"
+                return "Leaving Safety"
+            endif
+
+            if previous_location_action == "Nearing Danger"
+                return "Leaving Danger"
+            endif
         endif
     endif
 
+    ; Location is just in the wilderness
     return "None"
 EndFunction
 
